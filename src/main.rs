@@ -1,3 +1,5 @@
+use yui_kr::kr::*;
+
 fn main() {
-    println!("Hello, world!");
+    sample()
 }

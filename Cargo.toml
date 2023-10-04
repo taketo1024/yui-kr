@@ -6,3 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+num-bigint = "0.4.4"
+num-traits = "0.2.16"
+yui-core = { git = "https://github.com/taketo1024/yui.git" }
+yui-ratio = { git = "https://github.com/taketo1024/yui.git" }
+yui-polynomial = { git = "https://github.com/taketo1024/yui.git" }
+yui-matrix = { git = "https://github.com/taketo1024/yui.git" }
+yui-homology = { git = "https://github.com/taketo1024/yui.git" }
+yui-khovanov = { git = "https://github.com/taketo1024/yui.git" }
