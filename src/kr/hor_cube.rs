@@ -1,39 +1,29 @@
 use std::collections::BTreeMap;
-use std::marker::PhantomData;
 
 use itertools::izip;
 use num_traits::Zero;
 use yui_core::{Ring, RingOps};
-use yui_link::Link;
 use yui_polynomial::MDegree;
 use yui_utils::bitseq::{BitSeq, Bit};
-use crate::kr::base::MonGen;
 
-use super::base::{EdgeRing, TripGrad};
+use super::base::{EdgeRing, TripGrad, MonGen};
+use super::data::KRCubeData;
 
-struct KRHorCube<R>
+struct KRHorCube<'a, R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
-    dim: usize,
-    x_signs: Vec<i32>,
+    data: &'a KRCubeData<R>,
     v_coords: BitSeq,
     q_slice: isize,
-    _coeff: PhantomData<R>
 } 
 
-impl<R> KRHorCube<R> 
+impl<'a, R> KRHorCube<'a, R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    pub fn new(l: &Link, v_coords: BitSeq, q_slice: isize) -> Self {
-        let dim = l.crossing_num() as usize;
-        let x_signs = l.crossing_signs();
-
-        assert_eq!(v_coords.len(), dim);
-
+    pub fn new(data: &'a KRCubeData<R>, v_coords: BitSeq, q_slice: isize) -> Self {
+        assert_eq!(v_coords.len(), data.dim());
         Self {
-            dim,
-            x_signs,
+            data,
             v_coords,
-            q_slice,
-            _coeff: PhantomData,
+            q_slice
         }
     }
 
@@ -72,14 +62,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn root_grad(&self) -> TripGrad { 
-        let n = self.dim;
+        let n = self.data.dim();
         let h0 = BitSeq::zeros(n);
         let v0 = BitSeq::zeros(n);
-        Self::grad_shift(&self.x_signs, h0, v0)
+        Self::grad_shift(self.data.x_signs(), h0, v0)
     }
 
     fn grad_at(&self, h_coords: BitSeq) -> TripGrad { 
-        Self::grad_shift(&self.x_signs, h_coords, self.v_coords)
+        Self::grad_shift(self.data.x_signs(), h_coords, self.v_coords)
     }
 
     fn mon_deg(&self, h_coords: BitSeq) -> isize { 
@@ -121,12 +111,25 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
 
         let deg = deg as usize;
-        let n = self.dim;
+        let n = self.data.dim();
 
         Self::gen_mons(deg, n)
     }
 
-    pub fn edge(from: BitSeq, to: BitSeq) -> EdgeRing<R> {
+    pub fn edge(&self, from: BitSeq, to: BitSeq) -> EdgeRing<R> {
+        use Bit::{Bit0, Bit1};
+        assert_eq!(to.weight() - from.weight(), 1);
+
+        let n = from.len();
+        let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
+
+        let sign = self.data.x_signs()[i];
+        let v = self.v_coords[i];
+
+        match (sign.is_positive(), v) {
+            (true, Bit0) | (false, Bit1) => (),
+            (true, Bit1) | (false, Bit0) => ()
+        }
         todo!()
     }
 }
@@ -134,8 +137,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 #[cfg(test)]
 mod tests {
     use yui_ratio::Ratio;
+    use yui_link::Link;
     use super::*;
-    
+
     type R = Ratio<i64>;
 
     #[test]
@@ -159,7 +163,8 @@ mod tests {
     fn vert_grad() { 
         let l = Link::hopf_link(); // negative
         let v = BitSeq::from_iter([0,1]);
-        let cube = KRHorCube::<R>::new(&l, v, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let cube = KRHorCube::new(&data, v, 0);
 
         let grad0 = cube.root_grad();
         assert_eq!(grad0, TripGrad(0,-4,0));
@@ -176,35 +181,45 @@ mod tests {
         let v = BitSeq::from_iter([0,0,0]);
         let h = BitSeq::from_iter([0,0,0]);
         let q = 0;
-        let cube = KRHorCube::<R>::new(&l, v, q);
+
+        let data = KRCubeData::<R>::new(&l);
+        let cube = KRHorCube::new(&data, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 0);
 
         let v = BitSeq::from_iter([0,0,0]);
         let h = BitSeq::from_iter([0,0,0]);
         let q = 1;
-        let cube = KRHorCube::<R>::new(&l, v, q);
+
+        let data = KRCubeData::<R>::new(&l);
+        let cube = KRHorCube::new(&data, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 1);
 
         let v = BitSeq::from_iter([1,0,0]);
         let h = BitSeq::from_iter([0,0,0]);
         let q = 0;
-        let cube = KRHorCube::<R>::new(&l, v, q);
+
+        let data = KRCubeData::<R>::new(&l);
+        let cube = KRHorCube::new(&data, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 0);
 
         let v = BitSeq::from_iter([0,0,0]);
         let h = BitSeq::from_iter([1,0,0]);
         let q = 0;
-        let cube = KRHorCube::<R>::new(&l, v, q);
+
+        let data = KRCubeData::<R>::new(&l);
+        let cube = KRHorCube::new(&data, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 1);
 
         let v = BitSeq::from_iter([1,0,0]);
         let h = BitSeq::from_iter([1,0,0]);
         let q = 0;
-        let cube = KRHorCube::<R>::new(&l, v, q);
+
+        let data = KRCubeData::<R>::new(&l);
+        let cube = KRHorCube::new(&data, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 2);
     }
