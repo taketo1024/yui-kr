@@ -8,9 +8,14 @@ edition = "2021"
 [dependencies]
 num-bigint = "0.4.4"
 num-traits = "0.2.16"
+itertools = "0.11.0"
+
 yui-core = { git = "https://github.com/taketo1024/yui.git" }
 yui-ratio = { git = "https://github.com/taketo1024/yui.git" }
 yui-polynomial = { git = "https://github.com/taketo1024/yui.git" }
+yui-lin-comb = { git = "https://github.com/taketo1024/yui.git" }
+yui-utils = { git = "https://github.com/taketo1024/yui.git" }
 yui-matrix = { git = "https://github.com/taketo1024/yui.git" }
+yui-link = { git = "https://github.com/taketo1024/yui.git" }
 yui-homology = { git = "https://github.com/taketo1024/yui.git" }
 yui-khovanov = { git = "https://github.com/taketo1024/yui.git" }

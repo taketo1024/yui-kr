@@ -909,14 +909,18 @@ dependencies = [
 name = "yui-kr"
 version = "0.1.0"
 dependencies = [
+ "itertools",
  "num-bigint",
  "num-traits",
  "yui-core",
  "yui-homology",
  "yui-khovanov",
+ "yui-lin-comb",
+ "yui-link",
  "yui-matrix",
  "yui-polynomial",
  "yui-ratio",
+ "yui-utils",
 ]
 
 [[package]]
