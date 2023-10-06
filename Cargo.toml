@@ -16,7 +16,8 @@ yui-polynomial = { git = "https://github.com/taketo1024/yui.git" }
 yui-lin-comb = { git = "https://github.com/taketo1024/yui.git" }
 yui-utils = { git = "https://github.com/taketo1024/yui.git" }
 yui-matrix = { git = "https://github.com/taketo1024/yui.git" }
-yui-link = { git = "https://github.com/taketo1024/yui.git" }
+# yui-link = { git = "https://github.com/taketo1024/yui.git" }
+yui-link = { path = "../yui/workspace/link/" }
 yui-homology = { git = "https://github.com/taketo1024/yui.git" }
 yui-khovanov = { git = "https://github.com/taketo1024/yui.git" }
 petgraph = "0.6.4"

@@ -306,6 +306,15 @@ dependencies = [
 
 [[package]]
 name = "itertools"
+version = "0.10.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
@@ -898,6 +907,15 @@ checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
 [[package]]
 name = "yui-core"
 version = "0.1.0"
+dependencies = [
+ "is-even",
+ "num-bigint",
+ "num-traits",
+]
+
+[[package]]
+name = "yui-core"
+version = "0.1.0"
 source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
 dependencies = [
  "is-even",
@@ -912,14 +930,14 @@ source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e36715
 dependencies = [
  "derive_more",
  "grouping_by",
- "itertools",
+ "itertools 0.11.0",
  "log",
  "num-traits",
  "sprs",
- "yui-core",
- "yui-lin-comb",
+ "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-lin-comb 0.1.0 (git+https://github.com/taketo1024/yui.git)",
  "yui-matrix",
- "yui-utils",
+ "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
 ]
 
 [[package]]
@@ -931,35 +949,46 @@ dependencies = [
  "cartesian",
  "derive_more",
  "grouping_by",
- "itertools",
+ "itertools 0.11.0",
  "log",
  "num-traits",
- "yui-core",
+ "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
  "yui-homology",
- "yui-lin-comb",
- "yui-link",
+ "yui-lin-comb 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-link 0.1.0 (git+https://github.com/taketo1024/yui.git)",
  "yui-matrix",
- "yui-polynomial",
- "yui-utils",
+ "yui-polynomial 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
 ]
 
 [[package]]
 name = "yui-kr"
 version = "0.1.0"
 dependencies = [
- "itertools",
+ "itertools 0.11.0",
  "num-bigint",
  "num-traits",
  "petgraph",
- "yui-core",
+ "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
  "yui-homology",
  "yui-khovanov",
- "yui-lin-comb",
- "yui-link",
+ "yui-lin-comb 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-link 0.1.0",
  "yui-matrix",
- "yui-polynomial",
- "yui-ratio",
- "yui-utils",
+ "yui-polynomial 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-ratio 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+]
+
+[[package]]
+name = "yui-lin-comb"
+version = "0.1.0"
+dependencies = [
+ "auto-impl-ops",
+ "itertools 0.10.5",
+ "num-traits",
+ "yui-core 0.1.0",
+ "yui-utils 0.1.0",
 ]
 
 [[package]]
@@ -968,10 +997,24 @@ version = "0.1.0"
 source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
 dependencies = [
  "auto-impl-ops",
- "itertools",
+ "itertools 0.11.0",
  "num-traits",
- "yui-core",
- "yui-utils",
+ "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+]
+
+[[package]]
+name = "yui-link"
+version = "0.1.0"
+dependencies = [
+ "derive_more",
+ "itertools 0.10.5",
+ "num-traits",
+ "serde",
+ "serde_json",
+ "yui-core 0.1.0",
+ "yui-polynomial 0.1.0",
+ "yui-utils 0.1.0",
 ]
 
 [[package]]
@@ -980,13 +1023,13 @@ version = "0.1.0"
 source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
 dependencies = [
  "derive_more",
- "itertools",
+ "itertools 0.11.0",
  "num-traits",
  "serde",
  "serde_json",
- "yui-core",
- "yui-polynomial",
- "yui-utils",
+ "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-polynomial 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
 ]
 
 [[package]]
@@ -997,7 +1040,7 @@ dependencies = [
  "auto-impl-ops",
  "derive_more",
  "either",
- "itertools",
+ "itertools 0.11.0",
  "log",
  "ndarray",
  "num-bigint",
@@ -1006,10 +1049,24 @@ dependencies = [
  "rayon",
  "sprs",
  "thread_local",
- "yui-core",
+ "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
  "yui-quad-int",
- "yui-ratio",
- "yui-utils",
+ "yui-ratio 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+]
+
+[[package]]
+name = "yui-polynomial"
+version = "0.1.0"
+dependencies = [
+ "auto-impl-ops",
+ "itertools 0.10.5",
+ "num-traits",
+ "regex",
+ "yui-core 0.1.0",
+ "yui-lin-comb 0.1.0",
+ "yui-ratio 0.1.0",
+ "yui-utils 0.1.0",
 ]
 
 [[package]]
@@ -1018,13 +1075,13 @@ version = "0.1.0"
 source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
 dependencies = [
  "auto-impl-ops",
- "itertools",
+ "itertools 0.11.0",
  "num-traits",
  "regex",
- "yui-core",
- "yui-lin-comb",
- "yui-ratio",
- "yui-utils",
+ "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-lin-comb 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-ratio 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
 ]
 
 [[package]]
@@ -1036,7 +1093,17 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "regex",
- "yui-core",
+ "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+]
+
+[[package]]
+name = "yui-ratio"
+version = "0.1.0"
+dependencies = [
+ "auto-impl-ops",
+ "num-traits",
+ "regex",
+ "yui-core 0.1.0",
 ]
 
 [[package]]
@@ -1047,7 +1114,18 @@ dependencies = [
  "auto-impl-ops",
  "num-traits",
  "regex",
- "yui-core",
+ "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+]
+
+[[package]]
+name = "yui-utils"
+version = "0.1.0"
+dependencies = [
+ "derive_more",
+ "itertools 0.10.5",
+ "num-traits",
+ "prettytable",
+ "yui-core 0.1.0",
 ]
 
 [[package]]
@@ -1056,8 +1134,8 @@ version = "0.1.0"
 source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
 dependencies = [
  "derive_more",
- "itertools",
+ "itertools 0.11.0",
  "num-traits",
  "prettytable",
- "yui-core",
+ "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
 ]
