@@ -21,3 +21,4 @@ yui-link = { path = "../yui/workspace/link/" }
 yui-homology = { git = "https://github.com/taketo1024/yui.git" }
 yui-khovanov = { git = "https://github.com/taketo1024/yui.git" }
 petgraph = "0.6.4"
+derive_more = "0.99.17"
