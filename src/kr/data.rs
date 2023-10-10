@@ -3,8 +3,9 @@ use std::marker::PhantomData;
 use itertools::Itertools;
 use petgraph::{Graph, algo::min_spanning_tree};
 
-use yui_core::{Ring, RingOps};
+use yui_core::{Ring, RingOps, PowMod2};
 use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
+use yui_utils::bitseq::BitSeq;
 use super::base::EdgeRing;
 
 pub(crate) struct KRCubeData<R>
@@ -44,6 +45,27 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     pub fn x_poly(&self, i: usize) -> &KRCubeX<R> {
         &self.x_polys[i]
+    }
+
+    // TODO cache
+    pub fn targets(&self, from: BitSeq) -> Vec<BitSeq> { 
+        let n = self.dim;
+        (0..n).filter(|&i| from[i].is_zero() ).map(|i| { 
+            let mut t = from.clone();
+            t.set_1(i);
+            t
+        }).collect()
+    }    
+
+    // TODO cache
+    pub fn edge_sign(&self, from: BitSeq, to: BitSeq) -> i32 { 
+        assert_eq!(to.weight() - from.weight(), 1);
+        
+        let n = self.dim;
+        let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
+        let e = (0..i).filter(|&j| from[j].is_one()).count() as i32;
+
+        (-1).pow_mod2(e)
     }
 
     fn collect_x_polys(link: &Link) -> Vec<KRCubeX<R>> {
@@ -238,5 +260,55 @@ mod tests {
         let l = Link::hopf_link();
         let u = KRCubeData::<R>::resolve(&l);
         assert_eq!(u.components().len(), 1);
+    }
+
+    #[test]
+    fn targets() {
+        let l = Link::trefoil();
+        let data = KRCubeData::<R>::new(&l);
+
+        let ts = data.targets(BitSeq::from_iter([0,0,0]));
+        assert_eq!(ts, vec![
+            BitSeq::from_iter([1,0,0]), 
+            BitSeq::from_iter([0,1,0]), 
+            BitSeq::from_iter([0,0,1])]
+        );
+
+        let ts = data.targets(BitSeq::from_iter([1,0,0]));
+        assert_eq!(ts, vec![
+            BitSeq::from_iter([1,1,0]), 
+            BitSeq::from_iter([1,0,1])]
+        );
+
+        let ts = data.targets(BitSeq::from_iter([1,1,0]));
+        assert_eq!(ts, vec![
+            BitSeq::from_iter([1,1,1])]
+        )
+    }
+
+    #[test]
+    fn edge_sign() {
+        let l = Link::trefoil();
+        let data = KRCubeData::<R>::new(&l);
+
+        let e = data.edge_sign(
+            BitSeq::from_iter([0,0,0]), 
+            BitSeq::from_iter([1,0,0]));
+        assert_eq!(e, 1);
+
+        let e = data.edge_sign(
+            BitSeq::from_iter([0,0,0]), 
+            BitSeq::from_iter([0,1,0]));
+        assert_eq!(e, 1);
+
+        let e = data.edge_sign(
+            BitSeq::from_iter([1,0,0]), 
+            BitSeq::from_iter([1,1,0]));
+        assert_eq!(e, -1);
+
+        let e = data.edge_sign(
+            BitSeq::from_iter([0,1,0]), 
+            BitSeq::from_iter([1,1,0]));
+        assert_eq!(e, 1);
     }
 }

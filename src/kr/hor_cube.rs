@@ -128,11 +128,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         vs.flat_map(|v| self.vertex_gens(v)).collect_vec()
     }
 
-    // TODO cache
-    fn edge_sign(&self, from: BitSeq, to: BitSeq) -> i32 { 
-        todo!()
-    }
-
     fn edge_poly(&self, from: BitSeq, to: BitSeq) -> EdgeRing<R> {
         use Bit::{Bit0, Bit1};
         assert_eq!(to.weight() - from.weight(), 1);
@@ -152,19 +147,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         a
     }
 
-    // TODO cache
-    fn targets(&self, from: BitSeq) -> Vec<BitSeq> { 
-        let n = from.len();
-        (0..n).filter(|&i| from[i].is_zero() ).map(|i| { 
-            let mut t = from.clone();
-            t.set_1(i);
-            t
-        }).collect()
-    }
-
     fn differentiate(&self, from: BitSeq, x: MonGen) -> Vec<(BitSeq, EdgeRing<R>)> { 
-        self.targets(from).into_iter().map(|to| { 
-            let e = EdgeRing::from(self.edge_sign(from, to));
+        self.data.targets(from).into_iter().map(|to| { 
+            let e = EdgeRing::from(self.data.edge_sign(from, to));
             let x = EdgeRing::from_term(x.clone(), R::one());
             let p = self.edge_poly(from, to);
             (to, e * x * p)
