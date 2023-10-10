@@ -9,7 +9,7 @@ use yui_homology::FreeChainComplex;
 use yui_polynomial::MDegree;
 use yui_utils::bitseq::{BitSeq, Bit};
 
-use super::base::{EdgeRing, TripGrad, MonGen};
+use super::base::{EdgeRing, TripGrad, MonGen, VertGen};
 use super::data::KRCubeData;
 
 struct KRHorCube<R>
@@ -81,7 +81,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         + (self.root_grad().0 - self.grad_at(h_coords).0) / 2
     }
 
-    fn gen_mons(tot_deg: usize, n: usize) -> Vec<MonGen> { 
+    fn make_mons(tot_deg: usize, n: usize) -> Vec<MonGen> { 
         fn gen_iter(tot_deg: usize, n: usize, res: &mut Vec<BTreeMap<usize, usize>>, prev: BTreeMap<usize, usize>, i: usize, rem: usize) {
             if i < n - 1 { 
                 for d_i in (0..=rem).rev() { 
@@ -107,7 +107,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }).collect()
     }
 
-    fn vertex_gens(&self, h_coords: BitSeq) -> Vec<MonGen> {
+    fn vert_gens(&self, h_coords: BitSeq) -> Vec<VertGen> {
         let deg = self.mon_deg(h_coords);
         if deg < 0 { 
             return vec![]
@@ -115,17 +115,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         let deg = deg as usize;
         let n = self.data.dim();
+        let gens = Self::make_mons(deg, n);
 
-        Self::gen_mons(deg, n)
+        gens.into_iter().map(|x| VertGen(h_coords, x)).collect()
     }
 
-    fn generators(&self, k: usize) -> Vec<MonGen> {
-        let n = self.data.dim();
-
-        // TODO cache
-        let vs = BitSeq::generate(n).into_iter().filter(|v| v.weight() == k);
-
-        vs.flat_map(|v| self.vertex_gens(v)).collect_vec()
+    fn gens(&self, k: usize) -> Vec<VertGen> {
+        self.data.verts(k).into_iter().flat_map(|v| self.vert_gens(v)).collect()
     }
 
     fn edge_poly(&self, from: BitSeq, to: BitSeq) -> EdgeRing<R> {
@@ -156,7 +152,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }).collect()
     }
 
-    fn as_complex(self) -> FreeChainComplex<MonGen, R, RangeInclusive<isize>> {
+    fn as_complex(self) -> FreeChainComplex<VertGen, R, RangeInclusive<isize>> {
         let n = self.data.dim() as isize;
         let range = 0..=n;
         
@@ -165,7 +161,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         FreeChainComplex::new(range, 1, 
             move |i| {
-                todo!()
+                self0.gens(i as usize)
             },
             move |x| { 
                 todo!()
@@ -195,7 +191,7 @@ mod tests {
     fn gen_mons() { 
         let tot = 5;
         let n = 3;
-        let mons = KRHorCube::<R>::gen_mons(tot, n);
+        let mons = KRHorCube::<R>::make_mons(tot, n);
         assert_eq!(mons.len(), 21); // (1,2,2) <-> *|**|**
     }
 
@@ -344,5 +340,39 @@ mod tests {
         let ys = cube.differentiate(BitSeq::from_iter([1,1,1]), one);
 
         assert_eq!(ys, vec![]);
+    }
+
+    #[test]
+    fn vert_gens() {
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let v = BitSeq::from_iter([0,0,0]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let h = BitSeq::from_iter([0, 0, 0]);
+        let gens = cube.vert_gens(h);
+
+        assert_eq!(gens.len(), 1);
+        assert!(gens.iter().all(|x| x.0 == h));
+
+        let h = BitSeq::from_iter([1, 0, 0]);
+        let gens = cube.vert_gens(h);
+
+        assert_eq!(gens.len(), 3);
+        assert!(gens.iter().all(|x| x.0 == h));
+    }
+
+    #[test]
+    fn gens() {
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let v = BitSeq::from_iter([0,0,0]);
+        let q = 0;
+        let cube = make_cube(&l, v, q);
+
+        let gens = cube.gens(0);
+        assert_eq!(gens.len(), 1);
+
+        let gens = cube.gens(1);
+        assert_eq!(gens.len(), 9);
     }
 }

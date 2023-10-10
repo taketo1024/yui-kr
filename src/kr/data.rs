@@ -48,6 +48,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     // TODO cache
+    pub fn verts(&self, k: usize) -> Vec<BitSeq> {
+        let n = self.dim;
+        BitSeq::generate(n).into_iter().filter(|v| v.weight() == k).collect()
+    }
+
+    // TODO cache
     pub fn targets(&self, from: BitSeq) -> Vec<BitSeq> { 
         let n = self.dim;
         (0..n).filter(|&i| from[i].is_zero() ).map(|i| { 
