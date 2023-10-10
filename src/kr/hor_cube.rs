@@ -12,16 +12,16 @@ use yui_utils::bitseq::{BitSeq, Bit};
 use super::base::{EdgeRing, TripGrad, MonGen};
 use super::data::KRCubeData;
 
-struct KRHorCube<'a, R>
+struct KRHorCube<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
-    data: &'a KRCubeData<R>,
+    data: Rc<KRCubeData<R>>,
     v_coords: BitSeq,
     q_slice: isize,
 } 
 
-impl<'a, R> KRHorCube<'a, R> 
+impl<R> KRHorCube<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    pub fn new(data: &'a KRCubeData<R>, v_coords: BitSeq, q_slice: isize) -> Self {
+    pub fn new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self {
         assert_eq!(v_coords.len(), data.dim());
         Self {
             data,
@@ -196,6 +196,14 @@ mod tests {
     use super::*;
 
     type R = Ratio<i64>;
+    type P = EdgeRing<R>;
+
+    fn make_cube(l: &Link, v: BitSeq, q: isize) -> KRHorCube<R> {
+        let data = KRCubeData::<R>::new(&l);
+        let rc = Rc::new(data);
+        let cube = KRHorCube::new(rc, v, 0);
+        cube
+    }
 
     #[test]
     fn gen_mons() { 
@@ -218,8 +226,7 @@ mod tests {
     fn vert_grad() { 
         let l = Link::hopf_link(); // negative
         let v = BitSeq::from_iter([0,1]);
-        let data = KRCubeData::<R>::new(&l);
-        let cube = KRHorCube::new(&data, v, 0);
+        let cube = make_cube(&l, v, 0);
 
         let grad0 = cube.root_grad();
         assert_eq!(grad0, TripGrad(0,-4,0));
@@ -237,8 +244,7 @@ mod tests {
         let h = BitSeq::from_iter([0,0,0]);
         let q = 0;
 
-        let data = KRCubeData::<R>::new(&l);
-        let cube = KRHorCube::new(&data, v, q);
+        let cube = make_cube(&l, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 0);
 
@@ -246,8 +252,7 @@ mod tests {
         let h = BitSeq::from_iter([0,0,0]);
         let q = 1;
 
-        let data = KRCubeData::<R>::new(&l);
-        let cube = KRHorCube::new(&data, v, q);
+        let cube = make_cube(&l, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 1);
 
@@ -255,8 +260,7 @@ mod tests {
         let h = BitSeq::from_iter([0,0,0]);
         let q = 0;
 
-        let data = KRCubeData::<R>::new(&l);
-        let cube = KRHorCube::new(&data, v, q);
+        let cube = make_cube(&l, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 0);
 
@@ -264,8 +268,7 @@ mod tests {
         let h = BitSeq::from_iter([1,0,0]);
         let q = 0;
 
-        let data = KRCubeData::<R>::new(&l);
-        let cube = KRHorCube::new(&data, v, q);
+        let cube = make_cube(&l, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 1);
 
@@ -273,9 +276,55 @@ mod tests {
         let h = BitSeq::from_iter([1,0,0]);
         let q = 0;
 
-        let data = KRCubeData::<R>::new(&l);
-        let cube = KRHorCube::new(&data, v, q);
+        let cube = make_cube(&l, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 2);
+    }
+
+    #[test]
+    fn edge_poly() { 
+        let x = (0..3).map(|i| P::variable(i)).collect_vec();
+
+        // p: neg, v: 0, h: 0 -> 1
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let v = BitSeq::from_iter([0,0,0]);
+        let q = 0;
+        let cube = make_cube(&l, v, q);
+
+        let h0 = BitSeq::from_iter([0,0,0]);
+        let h1 = BitSeq::from_iter([1,0,0]);
+        let p = cube.edge_poly(h0, h1); // x_ac
+        assert_eq!(p, -&x[1] + &x[2]);
+
+        // p: neg, v: 1, h: 0 -> 1
+        let v = BitSeq::from_iter([1,0,0]);
+        let q = 0;
+        let cube = make_cube(&l, v, q);
+
+        let h0 = BitSeq::from_iter([0,0,0]);
+        let h1 = BitSeq::from_iter([1,0,0]);
+        let p = cube.edge_poly(h0, h1); // x_ac * x_bc
+        assert_eq!(p, (-&x[1] + &x[2]) * &x[0]);
+
+        // p: pos, v: 0, h: 0 -> 1
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]).mirror(); // trefoil
+        let v = BitSeq::from_iter([0,0,0]);
+        let q = 0;
+        let cube = make_cube(&l, v, q);
+
+        let h0 = BitSeq::from_iter([0,0,0]);
+        let h1 = BitSeq::from_iter([1,0,0]);
+        let p = cube.edge_poly(h0, h1); // x_ac * x_bc
+        assert_eq!(p, (-&x[1] + &x[2]) * &x[0]);
+
+        // p: pos, v: 1, h: 0 -> 1
+        let v = BitSeq::from_iter([1,0,0]);
+        let q = 0;
+        let cube = make_cube(&l, v, q);
+
+        let h0 = BitSeq::from_iter([0,0,0]);
+        let h1 = BitSeq::from_iter([1,0,0]);
+        let p = cube.edge_poly(h0, h1); // x_ac
+        assert_eq!(p, -&x[1] + &x[2]);
     }
 }
