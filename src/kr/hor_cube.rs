@@ -143,13 +143,20 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         a
     }
 
-    fn differentiate(&self, from: BitSeq, x: MonGen) -> Vec<(BitSeq, EdgeRing<R>)> { 
-        self.data.targets(from).into_iter().map(|to| { 
-            let e = EdgeRing::from(self.data.edge_sign(from, to));
+    fn differentiate(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
+        let VertGen(s, x) = e;
+        let s = s.clone();
+        
+        self.data.targets(s).into_iter().flat_map(|t| { 
+            let e = EdgeRing::from(self.data.edge_sign(s, t));
             let x = EdgeRing::from_term(x.clone(), R::one());
-            let p = self.edge_poly(from, to);
-            (to, e * x * p)
-        }).collect()
+            let p = self.edge_poly(s, t);
+            let q = e * x * p; // result polynomial
+
+            q.into_iter().map(move |(x, r)| 
+                (VertGen(t, x), r)
+            )
+        }).collect_vec()
     }
 
     fn as_complex(self) -> FreeChainComplex<VertGen, R, RangeInclusive<isize>> {
@@ -163,8 +170,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             move |i| {
                 self0.gens(i as usize)
             },
-            move |x| { 
-                todo!()
+            move |e| {
+                self1.differentiate(e)
             }
         )
     }
@@ -312,32 +319,41 @@ mod tests {
 
     #[test]
     fn differentiate() { 
-        let x = (0..3).map(|i| P::variable(i)).collect_vec();
+        let one = MonGen::one();
+        let x = (0..3).map(|i| MonGen::from(MDegree::from((i, 1)))).collect_vec();
 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let v = BitSeq::from_iter([0,0,0]);
         let q = 0;
-
         let cube = make_cube(&l, v, q);
-        let one = MonGen::one();
-        let ys = cube.differentiate(BitSeq::from_iter([0,0,0]), one);
 
-        assert_eq!(ys, vec![
-            (BitSeq::from_iter([1,0,0]), -&x[1] + &x[2]),
-            (BitSeq::from_iter([0,1,0]), -&x[2] + &x[0]),
-            (BitSeq::from_iter([0,0,1]), -&x[0] + &x[1])
+        let h = BitSeq::from_iter([0,0,0]);
+        let z = VertGen(h, one.clone());
+        let ys = cube.differentiate(&z);
+
+        assert_eq!(ys.into_iter().sorted().collect_vec(), vec![
+            (VertGen(BitSeq::from_iter([1,0,0]), x[1].clone()), -R::one()),
+            (VertGen(BitSeq::from_iter([1,0,0]), x[2].clone()),  R::one()),
+            (VertGen(BitSeq::from_iter([0,1,0]), x[2].clone()), -R::one()),
+            (VertGen(BitSeq::from_iter([0,1,0]), x[0].clone()),  R::one()),
+            (VertGen(BitSeq::from_iter([0,0,1]), x[0].clone()), -R::one()),
+            (VertGen(BitSeq::from_iter([0,0,1]), x[1].clone()),  R::one()),
         ]);
 
-        let one = MonGen::one();
-        let ys = cube.differentiate(BitSeq::from_iter([0,1,0]), one);
+        let h = BitSeq::from_iter([0,1,0]);
+        let z = VertGen(h, one.clone());
+        let ys = cube.differentiate(&z);
 
         assert_eq!(ys, vec![
-            (BitSeq::from_iter([1,1,0]), -&x[1] + &x[2]),
-            (BitSeq::from_iter([0,1,1]),  &x[0] - &x[1])
+            (VertGen(BitSeq::from_iter([1,1,0]), x[1].clone()), -R::one()),
+            (VertGen(BitSeq::from_iter([1,1,0]), x[2].clone()),  R::one()),
+            (VertGen(BitSeq::from_iter([0,1,1]), x[0].clone()),  R::one()),
+            (VertGen(BitSeq::from_iter([0,1,1]), x[1].clone()), -R::one()),
         ]);
 
-        let one = MonGen::one();
-        let ys = cube.differentiate(BitSeq::from_iter([1,1,1]), one);
+        let h = BitSeq::from_iter([1,1,1]);
+        let z = VertGen(h, one.clone());
+        let ys = cube.differentiate(&z);
 
         assert_eq!(ys, vec![]);
     }
