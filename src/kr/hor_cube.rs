@@ -176,6 +176,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 #[cfg(test)]
 mod tests {
+    use num_traits::One;
     use yui_ratio::Ratio;
     use yui_link::Link;
     use super::*;
@@ -311,5 +312,37 @@ mod tests {
         let h1 = BitSeq::from_iter([1,0,0]);
         let p = cube.edge_poly(h0, h1); // x_ac
         assert_eq!(p, -&x[1] + &x[2]);
+    }
+
+    #[test]
+    fn differentiate() { 
+        let x = (0..3).map(|i| P::variable(i)).collect_vec();
+
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let v = BitSeq::from_iter([0,0,0]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let one = MonGen::one();
+        let ys = cube.differentiate(BitSeq::from_iter([0,0,0]), one);
+
+        assert_eq!(ys, vec![
+            (BitSeq::from_iter([1,0,0]), -&x[1] + &x[2]),
+            (BitSeq::from_iter([0,1,0]), -&x[2] + &x[0]),
+            (BitSeq::from_iter([0,0,1]), -&x[0] + &x[1])
+        ]);
+
+        let one = MonGen::one();
+        let ys = cube.differentiate(BitSeq::from_iter([0,1,0]), one);
+
+        assert_eq!(ys, vec![
+            (BitSeq::from_iter([1,1,0]), -&x[1] + &x[2]),
+            (BitSeq::from_iter([0,1,1]),  &x[0] - &x[1])
+        ]);
+
+        let one = MonGen::one();
+        let ys = cube.differentiate(BitSeq::from_iter([1,1,1]), one);
+
+        assert_eq!(ys, vec![]);
     }
 }
