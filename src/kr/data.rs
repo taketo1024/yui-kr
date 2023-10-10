@@ -197,8 +197,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
  */
 pub(crate) struct KRCubeX<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    x_ac: EdgeRing<R>,
-    x_bc: EdgeRing<R>
+    pub x_ac: EdgeRing<R>,
+    pub x_bc: EdgeRing<R>
 }
 
 #[cfg(test)]

@@ -1,8 +1,11 @@
 use std::collections::BTreeMap;
+use std::ops::RangeInclusive;
+use std::rc::Rc;
 
-use itertools::izip;
+use itertools::{izip, Itertools};
 use num_traits::Zero;
 use yui_core::{Ring, RingOps};
+use yui_homology::FreeChainComplex;
 use yui_polynomial::MDegree;
 use yui_utils::bitseq::{BitSeq, Bit};
 
@@ -116,7 +119,21 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         Self::gen_mons(deg, n)
     }
 
-    pub fn edge(&self, from: BitSeq, to: BitSeq) -> EdgeRing<R> {
+    fn generators(&self, k: usize) -> Vec<MonGen> {
+        let n = self.data.dim();
+
+        // TODO cache
+        let vs = BitSeq::generate(n).into_iter().filter(|v| v.weight() == k);
+
+        vs.flat_map(|v| self.vertex_gens(v)).collect_vec()
+    }
+
+    // TODO cache
+    fn edge_sign(&self, from: BitSeq, to: BitSeq) -> i32 { 
+        todo!()
+    }
+
+    fn edge_poly(&self, from: BitSeq, to: BitSeq) -> EdgeRing<R> {
         use Bit::{Bit0, Bit1};
         assert_eq!(to.weight() - from.weight(), 1);
 
@@ -125,12 +142,50 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         let sign = self.data.x_signs()[i];
         let v = self.v_coords[i];
+        let p = self.data.x_poly(i);
 
-        match (sign.is_positive(), v) {
-            (true, Bit0) | (false, Bit1) => (),
-            (true, Bit1) | (false, Bit0) => ()
-        }
-        todo!()
+        let a = match (sign.is_positive(), v) {
+            (true, Bit0) | (false, Bit1) => &p.x_ac * &p.x_bc,
+            (true, Bit1) | (false, Bit0) => p.x_ac.clone()
+        };
+
+        a
+    }
+
+    // TODO cache
+    fn targets(&self, from: BitSeq) -> Vec<BitSeq> { 
+        let n = from.len();
+        (0..n).filter(|&i| from[i].is_zero() ).map(|i| { 
+            let mut t = from.clone();
+            t.set_1(i);
+            t
+        }).collect()
+    }
+
+    fn differentiate(&self, from: BitSeq, x: MonGen) -> Vec<(BitSeq, EdgeRing<R>)> { 
+        self.targets(from).into_iter().map(|to| { 
+            let e = EdgeRing::from(self.edge_sign(from, to));
+            let x = EdgeRing::from_term(x.clone(), R::one());
+            let p = self.edge_poly(from, to);
+            (to, e * x * p)
+        }).collect()
+    }
+
+    fn as_complex(self) -> FreeChainComplex<MonGen, R, RangeInclusive<isize>> {
+        let n = self.data.dim() as isize;
+        let range = 0..=n;
+        
+        let self0 = Rc::new(self);
+        let self1 = self0.clone();
+
+        FreeChainComplex::new(range, 1, 
+            move |i| {
+                todo!()
+            },
+            move |x| { 
+                todo!()
+            }
+        )
     }
 }
 
