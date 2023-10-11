@@ -182,6 +182,7 @@ mod tests {
     use std::collections::HashMap;
 
     use num_traits::One;
+    use yui_homology::{RModStr, HomologyComputable};
     use yui_ratio::Ratio;
     use yui_link::Link;
     use yui_utils::map;
@@ -363,7 +364,7 @@ mod tests {
 
     #[test]
     fn vert_gens() {
-        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,0]);
         let q = 0;
 
@@ -383,7 +384,7 @@ mod tests {
 
     #[test]
     fn gens() {
-        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,0]);
         let q = 0;
         let cube = make_cube(&l, v, q);
@@ -393,5 +394,63 @@ mod tests {
 
         let gens = cube.gens(1);
         assert_eq!(gens.len(), 9);
+    }
+
+    #[test]
+    fn as_complex() { 
+        use yui_homology::test::ChainComplexValidation;
+
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([1,0,0]);
+        let q = 0;
+        let cube = make_cube(&l, v, q);
+        let c = cube.as_complex();
+
+        assert_eq!(c[0].rank(), 1);
+        assert_eq!(c[1].rank(), 12);
+        assert_eq!(c[2].rank(), 26);
+        assert_eq!(c[3].rank(), 15);
+
+        c.check_d_all();
+
+        let v = BitSeq::from_iter([1,0,0]);
+        let q = 1;
+        let cube = make_cube(&l.mirror(), v, q);
+        let c = cube.as_complex();
+        
+        assert_eq!(c[0].rank(), 6);
+        assert_eq!(c[1].rank(), 40);
+        assert_eq!(c[2].rank(), 70);
+        assert_eq!(c[3].rank(), 36);
+        
+        c.check_d_all();
+    }
+
+    #[test]
+    fn homology() { 
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([1,0,0]);
+        let q = 0;
+        let cube = make_cube(&l, v, q);
+
+        let c = cube.as_complex();
+        let h = c.homology();
+
+        assert_eq!(h[0].rank(), 0);
+        assert_eq!(h[1].rank(), 0);
+        assert_eq!(h[2].rank(), 1);
+        assert_eq!(h[3].rank(), 1);
+
+        let l = Link::trefoil().mirror();
+        let v = BitSeq::from_iter([1,0,0]);
+        let q = 1;
+        let cube = make_cube(&l, v, q);
+        let c = cube.as_complex();
+        let h = c.homology();
+        
+        assert_eq!(h[0].rank(), 0);
+        assert_eq!(h[1].rank(), 0);
+        assert_eq!(h[2].rank(), 2);
+        assert_eq!(h[3].rank(), 2);
     }
 }
