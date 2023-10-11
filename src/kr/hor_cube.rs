@@ -179,9 +179,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use num_traits::One;
     use yui_ratio::Ratio;
     use yui_link::Link;
+    use yui_utils::map;
     use super::*;
 
     type R = Ratio<i64>;
@@ -190,7 +193,7 @@ mod tests {
     fn make_cube(l: &Link, v: BitSeq, q: isize) -> KRHorCube<R> {
         let data = KRCubeData::<R>::new(&l);
         let rc = Rc::new(data);
-        let cube = KRHorCube::new(rc, v, 0);
+        let cube = KRHorCube::new(rc, v, q);
         cube
     }
 
@@ -213,16 +216,16 @@ mod tests {
 
     #[test]
     fn vert_grad() { 
-        let l = Link::hopf_link(); // negative
-        let v = BitSeq::from_iter([0,1]);
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,1,0]);
         let cube = make_cube(&l, v, 0);
 
         let grad0 = cube.root_grad();
-        assert_eq!(grad0, TripGrad(0,-4,0));
+        assert_eq!(grad0, TripGrad(0,-6,0));
 
-        let h = BitSeq::from_iter([1,0]);
+        let h = BitSeq::from_iter([1,0,0]);
         let grad1 = cube.grad_at(h);
-        assert_eq!(grad1, TripGrad(0,-2,2));
+        assert_eq!(grad1, TripGrad(0,-4,2));
     }
 
     #[test]
@@ -331,25 +334,25 @@ mod tests {
         let z = VertGen(h, one.clone());
         let ys = cube.differentiate(&z);
 
-        assert_eq!(ys.into_iter().sorted().collect_vec(), vec![
-            (VertGen(BitSeq::from_iter([1,0,0]), x[1].clone()), -R::one()),
-            (VertGen(BitSeq::from_iter([1,0,0]), x[2].clone()),  R::one()),
-            (VertGen(BitSeq::from_iter([0,1,0]), x[2].clone()), -R::one()),
-            (VertGen(BitSeq::from_iter([0,1,0]), x[0].clone()),  R::one()),
-            (VertGen(BitSeq::from_iter([0,0,1]), x[0].clone()), -R::one()),
-            (VertGen(BitSeq::from_iter([0,0,1]), x[1].clone()),  R::one()),
-        ]);
+        assert_eq!(ys.into_iter().collect::<HashMap<_, _>>(), map!{
+            VertGen(BitSeq::from_iter([1,0,0]), x[1].clone()) => -R::one(),
+            VertGen(BitSeq::from_iter([1,0,0]), x[2].clone()) =>  R::one(),
+            VertGen(BitSeq::from_iter([0,1,0]), x[2].clone()) => -R::one(),
+            VertGen(BitSeq::from_iter([0,1,0]), x[0].clone()) =>  R::one(),
+            VertGen(BitSeq::from_iter([0,0,1]), x[0].clone()) => -R::one(),
+            VertGen(BitSeq::from_iter([0,0,1]), x[1].clone()) =>  R::one()
+        });
 
         let h = BitSeq::from_iter([0,1,0]);
         let z = VertGen(h, one.clone());
         let ys = cube.differentiate(&z);
 
-        assert_eq!(ys, vec![
-            (VertGen(BitSeq::from_iter([1,1,0]), x[1].clone()), -R::one()),
-            (VertGen(BitSeq::from_iter([1,1,0]), x[2].clone()),  R::one()),
-            (VertGen(BitSeq::from_iter([0,1,1]), x[0].clone()),  R::one()),
-            (VertGen(BitSeq::from_iter([0,1,1]), x[1].clone()), -R::one()),
-        ]);
+        assert_eq!(ys.into_iter().collect::<HashMap<_, _>>(), map! {
+            VertGen(BitSeq::from_iter([1,1,0]), x[1].clone()) => -R::one(),
+            VertGen(BitSeq::from_iter([1,1,0]), x[2].clone()) =>  R::one(),
+            VertGen(BitSeq::from_iter([0,1,1]), x[0].clone()) =>  R::one(),
+            VertGen(BitSeq::from_iter([0,1,1]), x[1].clone()) => -R::one()
+        });
 
         let h = BitSeq::from_iter([1,1,1]);
         let z = VertGen(h, one.clone());
