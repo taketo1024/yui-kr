@@ -121,7 +121,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn gens(&self, k: usize) -> Vec<VertGen> {
-        self.data.verts(k).into_iter().flat_map(|v| self.vert_gens(v)).collect()
+        self.data.verts(k).into_iter().flat_map(|v| 
+            self.vert_gens(v)
+        ).collect()
     }
 
     fn edge_poly(&self, from: BitSeq, to: BitSeq) -> EdgeRing<R> {
