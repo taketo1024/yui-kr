@@ -51,6 +51,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
+name = "bit_reverse"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "99528ca30abb9495c7e106bf7c3177b257c62040fc0f2909fe470b0f43097296"
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -898,16 +904,7 @@ checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
 [[package]]
 name = "yui-core"
 version = "0.1.0"
-dependencies = [
- "is-even",
- "num-bigint",
- "num-traits",
-]
-
-[[package]]
-name = "yui-core"
-version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0112e9da9f2eff991887919f50594d43e17a315e"
 dependencies = [
  "is-even",
  "num-bigint",
@@ -917,7 +914,7 @@ dependencies = [
 [[package]]
 name = "yui-homology"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0112e9da9f2eff991887919f50594d43e17a315e"
 dependencies = [
  "derive_more",
  "grouping_by",
@@ -925,16 +922,16 @@ dependencies = [
  "log",
  "num-traits",
  "sprs",
- "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-lin-comb 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-core",
+ "yui-lin-comb",
  "yui-matrix",
- "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-utils",
 ]
 
 [[package]]
 name = "yui-khovanov"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0112e9da9f2eff991887919f50594d43e17a315e"
 dependencies = [
  "auto-impl-ops",
  "cartesian",
@@ -943,13 +940,13 @@ dependencies = [
  "itertools",
  "log",
  "num-traits",
- "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-core",
  "yui-homology",
- "yui-lin-comb 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-link 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-lin-comb",
+ "yui-link",
  "yui-matrix",
- "yui-polynomial 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-polynomial",
+ "yui-utils",
 ]
 
 [[package]]
@@ -961,73 +958,48 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "petgraph",
- "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-core",
  "yui-homology",
  "yui-khovanov",
- "yui-lin-comb 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-link 0.1.0",
+ "yui-lin-comb",
+ "yui-link",
  "yui-matrix",
- "yui-polynomial 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-ratio 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-polynomial",
+ "yui-ratio",
+ "yui-utils",
 ]
 
 [[package]]
 name = "yui-lin-comb"
 version = "0.1.0"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0112e9da9f2eff991887919f50594d43e17a315e"
 dependencies = [
  "auto-impl-ops",
  "itertools",
  "num-traits",
- "yui-core 0.1.0",
- "yui-utils 0.1.0",
-]
-
-[[package]]
-name = "yui-lin-comb"
-version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
-dependencies = [
- "auto-impl-ops",
- "itertools",
- "num-traits",
- "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-core",
+ "yui-utils",
 ]
 
 [[package]]
 name = "yui-link"
 version = "0.1.0"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0112e9da9f2eff991887919f50594d43e17a315e"
 dependencies = [
  "derive_more",
  "itertools",
  "num-traits",
  "serde",
  "serde_json",
- "yui-core 0.1.0",
- "yui-polynomial 0.1.0",
- "yui-utils 0.1.0",
-]
-
-[[package]]
-name = "yui-link"
-version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
-dependencies = [
- "derive_more",
- "itertools",
- "num-traits",
- "serde",
- "serde_json",
- "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-polynomial 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-core",
+ "yui-polynomial",
+ "yui-utils",
 ]
 
 [[package]]
 name = "yui-matrix"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0112e9da9f2eff991887919f50594d43e17a315e"
 dependencies = [
  "auto-impl-ops",
  "derive_more",
@@ -1041,93 +1013,59 @@ dependencies = [
  "rayon",
  "sprs",
  "thread_local",
- "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-core",
  "yui-quad-int",
- "yui-ratio 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-ratio",
+ "yui-utils",
 ]
 
 [[package]]
 name = "yui-polynomial"
 version = "0.1.0"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0112e9da9f2eff991887919f50594d43e17a315e"
 dependencies = [
  "auto-impl-ops",
  "itertools",
  "num-traits",
  "regex",
- "yui-core 0.1.0",
- "yui-lin-comb 0.1.0",
- "yui-ratio 0.1.0",
- "yui-utils 0.1.0",
-]
-
-[[package]]
-name = "yui-polynomial"
-version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
-dependencies = [
- "auto-impl-ops",
- "itertools",
- "num-traits",
- "regex",
- "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-lin-comb 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-ratio 0.1.0 (git+https://github.com/taketo1024/yui.git)",
- "yui-utils 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-core",
+ "yui-lin-comb",
+ "yui-ratio",
+ "yui-utils",
 ]
 
 [[package]]
 name = "yui-quad-int"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0112e9da9f2eff991887919f50594d43e17a315e"
 dependencies = [
  "auto-impl-ops",
  "num-bigint",
  "num-traits",
  "regex",
- "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-core",
 ]
 
 [[package]]
 name = "yui-ratio"
 version = "0.1.0"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0112e9da9f2eff991887919f50594d43e17a315e"
 dependencies = [
  "auto-impl-ops",
  "num-traits",
  "regex",
- "yui-core 0.1.0",
-]
-
-[[package]]
-name = "yui-ratio"
-version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
-dependencies = [
- "auto-impl-ops",
- "num-traits",
- "regex",
- "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-core",
 ]
 
 [[package]]
 name = "yui-utils"
 version = "0.1.0"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0112e9da9f2eff991887919f50594d43e17a315e"
 dependencies = [
+ "bit_reverse",
  "derive_more",
  "itertools",
  "num-traits",
  "prettytable",
- "yui-core 0.1.0",
-]
-
-[[package]]
-name = "yui-utils"
-version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git#55c63f1c873bd8ea2f7d96e3671518b6f5e0838e"
-dependencies = [
- "derive_more",
- "itertools",
- "num-traits",
- "prettytable",
- "yui-core 0.1.0 (git+https://github.com/taketo1024/yui.git)",
+ "yui-core",
 ]
