@@ -2,21 +2,23 @@ use std::cell::OnceCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use yui_core::{Ring, RingOps};
+use yui_core::{EucRing, EucRingOps};
+use yui_homology::{Idx2Iter, FreeChainComplex, Idx2};
 use yui_utils::bitseq::BitSeq;
 
+use super::base::{EdgeRing, VertGen};
 use super::data::KRCubeData;
 use super::hor_homol::KRHorHomol;
 
 struct KRTotCube<R>
-where R: Ring, for<'x> &'x R: RingOps<R> { 
+where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     data: Rc<KRCubeData<R>>,
     q_slice: isize,
     hor_hmls: HashMap<BitSeq, OnceCell<KRHorHomol<R>>>
 } 
 
 impl<R> KRTotCube<R> 
-where R: Ring, for<'x> &'x R: RingOps<R> {
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Rc<KRCubeData<R>>, q_slice: isize) -> Self {
         let n = data.dim();
         let hor_homols = BitSeq::generate(n).into_iter().map(|v|
@@ -36,7 +38,24 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         })
     }
 
-    fn vert_gens(&self, h: usize, v_coords: BitSeq) {
-        self.hor_hml(v_coords)[h]
+    pub fn as_complex(self) -> FreeChainComplex<VertGen, R, Idx2Iter> {
+        let n = self.data.dim() as isize;
+
+        let start = Idx2(0, 0);
+        let end   = Idx2(n, n);
+        let range = start.iter_rect(end, (1, 1));
+        
+        let self0 = Rc::new(self);
+        let self1 = self0.clone();
+
+        FreeChainComplex::new(range, Idx2(0, 1), 
+            move |idx| {
+                let (j, k) = idx.as_tuple();
+                todo!()
+            },
+            move |e| {
+                todo!()
+            }
+        )
     }
 }
