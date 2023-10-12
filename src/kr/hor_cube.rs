@@ -117,11 +117,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let n = self.data.dim();
         let gens = Self::make_mons(deg, n);
 
-        gens.into_iter().map(|x| VertGen(h_coords, x)).collect()
+        gens.into_iter().map(|x| 
+            VertGen(h_coords, self.v_coords, x)
+        ).collect()
     }
 
-    fn gens(&self, k: usize) -> Vec<VertGen> {
-        self.data.verts(k).into_iter().flat_map(|v| 
+    fn gens(&self, i: usize) -> Vec<VertGen> {
+        self.data.verts(i).into_iter().flat_map(|v| 
             self.vert_gens(v)
         ).collect()
     }
@@ -146,17 +148,18 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn differentiate(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
-        let VertGen(s, x) = e;
-        let s = s.clone();
+        let VertGen(h, v, x) = e;
+        let h = h.clone();
+        let v = v.clone();
         
-        self.data.targets(s).into_iter().flat_map(|t| { 
-            let e = EdgeRing::from(self.data.edge_sign(s, t));
+        self.data.targets(h).into_iter().flat_map(|t| { 
+            let e = EdgeRing::from(self.data.edge_sign(h, t));
             let x = EdgeRing::from_term(x.clone(), R::one());
-            let p = self.edge_poly(s, t);
+            let p = self.edge_poly(h, t);
             let q = e * x * p; // result polynomial
 
             q.into_iter().map(move |(x, r)| 
-                (VertGen(t, x), r)
+                (VertGen(t, v, x), r)
             )
         }).collect_vec()
     }
@@ -334,31 +337,31 @@ mod tests {
         let cube = make_cube(&l, v, q);
 
         let h = BitSeq::from_iter([0,0,0]);
-        let z = VertGen(h, one.clone());
+        let z = VertGen(h, v, one.clone());
         let ys = cube.differentiate(&z);
 
         assert_eq!(ys.into_iter().collect::<HashMap<_, _>>(), map!{
-            VertGen(BitSeq::from_iter([1,0,0]), x[1].clone()) => -R::one(),
-            VertGen(BitSeq::from_iter([1,0,0]), x[2].clone()) =>  R::one(),
-            VertGen(BitSeq::from_iter([0,1,0]), x[2].clone()) => -R::one(),
-            VertGen(BitSeq::from_iter([0,1,0]), x[0].clone()) =>  R::one(),
-            VertGen(BitSeq::from_iter([0,0,1]), x[0].clone()) => -R::one(),
-            VertGen(BitSeq::from_iter([0,0,1]), x[1].clone()) =>  R::one()
+            VertGen(BitSeq::from_iter([1,0,0]), v, x[1].clone()) => -R::one(),
+            VertGen(BitSeq::from_iter([1,0,0]), v, x[2].clone()) =>  R::one(),
+            VertGen(BitSeq::from_iter([0,1,0]), v, x[2].clone()) => -R::one(),
+            VertGen(BitSeq::from_iter([0,1,0]), v, x[0].clone()) =>  R::one(),
+            VertGen(BitSeq::from_iter([0,0,1]), v, x[0].clone()) => -R::one(),
+            VertGen(BitSeq::from_iter([0,0,1]), v, x[1].clone()) =>  R::one()
         });
 
         let h = BitSeq::from_iter([0,1,0]);
-        let z = VertGen(h, one.clone());
+        let z = VertGen(h, v, one.clone());
         let ys = cube.differentiate(&z);
 
         assert_eq!(ys.into_iter().collect::<HashMap<_, _>>(), map! {
-            VertGen(BitSeq::from_iter([1,1,0]), x[1].clone()) => -R::one(),
-            VertGen(BitSeq::from_iter([1,1,0]), x[2].clone()) =>  R::one(),
-            VertGen(BitSeq::from_iter([0,1,1]), x[0].clone()) =>  R::one(),
-            VertGen(BitSeq::from_iter([0,1,1]), x[1].clone()) => -R::one()
+            VertGen(BitSeq::from_iter([1,1,0]), v, x[1].clone()) => -R::one(),
+            VertGen(BitSeq::from_iter([1,1,0]), v, x[2].clone()) =>  R::one(),
+            VertGen(BitSeq::from_iter([0,1,1]), v, x[0].clone()) =>  R::one(),
+            VertGen(BitSeq::from_iter([0,1,1]), v, x[1].clone()) => -R::one()
         });
 
         let h = BitSeq::from_iter([1,1,1]);
-        let z = VertGen(h, one.clone());
+        let z = VertGen(h, v, one.clone());
         let ys = cube.differentiate(&z);
 
         assert_eq!(ys, vec![]);

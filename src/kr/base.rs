@@ -10,8 +10,12 @@ pub(crate) type MonGen = Mono<'x', MDegree<usize>>;
 pub(crate) type EdgeRing<R> = PolyN<'x', R>;
 
 #[derive(PartialEq, Eq, Hash, Default, Clone, Debug, Display, PartialOrd, Ord)]
-#[display(fmt = "({}, {})", _0, _1)]
-pub(crate) struct VertGen(pub BitSeq, pub MonGen);
+#[display(fmt = "({}-{}, {})", _0, _1, _2)]
+pub(crate) struct VertGen(
+    pub BitSeq, // h-coords
+    pub BitSeq, // v-coords
+    pub MonGen
+);
 
 impl Elem for VertGen {
     fn set_symbol() -> String {
