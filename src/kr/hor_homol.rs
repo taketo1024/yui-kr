@@ -6,7 +6,7 @@ use yui_core::{EucRing, EucRingOps};
 use yui_homology::{FreeChainComplex, ChainComplex, RModStr};
 use yui_homology::utils::HomologyCalc;
 use yui_lin_comb::LinComb;
-use yui_matrix::sparse::{SpMat, MatType};
+use yui_matrix::sparse::{SpMat, MatType, SpVec};
 use yui_utils::bitseq::BitSeq;
 use crate::kr::hor_cube::KRHorCube;
 
@@ -17,6 +17,7 @@ type KRHorHomolSummand<R> = (Vec<LinComb<VertGen, R>>, SpMat<R>);
 
 pub(crate) struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
+    v_coords: BitSeq,
     complex: FreeChainComplex<VertGen, R, RangeInclusive<isize>>,
     cache: HashMap<usize, OnceCell<KRHorHomolSummand<R>>>
 } 
@@ -31,7 +32,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             (i, OnceCell::new())
         ).collect();
 
-        Self { complex, cache }
+        Self { v_coords, complex, cache }
     }
 
     fn compute_summand(&self, i: usize) -> KRHorHomolSummand<R> { 
@@ -69,11 +70,25 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn gens(&self, i: usize) -> &Vec<LinComb<VertGen, R>> { 
         &self.summand(i).0
     }
+
+    pub fn trans(&self, i: usize) -> &SpMat<R> { 
+        &self.summand(i).1
+    }
+
+    pub fn vectorize(&self, i: usize, z: &LinComb<VertGen, R>) -> SpVec<R> {
+        debug_assert!(z.iter().all(|(x, _)| 
+            x.0.weight() == i && 
+            x.1 == self.v_coords
+        ));
+        let v = self.complex[i as isize].vectorize(z);
+        let p = self.trans(i);
+        p * v
+    }
 }
 
 #[cfg(test)]
 mod tests { 
-    use num_traits::Zero;
+    use num_traits::{Zero, One};
     use yui_link::Link;
     use yui_ratio::Ratio;
     use crate::kr::base::EdgeRing;
@@ -114,5 +129,24 @@ mod tests {
         let z = &zs[0];
         let dz = hml.complex.differetiate(z); 
         assert!(dz.is_zero());
+    }
+
+    #[test]
+    fn vectorize() { 
+        let l = Link::trefoil().mirror();
+        let v = BitSeq::from_iter([1,0,0]);
+        let q = 1;
+        let hml = make_hml(&l, v, q);
+
+        let zs = hml.gens(2);
+        assert_eq!(zs.len(), 2);
+
+        let z0 = &zs[0];
+        let z1 = &zs[1];
+        let w = z0 * R::from(3) + z1 * R::from(-1);
+
+        assert_eq!(hml.vectorize(2, z0), SpVec::from(vec![R::from(1), R::from(0)]));
+        assert_eq!(hml.vectorize(2, z1), SpVec::from(vec![R::from(0), R::from(1)]));
+        assert_eq!(hml.vectorize(2, &w), SpVec::from(vec![R::from(3), R::from(-1)]));
     }
 }
