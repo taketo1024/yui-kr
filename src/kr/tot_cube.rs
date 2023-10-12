@@ -6,7 +6,7 @@ use num_traits::One;
 use yui_core::{EucRing, EucRingOps};
 use yui_homology::{Idx2Iter, Idx2, GenericChainComplex};
 use yui_lin_comb::LinComb;
-use yui_matrix::sparse::SpMat;
+use yui_matrix::sparse::{SpMat, SpVec};
 use yui_utils::bitseq::{BitSeq, Bit};
 
 use super::base::{VertGen, EdgeRing};
@@ -53,6 +53,28 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }).collect()
     }
 
+    fn vectorize(&self, i: usize, j: usize, z: &LinComb<VertGen, R>) -> SpVec<R> {
+        debug_assert!(z.iter().all(|(x, _)| 
+            x.0.weight() == i && 
+            x.1.weight() == j
+        ));
+
+        let (r, entries) = self.data.verts(j).iter().fold((0, vec![]), |acc, &v| { 
+            let (mut r, mut entries) = acc;
+
+            let z_v = z.filter_gens(|x| x.1 == v);
+            let vec = self.hor_hml(v).vectorize(i, &z_v);
+            for (i, a) in vec.iter() { 
+                entries.push((i + r, a.clone()))
+            }
+            r += vec.dim();
+
+            (r, entries)
+        });
+
+        SpVec::from_entries(r, entries)
+    }
+
     fn edge_poly(&self, h_coords: BitSeq, from: BitSeq, to: BitSeq) -> EdgeRing<R> {
         use Bit::{Bit0, Bit1};
         assert_eq!(to.weight() - from.weight(), 1);
@@ -90,17 +112,20 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn d_matrix(&self, i: usize, j: usize) -> SpMat<R> { 
         let gens = self.gens(i, j);
         let shape = (self.rank(i, j+1), self.rank(i, j));
+        let mut entries = vec![];
 
-        SpMat::generate(shape, |_set| { 
-            for (_l, z) in gens.iter().enumerate() { 
-                let _dz: LinComb<VertGen, R> = z.iter().map(|(x, a)| { 
-                    self.differentiate(x) * a
-                }).sum();
+        for (l, z) in gens.iter().enumerate() { 
+            let dz: LinComb<VertGen, R> = z.iter().map(|(x, a)| { 
+                self.differentiate(x) * a
+            }).sum();
+            let w = self.vectorize(i, j + 1, &dz);
 
-                // vectorize dz and set entry.
-                todo!()
+            for (k, b) in w.iter() { 
+                entries.push((k, l, b.clone()));
             }
-        })
+        }
+
+        SpMat::from_entries(shape, entries)
     }
 
     pub fn as_complex(self) -> GenericChainComplex<R, Idx2Iter> {
@@ -114,5 +139,159 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             let (i, j) = idx.as_tuple();
             Some(self.d_matrix(i as usize, j as usize))
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use itertools::Itertools;
+    use num_traits::One;
+    use yui_homology::{HomologyComputable, RModStr};
+    use yui_homology::test::ChainComplexValidation;
+    use yui_ratio::Ratio;
+    use yui_link::Link;
+    use super::*;
+
+    type R = Ratio<i64>;
+    type P = EdgeRing<R>;
+
+    fn make_cube(l: &Link, q: isize) -> KRTotCube<R> {
+        let data = KRCubeData::<R>::new(&l);
+        let rc = Rc::new(data);
+        let cube = KRTotCube::new(rc, q);
+        cube
+    }
+
+    #[test]
+    fn edge_poly() { 
+        let x = (0..3).map(|i| P::variable(i)).collect_vec();
+
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let cube = make_cube(&l, 0);
+
+        // p: neg, h: 0, v: 0 -> 1
+        let h  = BitSeq::from_iter([0,0,0]);
+        let v0 = BitSeq::from_iter([0,0,0]);
+        let v1 = BitSeq::from_iter([1,0,0]);
+        let p = cube.edge_poly(h, v0, v1); // 1
+        assert_eq!(p, P::one());
+
+        // p: neg, h: 1, v: 0 -> 1
+        let h  = BitSeq::from_iter([1,0,0]);
+        let v0 = BitSeq::from_iter([0,0,0]);
+        let v1 = BitSeq::from_iter([1,0,0]);
+        let p = cube.edge_poly(h, v0, v1); // x_bc
+        assert_eq!(p, x[0]);
+
+        let l = l.mirror(); // trefoil
+        let cube = make_cube(&l, 0);
+
+        // p: pos, h: 0, v: 0 -> 1
+        let h  = BitSeq::from_iter([0,0,0]);
+        let v0 = BitSeq::from_iter([0,0,0]);
+        let v1 = BitSeq::from_iter([1,0,0]);
+        let p = cube.edge_poly(h, v0, v1); // x_bc
+        assert_eq!(p, x[0]);
+
+        // p: pos, h: 1, v: 0 -> 1
+        let h  = BitSeq::from_iter([1,0,0]);
+        let v0 = BitSeq::from_iter([0,0,0]);
+        let v1 = BitSeq::from_iter([1,0,0]);
+        let p = cube.edge_poly(h, v0, v1); // x_bc
+        assert_eq!(p, P::one());
+    }
+
+    #[test]
+    fn rank() { 
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let q = 0;
+        let cube = make_cube(&l, q);
+        
+        assert_eq!(cube.rank(0, 0), 0);
+        assert_eq!(cube.rank(0, 1), 0);
+        assert_eq!(cube.rank(0, 2), 0);
+        assert_eq!(cube.rank(0, 3), 0);
+        assert_eq!(cube.rank(1, 0), 0);
+        assert_eq!(cube.rank(1, 1), 0);
+        assert_eq!(cube.rank(1, 2), 0);
+        assert_eq!(cube.rank(1, 3), 0);
+        assert_eq!(cube.rank(2, 0), 1);
+        assert_eq!(cube.rank(2, 1), 3);
+        assert_eq!(cube.rank(2, 2), 6);
+        assert_eq!(cube.rank(2, 3), 4);
+        assert_eq!(cube.rank(3, 0), 1);
+        assert_eq!(cube.rank(3, 1), 3);
+        assert_eq!(cube.rank(3, 2), 6);
+        assert_eq!(cube.rank(3, 3), 4);
+    }
+
+    #[test]
+    fn vectorize() { 
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let q = 0;
+        let cube = make_cube(&l, q);
+        let zs = cube.gens(3, 3);
+
+        assert_eq!(zs.len(), 4);
+
+        let _0 = R::from(0);
+        let _1 = R::from(1);
+
+        assert_eq!(cube.vectorize(3, 3, &zs[0]), SpVec::from(vec![_1,_0,_0,_0]));
+        assert_eq!(cube.vectorize(3, 3, &zs[1]), SpVec::from(vec![_0,_1,_0,_0]));
+        assert_eq!(cube.vectorize(3, 3, &(zs[0] - zs[3])), SpVec::from(vec![_1,_0,_0,-_1]));
+    }
+
+    #[test]
+    fn complex() { 
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let q = -4;
+        let cube = make_cube(&l, q);
+        let cpx = cube.as_complex();
+
+        assert_eq!(cpx[Idx2(0, 0)].rank(), 0);
+        assert_eq!(cpx[Idx2(0, 1)].rank(), 0);
+        assert_eq!(cpx[Idx2(0, 2)].rank(), 0);
+        assert_eq!(cpx[Idx2(0, 3)].rank(), 0);
+        assert_eq!(cpx[Idx2(1, 0)].rank(), 0);
+        assert_eq!(cpx[Idx2(1, 1)].rank(), 0);
+        assert_eq!(cpx[Idx2(1, 2)].rank(), 0);
+        assert_eq!(cpx[Idx2(1, 3)].rank(), 0);
+        assert_eq!(cpx[Idx2(2, 0)].rank(), 0);
+        assert_eq!(cpx[Idx2(2, 1)].rank(), 0);
+        assert_eq!(cpx[Idx2(2, 2)].rank(), 0);
+        assert_eq!(cpx[Idx2(2, 3)].rank(), 1);
+        assert_eq!(cpx[Idx2(3, 0)].rank(), 0);
+        assert_eq!(cpx[Idx2(3, 1)].rank(), 3);
+        assert_eq!(cpx[Idx2(3, 2)].rank(), 6);
+        assert_eq!(cpx[Idx2(3, 3)].rank(), 4);
+
+        cpx.check_d_all();
+    }
+
+    #[test]
+    fn homology() { 
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let q = -4;
+        let cube = make_cube(&l, q);
+        let cpx = cube.as_complex();
+        let hml = cpx.homology();
+
+        assert_eq!(hml[Idx2(0, 0)].rank(), 0);
+        assert_eq!(hml[Idx2(0, 1)].rank(), 0);
+        assert_eq!(hml[Idx2(0, 2)].rank(), 0);
+        assert_eq!(hml[Idx2(0, 3)].rank(), 0);
+        assert_eq!(hml[Idx2(1, 0)].rank(), 0);
+        assert_eq!(hml[Idx2(1, 1)].rank(), 0);
+        assert_eq!(hml[Idx2(1, 2)].rank(), 0);
+        assert_eq!(hml[Idx2(1, 3)].rank(), 0);
+        assert_eq!(hml[Idx2(2, 0)].rank(), 0);
+        assert_eq!(hml[Idx2(2, 1)].rank(), 0);
+        assert_eq!(hml[Idx2(2, 2)].rank(), 0);
+        assert_eq!(hml[Idx2(2, 3)].rank(), 1);
+        assert_eq!(hml[Idx2(3, 0)].rank(), 0);
+        assert_eq!(hml[Idx2(3, 1)].rank(), 1);
+        assert_eq!(hml[Idx2(3, 2)].rank(), 0);
+        assert_eq!(hml[Idx2(3, 3)].rank(), 0);
     }
 }

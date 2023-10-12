@@ -6,7 +6,7 @@ use yui_core::{EucRing, EucRingOps};
 use yui_homology::{FreeChainComplex, ChainComplex, RModStr};
 use yui_homology::utils::HomologyCalc;
 use yui_lin_comb::LinComb;
-use yui_matrix::sparse::{SpMat, MatType, SpVec};
+use yui_matrix::sparse::{SpMat, SpVec};
 use yui_utils::bitseq::BitSeq;
 use crate::kr::hor_cube::KRHorCube;
 
@@ -88,7 +88,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 #[cfg(test)]
 mod tests { 
-    use num_traits::{Zero, One};
+    use num_traits::Zero;
     use yui_link::Link;
     use yui_ratio::Ratio;
     use crate::kr::base::EdgeRing;
