@@ -2,10 +2,10 @@ use std::cell::OnceCell;
 use std::collections::HashMap;
 use std::ops::RangeInclusive;
 use std::rc::Rc;
-use itertools::Itertools;
 use yui_core::{EucRing, EucRingOps};
 use yui_homology::{FreeChainComplex, ChainComplex, RModStr};
 use yui_homology::utils::HomologyCalc;
+use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpVec, SpMat};
 use yui_utils::bitseq::BitSeq;
 use crate::kr::hor_cube::KRHorCube;
@@ -13,7 +13,7 @@ use crate::kr::hor_cube::KRHorCube;
 use super::base::{VertGen, EdgeRing};
 use super::data::KRCubeData;
 
-type KRHorHomolSummand<R> = (Vec<(BitSeq, EdgeRing<R>)>, SpMat<R>);
+type KRHorHomolSummand<R> = (Vec<LinComb<VertGen, R>>, SpMat<R>);
 
 pub(crate) struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
@@ -34,8 +34,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self { complex, cache }
     }
 
-    fn compute_summand(&self, j: usize) -> KRHorHomolSummand<R> { 
-        let j = j as isize;
+    fn compute_summand(&self, i: usize) -> KRHorHomolSummand<R> { 
+        let j = i as isize;
         let d1 = self.complex.d_matrix(j);
         let d2 = self.complex.d_matrix(j+1);
 
@@ -45,29 +45,24 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let gens = self.complex[j].generators();
         let h_gens = (0..r).map(|k| { 
-            let v = q.col_vec(k); // 
-            let e = v.iter().map(|(i, a)| {
+            let v = q.col_vec(k); 
+            let terms = v.iter().map(|(i, a)| {
                 let x = &gens[i];
-                todo!() // group by h-coords
+                (x.clone(), a.clone())
             });
-            
-            todo!()
+            LinComb::from_iter(terms)
         }).collect();
 
         (h_gens, p)
     }
 
-    fn summand(&self, j: usize) -> &KRHorHomolSummand<R> {
-        &self.cache[&j].get_or_init(|| { 
-            self.compute_summand(j)
+    fn summand(&self, i: usize) -> &KRHorHomolSummand<R> {
+        &self.cache[&i].get_or_init(|| { 
+            self.compute_summand(i)
         })
     }
 
-    pub fn gens(&self, j: usize) -> &Vec<(BitSeq, EdgeRing<R>)> { 
-        &self.summand(j).0
-    }
-
-    pub fn vectorize(&self, j: usize, p: EdgeRing<R>) -> SpVec<R> {
-        todo!()
+    pub fn gens(&self, i: usize) -> &Vec<LinComb<VertGen, R>> { 
+        &self.summand(i).0
     }
 }

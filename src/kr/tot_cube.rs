@@ -3,10 +3,9 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{Idx2Iter, FreeChainComplex, Idx2};
+use yui_homology::{Idx2Iter, Idx2, GenericChainComplex};
 use yui_utils::bitseq::BitSeq;
 
-use super::base::{EdgeRing, VertGen};
 use super::data::KRCubeData;
 use super::hor_homol::KRHorHomol;
 
@@ -38,24 +37,16 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         })
     }
 
-    pub fn as_complex(self) -> FreeChainComplex<VertGen, R, Idx2Iter> {
+    pub fn as_complex(self) -> GenericChainComplex<R, Idx2Iter> {
         let n = self.data.dim() as isize;
 
         let start = Idx2(0, 0);
         let end   = Idx2(n, n);
         let range = start.iter_rect(end, (1, 1));
         
-        let self0 = Rc::new(self);
-        let self1 = self0.clone();
-
-        FreeChainComplex::new(range, Idx2(0, 1), 
-            move |idx| {
-                let (j, k) = idx.as_tuple();
-                todo!()
-            },
-            move |e| {
-                todo!()
-            }
-        )
+        GenericChainComplex::generate(range, Idx2(0, 1), |idx| {
+            let (i, j) = idx.as_tuple();
+            todo!()
+        })
     }
 }
