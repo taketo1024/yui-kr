@@ -6,11 +6,11 @@ use yui_core::{EucRing, EucRingOps};
 use yui_homology::{FreeChainComplex, ChainComplex, RModStr};
 use yui_homology::utils::HomologyCalc;
 use yui_lin_comb::LinComb;
-use yui_matrix::sparse::{SpVec, SpMat};
+use yui_matrix::sparse::SpMat;
 use yui_utils::bitseq::BitSeq;
 use crate::kr::hor_cube::KRHorCube;
 
-use super::base::{VertGen, EdgeRing};
+use super::base::VertGen;
 use super::data::KRCubeData;
 
 type KRHorHomolSummand<R> = (Vec<LinComb<VertGen, R>>, SpMat<R>);
@@ -60,6 +60,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         &self.cache[&i].get_or_init(|| { 
             self.compute_summand(i)
         })
+    }
+
+    pub fn rank(&self, i: usize) -> usize { 
+        self.summand(i).0.len()
     }
 
     pub fn gens(&self, i: usize) -> &Vec<LinComb<VertGen, R>> { 

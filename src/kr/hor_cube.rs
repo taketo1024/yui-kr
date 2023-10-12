@@ -149,17 +149,17 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     fn differentiate(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
         let VertGen(h, v, x) = e;
-        let h = h.clone();
+        let h0 = h.clone();
         let v = v.clone();
         
-        self.data.targets(h).into_iter().flat_map(|t| { 
-            let e = EdgeRing::from(self.data.edge_sign(h, t));
+        self.data.targets(h0).into_iter().flat_map(|h1| { 
+            let e = EdgeRing::from(self.data.edge_sign(h0, h1));
             let x = EdgeRing::from_term(x.clone(), R::one());
-            let p = self.edge_poly(h, t);
+            let p = self.edge_poly(h0, h1);
             let q = e * x * p; // result polynomial
 
             q.into_iter().map(move |(x, r)| 
-                (VertGen(t, v, x), r)
+                (VertGen(h1, v, x), r)
             )
         }).collect_vec()
     }
