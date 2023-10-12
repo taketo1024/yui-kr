@@ -5,6 +5,7 @@ mod data;
 mod hor_cube;
 mod hor_homol;
 mod tot_cube;
+mod homology;
 
 pub fn sample() {
     println!("sample")
