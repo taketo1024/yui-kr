@@ -933,6 +933,7 @@ dependencies = [
 name = "yui-kr"
 version = "0.1.0"
 dependencies = [
+ "cartesian",
  "derive_more",
  "itertools",
  "num-bigint",
