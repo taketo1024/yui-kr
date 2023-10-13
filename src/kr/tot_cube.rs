@@ -13,7 +13,9 @@ use super::base::{VertGen, EdgeRing};
 use super::data::KRCubeData;
 use super::hor_homol::KRHorHomol;
 
-struct KRTotCube<R>
+pub(crate) type KRTotComplex<R> = GenericChainComplex<R, Idx2Iter>;
+
+pub(crate) struct KRTotCube<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     data: Rc<KRCubeData<R>>,
     q_slice: isize,
@@ -128,7 +130,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         SpMat::from_entries(shape, entries)
     }
 
-    pub fn as_complex(self) -> GenericChainComplex<R, Idx2Iter> {
+    pub fn as_complex(self) -> KRTotComplex<R> {
         let n = self.data.dim() as isize;
 
         let start = Idx2(0, 0);
