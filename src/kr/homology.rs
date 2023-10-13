@@ -5,21 +5,20 @@ use std::rc::Rc;
 use cartesian::{cartesian, TuplePrepend};
 use itertools::Itertools;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{GenericHomology, Idx2Iter, HomologyComputable, Idx2, RModStr};
+use yui_homology::Idx2;
 use yui_link::Link;
 use yui_polynomial::LPoly;
 
 use super::base::TripGrad;
 use super::data::KRCubeData;
-use super::tot_cube::KRTotCube;
+use super::tot_homol::KRTotHomol;
 
-type TotHomology<R> = GenericHomology<R, Idx2Iter>;
 type QPoly<R> = LPoly<'q', R>;
 
 struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Rc<KRCubeData<R>>,
-    cache: UnsafeCell<HashMap<isize, TotHomology<R>>>
+    cache: UnsafeCell<HashMap<isize, KRTotHomol<R>>>
 }
 
 impl<R> KRHomology<R> 
@@ -30,12 +29,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self { data, cache }
     }
 
-    fn tot_hml(&self, q_slice: isize) -> &TotHomology<R> {
+    fn tot_hml(&self, q_slice: isize) -> &KRTotHomol<R> {
         let cache = unsafe { &mut *self.cache.get() };
         cache.entry(q_slice).or_insert_with(|| {
-            let cube = KRTotCube::new(self.data.clone(), q_slice);
-            let hml = cube.as_complex().homology();
-            hml
+            KRTotHomol::new(self.data.clone(), q_slice)
         })
     }
 
@@ -53,8 +50,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return 0
         };
 
-        let hml = self.tot_hml(q);
-        hml[Idx2(h, v)].rank()
+        self.tot_hml(q).rank(h as usize, v as usize)
     }
 
     pub fn rank_all(&self) -> HashMap<TripGrad, usize> { 
