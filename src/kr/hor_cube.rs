@@ -12,6 +12,8 @@ use yui_utils::bitseq::{BitSeq, Bit};
 use super::base::{EdgeRing, TripGrad, MonGen, VertGen};
 use super::data::KRCubeData;
 
+pub(crate) type KRHorComplex<R> = FreeChainComplex<VertGen, R, RangeInclusive<isize>>;
+
 pub(crate) struct KRHorCube<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     data: Rc<KRCubeData<R>>,
@@ -164,7 +166,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }).collect_vec()
     }
 
-    pub fn as_complex(self) -> FreeChainComplex<VertGen, R, RangeInclusive<isize>> {
+    pub fn as_complex(self) -> KRHorComplex<R> {
         let n = self.data.dim() as isize;
         let range = 0..=n;
         

@@ -1,38 +1,35 @@
-use std::cell::OnceCell;
+use std::cell::UnsafeCell;
 use std::collections::HashMap;
-use std::ops::RangeInclusive;
 use std::rc::Rc;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{FreeChainComplex, ChainComplex, RModStr};
+use yui_homology::{ChainComplex, RModStr};
 use yui_homology::utils::HomologyCalc;
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpMat, SpVec};
 use yui_utils::bitseq::BitSeq;
-use crate::kr::hor_cube::KRHorCube;
 
 use super::base::VertGen;
 use super::data::KRCubeData;
+use super::hor_cube::{KRHorCube, KRHorComplex};
 
 type KRHorHomolSummand<R> = (Vec<LinComb<VertGen, R>>, SpMat<R>);
 
 pub(crate) struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     v_coords: BitSeq,
-    complex: FreeChainComplex<VertGen, R, RangeInclusive<isize>>,
-    cache: HashMap<usize, OnceCell<KRHorHomolSummand<R>>>
+    q_slice: isize,
+    complex: KRHorComplex<R>,
+    cache: UnsafeCell<HashMap<usize, KRHorHomolSummand<R>>>
 } 
 
 impl<R> KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
-        let n = data.dim();
         let cube = KRHorCube::new(data, v_coords, q_slice);
         let complex = cube.as_complex();
-        let cache = (0..=n).map(|i| 
-            (i, OnceCell::new())
-        ).collect();
+        let cache = UnsafeCell::new( HashMap::new() );
 
-        Self { v_coords, complex, cache }
+        Self { v_coords, q_slice, complex, cache }
     }
 
     fn compute_summand(&self, i: usize) -> KRHorHomolSummand<R> { 
@@ -58,7 +55,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn summand(&self, i: usize) -> &KRHorHomolSummand<R> {
-        &self.cache[&i].get_or_init(|| { 
+        let cache = unsafe { &mut *self.cache.get() };
+        cache.entry(i).or_insert_with(|| {
             self.compute_summand(i)
         })
     }
