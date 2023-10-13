@@ -24,7 +24,7 @@ impl Elem for VertGen {
 }
 impl FreeGen for VertGen {}
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct TripGrad(
     pub isize, 
     pub isize, 

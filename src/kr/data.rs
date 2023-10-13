@@ -12,7 +12,7 @@ use super::base::{EdgeRing, TripGrad};
 pub(crate) struct KRCubeData<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     dim: usize,
-    
+    grad_shift: TripGrad,
     x_signs: Vec<i32>,
     x_polys: Vec<KRCubeX<R>>,
     _base_ring: PhantomData<R>
@@ -21,12 +21,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> KRCubeData<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn new(link: &Link) -> Self {
-        let dim = link.crossing_num() as usize;
+        let n = link.crossing_num() as usize;
+        let grad_shift = Self::l_grad_shift(link);
         let x_signs = link.crossing_signs();
         let x_polys = Self::collect_x_polys(link);
 
         Self {
-            dim,
+            dim: n,
+            grad_shift,
             x_signs,
             x_polys,
             _base_ring: PhantomData,
@@ -35,6 +37,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     pub fn dim(&self) -> usize { 
         self.dim
+    }
+
+    pub fn grad_shift(&self) -> TripGrad { 
+        self.grad_shift
     }
 
     pub fn x_signs(&self) -> &Vec<i32> { 
@@ -76,7 +82,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         (-1).pow_mod2(e)
     }
 
-    fn grad_shift_x(x_sign: i32, h: Bit, v: Bit) -> TripGrad { 
+    fn l_grad_shift(link: &Link) -> TripGrad { 
+        let w = link.writhe() as isize;
+        let s = link.seifert_circles().len() as isize;
+        TripGrad(-w + s - 1, w + s - 1, w - s + 1)
+    }
+
+    fn x_grad_shift(x_sign: i32, h: Bit, v: Bit) -> TripGrad { 
         use Bit::{Bit0, Bit1};
         if x_sign.is_positive() {
             match (h, v) {
@@ -114,10 +126,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             v_coords.iter()
         );
         let grad = trip.fold(zero, |grad, (&e, h, v)| { 
-            grad + Self::grad_shift_x(e, h, v)
+            grad + Self::x_grad_shift(e, h, v)
         });
 
-        grad
+        self.grad_shift + grad
     }
 
     fn collect_x_polys(link: &Link) -> Vec<KRCubeX<R>> {
@@ -365,16 +377,22 @@ mod tests {
     }
 
     #[test]
-    fn vert_grad() { 
+    fn grad_shift() { 
+        let l = Link::trefoil(); // (w, s) = (-3, 2)
+        let data = KRCubeData::<R>::new(&l);
+        assert_eq!(data.grad_shift(), TripGrad(4,-2,-4));
+    }
+
+    #[test]
+    fn grad_at() { 
         let l = Link::trefoil();
         let data = KRCubeData::<R>::new(&l);
-
         let grad0 = data.root_grad();
-        assert_eq!(grad0, TripGrad(0,-6,0));
+        assert_eq!(grad0, TripGrad(4,-8,-4));
 
         let h = BitSeq::from_iter([1,0,0]);
         let v = BitSeq::from_iter([0,1,0]);
         let grad1 = data.grad_at(h, v);
-        assert_eq!(grad1, TripGrad(0,-4,2));
+        assert_eq!(grad1, TripGrad(4,-6,-2));
     }
 }
