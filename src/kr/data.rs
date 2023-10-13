@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::marker::PhantomData;
+use std::ops::RangeInclusive;
 use itertools::{Itertools, izip};
-use num_traits::Zero;
 use petgraph::{Graph, algo::min_spanning_tree};
 
 use yui_core::{Ring, RingOps, PowMod2};
@@ -11,8 +11,9 @@ use super::base::{EdgeRing, TripGrad};
 
 pub(crate) struct KRCubeData<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
-    dim: usize,
-    grad_shift: TripGrad,
+    n_cross: usize,
+    writhe: isize, 
+    n_seif: isize,
     x_signs: Vec<i32>,
     x_polys: Vec<KRCubeX<R>>,
     _base_ring: PhantomData<R>
@@ -22,13 +23,15 @@ impl<R> KRCubeData<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn new(link: &Link) -> Self {
         let n = link.crossing_num() as usize;
-        let grad_shift = Self::l_grad_shift(link);
+        let w = link.writhe() as isize;
+        let s = link.seifert_circles().len() as isize;
         let x_signs = link.crossing_signs();
         let x_polys = Self::collect_x_polys(link);
 
         Self {
-            dim: n,
-            grad_shift,
+            n_cross: n,
+            writhe: w,
+            n_seif: s,
             x_signs,
             x_polys,
             _base_ring: PhantomData,
@@ -36,11 +39,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn dim(&self) -> usize { 
-        self.dim
-    }
-
-    pub fn grad_shift(&self) -> TripGrad { 
-        self.grad_shift
+        self.n_cross
     }
 
     pub fn x_signs(&self) -> &Vec<i32> { 
@@ -57,13 +56,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     // TODO cache
     pub fn verts(&self, k: usize) -> Vec<BitSeq> {
-        let n = self.dim;
+        let n = self.n_cross;
         BitSeq::generate(n).into_iter().filter(|v| v.weight() == k).collect()
     }
 
     // TODO cache
     pub fn targets(&self, from: BitSeq) -> Vec<BitSeq> { 
-        let n = self.dim;
+        let n = self.n_cross;
         (0..n).filter(|&i| from[i].is_zero() ).map(|i| { 
             let mut t = from.clone();
             t.set_1(i);
@@ -75,16 +74,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn edge_sign(&self, from: BitSeq, to: BitSeq) -> i32 { 
         assert_eq!(to.weight() - from.weight(), 1);
         
-        let n = self.dim;
+        let n = self.n_cross;
         let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
         let e = (0..i).filter(|&j| from[j].is_one()).count() as i32;
 
         (-1).pow_mod2(e)
     }
 
-    fn l_grad_shift(link: &Link) -> TripGrad { 
-        let w = link.writhe() as isize;
-        let s = link.seifert_circles().len() as isize;
+    fn l_grad_shift(&self) -> TripGrad { 
+        let w = self.writhe;
+        let s = self.n_seif;
         TripGrad(-w + s - 1, w + s - 1, w - s + 1)
     }
 
@@ -108,28 +107,72 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn root_grad(&self) -> TripGrad { 
-        let n = self.dim;
+        let n = self.n_cross;
         let zero = BitSeq::zeros(n);
         self.grad_at(zero, zero)
     }
 
     pub fn grad_at(&self, h_coords: BitSeq, v_coords: BitSeq) -> TripGrad { 
-        let n = self.dim;
+        let n = self.n_cross;
 
         assert_eq!(h_coords.len(), n);
         assert_eq!(v_coords.len(), n);
 
-        let zero = TripGrad::zero();
+        let init = self.l_grad_shift();
         let trip = izip!(
             self.x_signs.iter(), 
             h_coords.iter(), 
             v_coords.iter()
         );
-        let grad = trip.fold(zero, |grad, (&e, h, v)| { 
-            grad + Self::x_grad_shift(e, h, v)
-        });
 
-        self.grad_shift + grad
+        trip.fold(init, |grad, (&e, h, v)| { 
+            grad + Self::x_grad_shift(e, h, v)
+        })
+    }
+
+    // Morton bound (only for knots)
+    pub fn i_range(&self) -> RangeInclusive<isize> { 
+        let n = self.n_cross as isize;
+        let s = self.n_seif;
+        -n + s - 1 ..= n - s + 1
+    }
+
+    // MFW inequality
+    pub fn j_range(&self) -> RangeInclusive<isize> { 
+        let w = self.writhe;
+        let s = self.n_seif;
+        w - s + 1 ..= w + s - 1
+    }
+
+    pub fn is_triv(&self, grad: TripGrad) -> bool { 
+        let TripGrad(i, j, k) = grad;
+        let TripGrad(i0, j0, k0) = self.root_grad();
+        let i_range = self.i_range();
+        let j_range = self.j_range();
+
+        let ok = (i - i0).is_even() 
+            && (j - j0).is_even() 
+            && (k - k0).is_even()
+            && i_range.contains(&i)
+            && j_range.contains(&j)
+            && i_range.contains(&k)
+            && i_range.contains(&(k + 2 * i));
+
+        !ok
+    }
+
+    pub fn to_inner_grad(&self, grad: TripGrad) -> Option<TripGrad> { 
+        let TripGrad(i, j, k) = grad;
+        let TripGrad(i0, j0, k0) = self.root_grad();
+        
+        if (i - i0).is_even() && (j - j0).is_even() && (k - k0).is_even() {
+            let h = (j - j0) / 2;
+            let v = (k - k0) / 2;
+            let q = ((i - i0) - (j - j0)) / 2;
+            Some(TripGrad(h, v, q))
+        } else { 
+            None
+        }
     }
 
     fn collect_x_polys(link: &Link) -> Vec<KRCubeX<R>> {
@@ -380,7 +423,7 @@ mod tests {
     fn grad_shift() { 
         let l = Link::trefoil(); // (w, s) = (-3, 2)
         let data = KRCubeData::<R>::new(&l);
-        assert_eq!(data.grad_shift(), TripGrad(4,-2,-4));
+        assert_eq!(data.l_grad_shift(), TripGrad(4,-2,-4));
     }
 
     #[test]
@@ -394,5 +437,15 @@ mod tests {
         let v = BitSeq::from_iter([0,1,0]);
         let grad1 = data.grad_at(h, v);
         assert_eq!(grad1, TripGrad(4,-6,-2));
+    }
+}
+
+trait IsEven { 
+    fn is_even(&self) -> bool;
+}
+
+impl IsEven for isize {
+    fn is_even(&self) -> bool {
+        self & 1 == 0
     }
 }
