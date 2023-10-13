@@ -2,14 +2,13 @@ use std::collections::BTreeMap;
 use std::ops::RangeInclusive;
 use std::rc::Rc;
 
-use itertools::{izip, Itertools};
-use num_traits::Zero;
+use itertools::Itertools;
 use yui_core::{Ring, RingOps};
 use yui_homology::FreeChainComplex;
 use yui_polynomial::MDegree;
 use yui_utils::bitseq::{BitSeq, Bit};
 
-use super::base::{EdgeRing, TripGrad, MonGen, VertGen};
+use super::base::{EdgeRing, MonGen, VertGen};
 use super::data::KRCubeData;
 
 pub(crate) type KRHorComplex<R> = FreeChainComplex<VertGen, R, RangeInclusive<isize>>;
@@ -32,55 +31,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    fn grad_shift_x(x_sign: i32, h: Bit, v: Bit) -> TripGrad { 
-        use Bit::{Bit0, Bit1};
-        if x_sign.is_positive() {
-            match (h, v) {
-                (Bit0, Bit0) => TripGrad(2, -2, -2),
-                (Bit1, Bit0) => TripGrad(0,  0, -2),
-                (Bit0, Bit1) => TripGrad(0, -2,  0),
-                (Bit1, Bit1) => TripGrad(0,  0,  0)
-            }
-        } else { 
-            match (h, v) {
-                (Bit0, Bit0) => TripGrad( 0, -2, 0),
-                (Bit1, Bit0) => TripGrad( 0,  0, 0),
-                (Bit0, Bit1) => TripGrad( 0, -2, 2),
-                (Bit1, Bit1) => TripGrad(-2,  0, 2)
-            }
-        }
-    }
-
-    fn grad_shift(x_signs: &Vec<i32>, h_coords: BitSeq, v_coords: BitSeq) -> TripGrad { 
-        assert_eq!(x_signs.len(), h_coords.len());
-        assert_eq!(x_signs.len(), v_coords.len());
-
-        let zero = TripGrad::zero();
-        let trip = izip!(
-            x_signs.iter(), 
-            h_coords.iter(), 
-            v_coords.iter()
-        );
-        trip.fold(zero, |grad, (&e, h, v)| { 
-            grad + Self::grad_shift_x(e, h, v)
-        })
-    }
-
-    fn root_grad(&self) -> TripGrad { 
-        let n = self.data.dim();
-        let h0 = BitSeq::zeros(n);
-        let v0 = BitSeq::zeros(n);
-        Self::grad_shift(self.data.x_signs(), h0, v0)
-    }
-
-    fn grad_at(&self, h_coords: BitSeq) -> TripGrad { 
-        Self::grad_shift(self.data.x_signs(), h_coords, self.v_coords)
-    }
-
     fn mon_deg(&self, h_coords: BitSeq) -> isize { 
-        self.q_slice 
-        + (h_coords.weight() as isize)
-        + (self.root_grad().0 - self.grad_at(h_coords).0) / 2
+        let i0 = self.data.root_grad().0;
+        let i  = self.data.grad_at(h_coords, self.v_coords).0; // <= i0
+        let h = h_coords.weight() as isize;
+
+        self.q_slice + h + (i0 - i) / 2
     }
 
     fn make_mons(tot_deg: usize, n: usize) -> Vec<MonGen> { 
@@ -211,29 +167,6 @@ mod tests {
         let n = 3;
         let mons = KRHorCube::<R>::make_mons(tot, n);
         assert_eq!(mons.len(), 21); // (1,2,2) <-> *|**|**
-    }
-
-    #[test]
-    fn grad_shift() { 
-        let signs = vec![1,1,-1,-1];
-        let h = BitSeq::from_iter([0,1,0,1]);
-        let v = BitSeq::from_iter([0,0,1,1]);
-        let grad = KRHorCube::<R>::grad_shift(&signs, h, v);
-        assert_eq!(grad, TripGrad(0,-4,0));
-    }
-
-    #[test]
-    fn vert_grad() { 
-        let l = Link::trefoil();
-        let v = BitSeq::from_iter([0,1,0]);
-        let cube = make_cube(&l, v, 0);
-
-        let grad0 = cube.root_grad();
-        assert_eq!(grad0, TripGrad(0,-6,0));
-
-        let h = BitSeq::from_iter([1,0,0]);
-        let grad1 = cube.grad_at(h);
-        assert_eq!(grad1, TripGrad(0,-4,2));
     }
 
     #[test]

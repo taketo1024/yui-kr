@@ -1,16 +1,18 @@
 use std::collections::HashSet;
 use std::marker::PhantomData;
-use itertools::Itertools;
+use itertools::{Itertools, izip};
+use num_traits::Zero;
 use petgraph::{Graph, algo::min_spanning_tree};
 
 use yui_core::{Ring, RingOps, PowMod2};
 use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
-use yui_utils::bitseq::BitSeq;
-use super::base::EdgeRing;
+use yui_utils::bitseq::{BitSeq, Bit};
+use super::base::{EdgeRing, TripGrad};
 
 pub(crate) struct KRCubeData<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     dim: usize,
+    
     x_signs: Vec<i32>,
     x_polys: Vec<KRCubeX<R>>,
     _base_ring: PhantomData<R>
@@ -72,6 +74,50 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let e = (0..i).filter(|&j| from[j].is_one()).count() as i32;
 
         (-1).pow_mod2(e)
+    }
+
+    fn grad_shift_x(x_sign: i32, h: Bit, v: Bit) -> TripGrad { 
+        use Bit::{Bit0, Bit1};
+        if x_sign.is_positive() {
+            match (h, v) {
+                (Bit0, Bit0) => TripGrad(2, -2, -2),
+                (Bit1, Bit0) => TripGrad(0,  0, -2),
+                (Bit0, Bit1) => TripGrad(0, -2,  0),
+                (Bit1, Bit1) => TripGrad(0,  0,  0)
+            }
+        } else { 
+            match (h, v) {
+                (Bit0, Bit0) => TripGrad( 0, -2, 0),
+                (Bit1, Bit0) => TripGrad( 0,  0, 0),
+                (Bit0, Bit1) => TripGrad( 0, -2, 2),
+                (Bit1, Bit1) => TripGrad(-2,  0, 2)
+            }
+        }
+    }
+
+    pub fn root_grad(&self) -> TripGrad { 
+        let n = self.dim;
+        let zero = BitSeq::zeros(n);
+        self.grad_at(zero, zero)
+    }
+
+    pub fn grad_at(&self, h_coords: BitSeq, v_coords: BitSeq) -> TripGrad { 
+        let n = self.dim;
+
+        assert_eq!(h_coords.len(), n);
+        assert_eq!(v_coords.len(), n);
+
+        let zero = TripGrad::zero();
+        let trip = izip!(
+            self.x_signs.iter(), 
+            h_coords.iter(), 
+            v_coords.iter()
+        );
+        let grad = trip.fold(zero, |grad, (&e, h, v)| { 
+            grad + Self::grad_shift_x(e, h, v)
+        });
+
+        grad
     }
 
     fn collect_x_polys(link: &Link) -> Vec<KRCubeX<R>> {
@@ -316,5 +362,19 @@ mod tests {
             BitSeq::from_iter([0,1,0]), 
             BitSeq::from_iter([1,1,0]));
         assert_eq!(e, 1);
+    }
+
+    #[test]
+    fn vert_grad() { 
+        let l = Link::trefoil();
+        let data = KRCubeData::<R>::new(&l);
+
+        let grad0 = data.root_grad();
+        assert_eq!(grad0, TripGrad(0,-6,0));
+
+        let h = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from_iter([0,1,0]);
+        let grad1 = data.grad_at(h, v);
+        assert_eq!(grad1, TripGrad(0,-4,2));
     }
 }
