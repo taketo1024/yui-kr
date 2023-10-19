@@ -2,11 +2,11 @@ use std::ops::Add;
 use derive_more::Display;
 use num_traits::Zero;
 use yui_core::Elem;
-use yui_lin_comb::FreeGen;
-use yui_polynomial::{PolyN, Mono, MDegree};
+use yui_lin_comb::Gen;
+use yui_polynomial::{PolyN, Mono, MultiDeg};
 use yui_utils::bitseq::BitSeq;
 
-pub(crate) type MonGen = Mono<'x', MDegree<usize>>;
+pub(crate) type MonGen = Mono<'x', MultiDeg<usize>>;
 pub(crate) type EdgeRing<R> = PolyN<'x', R>;
 
 #[derive(PartialEq, Eq, Hash, Default, Clone, Debug, Display, PartialOrd, Ord)]
@@ -18,11 +18,11 @@ pub(crate) struct VertGen(
 );
 
 impl Elem for VertGen {
-    fn set_symbol() -> String {
+    fn math_symbol() -> String {
         String::from("")
     }
 }
-impl FreeGen for VertGen {}
+impl Gen for VertGen {}
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct TripGrad(

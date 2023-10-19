@@ -4,7 +4,7 @@ use std::ops::RangeInclusive;
 use itertools::{Itertools, izip};
 use petgraph::{Graph, algo::min_spanning_tree};
 
-use yui_core::{Ring, RingOps, PowMod2};
+use yui_core::{Ring, RingOps, PowMod2, Sign};
 use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
 use yui_utils::bitseq::{BitSeq, Bit};
 use super::base::{EdgeRing, TripGrad};
@@ -14,7 +14,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     n_cross: usize,
     writhe: isize, 
     n_seif: isize,
-    x_signs: Vec<i32>,
+    x_signs: Vec<Sign>,
     x_polys: Vec<KRCubeX<R>>,
     _base_ring: PhantomData<R>
 }
@@ -42,11 +42,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.n_cross
     }
 
-    pub fn x_signs(&self) -> &Vec<i32> { 
+    pub fn x_signs(&self) -> &Vec<Sign> { 
         &self.x_signs
     }
 
-    pub fn x_sign(&self, i: usize) -> i32 { 
+    pub fn x_sign(&self, i: usize) -> Sign { 
         self.x_signs[i]
     }
 
@@ -87,7 +87,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         TripGrad(-w + s - 1, w + s - 1, w - s + 1)
     }
 
-    fn x_grad_shift(x_sign: i32, h: Bit, v: Bit) -> TripGrad { 
+    fn x_grad_shift(x_sign: Sign, h: Bit, v: Bit) -> TripGrad { 
         use Bit::{Bit0, Bit1};
         if x_sign.is_positive() {
             match (h, v) {
@@ -192,7 +192,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         //
         //    true        false
        
-        let is_vert = |x: &Crossing, sign: i32| -> bool { 
+        let is_vert = |x: &Crossing, sign: Sign| -> bool { 
             use CrossingType::*;
             match (x.ctype(), sign.is_positive()) {
                 (X, false) | (Xm, true)  | (V, _) => true,

@@ -4,8 +4,7 @@ use std::rc::Rc;
 
 use cartesian::{cartesian, TuplePrepend};
 use itertools::Itertools;
-use yui_core::{EucRing, EucRingOps};
-use yui_homology::Idx2;
+use yui_core::{EucRing, EucRingOps, isize2};
 use yui_link::Link;
 use yui_polynomial::LPoly;
 
@@ -70,10 +69,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         ranks
     }
 
-    pub fn qpoly_table(&self) -> HashMap<Idx2, QPoly<R>> { 
+    pub fn qpoly_table(&self) -> HashMap<isize2, QPoly<R>> { 
         let str = self.rank_all();        
         let polys = str.into_iter().into_group_map_by(|(idx, _)|
-            Idx2(idx.1, idx.2) // (j, k)
+            isize2(idx.1, idx.2) // (j, k)
         ).into_iter().map(|(jk, list)| { 
             let elems = list.into_iter().map(|(idx, r)| {
                 let i = idx.0;
@@ -92,8 +91,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let k_range = self.data.i_range().rev().step_by(2);
         let polys = self.qpoly_table();   
 
-        let table = yui_utils::table("k\\j", &k_range.collect(), &j_range.collect(), |k, j| { 
-            if let Some(p) = polys.get(&Idx2(j, k)) { 
+        let table = yui_utils::table("k\\j", k_range, j_range, |&k, &j| { 
+            if let Some(p) = polys.get(&isize2(j, k)) { 
                 p.to_string()
             } else { 
                 "".to_string()

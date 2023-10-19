@@ -2,17 +2,16 @@ use std::cell::UnsafeCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{ChainComplex, RModStr};
-use yui_homology::utils::HomologyCalc;
+use yui_homology::{ChainComplexTrait, HomologyCalc, HomologySummand};
 use yui_lin_comb::LinComb;
-use yui_matrix::sparse::{SpMat, SpVec};
+use yui_matrix::sparse::SpVec;
 use yui_utils::bitseq::BitSeq;
 
 use super::base::VertGen;
 use super::data::KRCubeData;
 use super::hor_cube::{KRHorCube, KRHorComplex};
 
-type KRHorHomolSummand<R> = (Vec<LinComb<VertGen, R>>, SpMat<R>);
+type KRHorHomolSummand<R> = (HomologySummand<R>, Vec<LinComb<VertGen, R>>);
 
 pub(crate) struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
@@ -37,21 +36,23 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let d0 = self.complex.d_matrix(i - 1);
         let d1 = self.complex.d_matrix(i);
 
-        // p: (r, n), q: (n, r)
-        let (h, p, q) = HomologyCalc::calculate_with_trans(d0, d1);
+        let h = HomologyCalc::calculate(d0, d1, true);
         let r = h.rank();
 
-        let gens = self.complex[i].generators();
-        let h_gens = (0..r).map(|k| { 
-            let v = q.col_vec(k); 
+        let xs = self.complex.gens(i);
+        let gens: Vec<_> = (0..r).map(|k| { 
+            let v = h.gen(k); 
             let terms = v.iter().map(|(i, a)| {
-                let x = &gens[i];
-                (x.clone(), a.clone())
+                let x = xs[i].clone();
+                (x, a.clone())
             });
             LinComb::from_iter(terms)
         }).collect();
 
-        (h_gens, p)
+        // debug_assert!(gens.iter().all(|z| !z.is_zero()));
+        // debug_assert!(gens.iter().all(|z| self.complex.differentiate(i, z).is_zero()));
+
+        (h, gens)
     }
 
     fn summand(&self, i: usize) -> &KRHorHomolSummand<R> {
@@ -62,14 +63,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn rank(&self, i: usize) -> usize { 
-        self.summand(i).0.len()
+        self.summand(i).0.rank()
     }
 
     pub fn gens(&self, i: usize) -> &Vec<LinComb<VertGen, R>> { 
-        &self.summand(i).0
-    }
-
-    pub fn trans(&self, i: usize) -> &SpMat<R> { 
         &self.summand(i).1
     }
 
@@ -78,9 +75,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             x.0.weight() == i && 
             x.1 == self.v_coords
         ));
-        let v = self.complex[i as isize].vectorize(z);
-        let p = self.trans(i);
-        p * v
+        let v = self.complex.vectorize(i as isize, z);
+        let v = self.summand(i).0.vectorize(&v);
+        v
     }
 }
 
@@ -125,7 +122,7 @@ mod tests {
         assert_eq!(zs.len(), 1);
 
         let z = &zs[0];
-        let dz = hml.complex.differetiate(z); 
+        let dz = hml.complex.differentiate(2, z); 
         assert!(dz.is_zero());
     }
 

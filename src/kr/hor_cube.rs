@@ -1,17 +1,16 @@
 use std::collections::BTreeMap;
-use std::ops::RangeInclusive;
 use std::rc::Rc;
 
 use itertools::Itertools;
 use yui_core::{Ring, RingOps};
-use yui_homology::FreeChainComplex;
-use yui_polynomial::MDegree;
+use yui_homology::XChainComplex;
+use yui_polynomial::MultiDeg;
 use yui_utils::bitseq::{BitSeq, Bit};
 
 use super::base::{EdgeRing, MonGen, VertGen};
 use super::data::KRCubeData;
 
-pub(crate) type KRHorComplex<R> = FreeChainComplex<VertGen, R, RangeInclusive<isize>>;
+pub(crate) type KRHorComplex<R> = XChainComplex<VertGen, R>;
 
 pub(crate) struct KRHorCube<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
@@ -60,7 +59,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         gen_iter(tot_deg, n, &mut res, prev, 0, tot_deg);
 
         res.into_iter().map(|d| {
-            let mdeg = MDegree::new(d);
+            let mdeg = MultiDeg::new(d);
             MonGen::from(mdeg)
         }).collect()
     }
@@ -126,15 +125,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let n = self.data.dim() as isize;
         let range = 0..=n;
         
-        let self0 = Rc::new(self);
-        let self1 = self0.clone();
-
-        FreeChainComplex::new(range, 1, 
-            move |i| {
-                self0.gens(i as usize)
+        XChainComplex::new(range, 1, 
+            |i| {
+                self.gens(i as usize)
             },
-            move |e| {
-                self1.differentiate(e)
+            |_i, e| {
+                self.differentiate(e)
             }
         )
     }
@@ -145,7 +141,7 @@ mod tests {
     use std::collections::HashMap;
 
     use num_traits::One;
-    use yui_homology::{RModStr, HomologyComputable};
+    use yui_homology::ChainComplexTrait;
     use yui_ratio::Ratio;
     use yui_link::Link;
     use yui_utils::map;
@@ -264,7 +260,7 @@ mod tests {
     #[test]
     fn differentiate() { 
         let one = MonGen::one();
-        let x = (0..3).map(|i| MonGen::from(MDegree::from((i, 1)))).collect_vec();
+        let x = (0..3).map(|i| MonGen::from(MultiDeg::from((i, 1)))).collect_vec();
 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let v = BitSeq::from_iter([0,0,0]);
@@ -338,18 +334,16 @@ mod tests {
 
     #[test]
     fn as_complex() { 
-        use yui_homology::test::ChainComplexValidation;
-
         let l = Link::trefoil();
         let v = BitSeq::from_iter([1,0,0]);
         let q = 0;
         let cube = make_cube(&l, v, q);
         let c = cube.as_complex();
 
-        assert_eq!(c[0].rank(), 1);
-        assert_eq!(c[1].rank(), 12);
-        assert_eq!(c[2].rank(), 26);
-        assert_eq!(c[3].rank(), 15);
+        assert_eq!(c.rank(0), 1);
+        assert_eq!(c.rank(1), 12);
+        assert_eq!(c.rank(2), 26);
+        assert_eq!(c.rank(3), 15);
 
         c.check_d_all();
 
@@ -358,10 +352,10 @@ mod tests {
         let cube = make_cube(&l.mirror(), v, q);
         let c = cube.as_complex();
         
-        assert_eq!(c[0].rank(), 6);
-        assert_eq!(c[1].rank(), 40);
-        assert_eq!(c[2].rank(), 70);
-        assert_eq!(c[3].rank(), 36);
+        assert_eq!(c.rank(0), 6);
+        assert_eq!(c.rank(1), 40);
+        assert_eq!(c.rank(2), 70);
+        assert_eq!(c.rank(3), 36);
         
         c.check_d_all();
     }
@@ -374,7 +368,7 @@ mod tests {
         let cube = make_cube(&l, v, q);
 
         let c = cube.as_complex();
-        let h = c.homology();
+        let h = c.homology(false);
 
         assert_eq!(h[0].rank(), 0);
         assert_eq!(h[1].rank(), 0);
@@ -386,7 +380,7 @@ mod tests {
         let q = 1;
         let cube = make_cube(&l, v, q);
         let c = cube.as_complex();
-        let h = c.homology();
+        let h = c.homology(false);
         
         assert_eq!(h[0].rank(), 0);
         assert_eq!(h[1].rank(), 0);

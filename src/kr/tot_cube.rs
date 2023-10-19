@@ -1,10 +1,10 @@
 use std::cell::OnceCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-
+use cartesian::cartesian;
 use num_traits::One;
-use yui_core::{EucRing, EucRingOps};
-use yui_homology::{Idx2Iter, Idx2, GenericChainComplex};
+use yui_core::{EucRing, EucRingOps, isize2};
+use yui_homology::{ChainComplex2};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpMat, SpVec};
 use yui_utils::bitseq::{BitSeq, Bit};
@@ -13,7 +13,7 @@ use super::base::{VertGen, EdgeRing};
 use super::data::KRCubeData;
 use super::hor_homol::KRHorHomol;
 
-pub(crate) type KRTotComplex<R> = GenericChainComplex<R, Idx2Iter>;
+pub(crate) type KRTotComplex<R> = ChainComplex2<R>;
 
 pub(crate) struct KRTotCube<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
@@ -133,13 +133,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn as_complex(self) -> KRTotComplex<R> {
         let n = self.data.dim() as isize;
 
-        let start = Idx2(0, 0);
-        let end   = Idx2(n, n);
-        let range = start.iter_rect(end, (1, 1));
-        
-        GenericChainComplex::generate(range, Idx2(0, 1), |idx| {
-            let (i, j) = idx.as_tuple();
-            Some(self.d_matrix(i as usize, j as usize))
+        let range = cartesian!(0..=n, 0..=n).map(|(i, j)| isize2(i, j));
+        ChainComplex2::new(range, isize2(0, 1), |idx| {
+            let isize2(i, j) = idx;
+            self.d_matrix(i as usize, j as usize)
         })
     }
 }
@@ -148,8 +145,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 mod tests {
     use itertools::Itertools;
     use num_traits::One;
-    use yui_homology::{HomologyComputable, RModStr};
-    use yui_homology::test::ChainComplexValidation;
+    use yui_homology::ChainComplexTrait;
     use yui_ratio::Ratio;
     use yui_link::Link;
     use super::*;
@@ -251,22 +247,22 @@ mod tests {
         let cube = make_cube(&l, q);
         let cpx = cube.as_complex();
 
-        assert_eq!(cpx[Idx2(0, 0)].rank(), 0);
-        assert_eq!(cpx[Idx2(0, 1)].rank(), 0);
-        assert_eq!(cpx[Idx2(0, 2)].rank(), 0);
-        assert_eq!(cpx[Idx2(0, 3)].rank(), 0);
-        assert_eq!(cpx[Idx2(1, 0)].rank(), 0);
-        assert_eq!(cpx[Idx2(1, 1)].rank(), 0);
-        assert_eq!(cpx[Idx2(1, 2)].rank(), 0);
-        assert_eq!(cpx[Idx2(1, 3)].rank(), 0);
-        assert_eq!(cpx[Idx2(2, 0)].rank(), 0);
-        assert_eq!(cpx[Idx2(2, 1)].rank(), 0);
-        assert_eq!(cpx[Idx2(2, 2)].rank(), 0);
-        assert_eq!(cpx[Idx2(2, 3)].rank(), 1);
-        assert_eq!(cpx[Idx2(3, 0)].rank(), 0);
-        assert_eq!(cpx[Idx2(3, 1)].rank(), 3);
-        assert_eq!(cpx[Idx2(3, 2)].rank(), 6);
-        assert_eq!(cpx[Idx2(3, 3)].rank(), 4);
+        assert_eq!(cpx.rank(isize2(0, 0)), 0);
+        assert_eq!(cpx.rank(isize2(0, 1)), 0);
+        assert_eq!(cpx.rank(isize2(0, 2)), 0);
+        assert_eq!(cpx.rank(isize2(0, 3)), 0);
+        assert_eq!(cpx.rank(isize2(1, 0)), 0);
+        assert_eq!(cpx.rank(isize2(1, 1)), 0);
+        assert_eq!(cpx.rank(isize2(1, 2)), 0);
+        assert_eq!(cpx.rank(isize2(1, 3)), 0);
+        assert_eq!(cpx.rank(isize2(2, 0)), 0);
+        assert_eq!(cpx.rank(isize2(2, 1)), 0);
+        assert_eq!(cpx.rank(isize2(2, 2)), 0);
+        assert_eq!(cpx.rank(isize2(2, 3)), 1);
+        assert_eq!(cpx.rank(isize2(3, 0)), 0);
+        assert_eq!(cpx.rank(isize2(3, 1)), 3);
+        assert_eq!(cpx.rank(isize2(3, 2)), 6);
+        assert_eq!(cpx.rank(isize2(3, 3)), 4);
 
         cpx.check_d_all();
     }
@@ -277,23 +273,23 @@ mod tests {
         let q = -4;
         let cube = make_cube(&l, q);
         let cpx = cube.as_complex();
-        let hml = cpx.homology();
+        let hml = cpx.homology(false);
 
-        assert_eq!(hml[Idx2(0, 0)].rank(), 0);
-        assert_eq!(hml[Idx2(0, 1)].rank(), 0);
-        assert_eq!(hml[Idx2(0, 2)].rank(), 0);
-        assert_eq!(hml[Idx2(0, 3)].rank(), 0);
-        assert_eq!(hml[Idx2(1, 0)].rank(), 0);
-        assert_eq!(hml[Idx2(1, 1)].rank(), 0);
-        assert_eq!(hml[Idx2(1, 2)].rank(), 0);
-        assert_eq!(hml[Idx2(1, 3)].rank(), 0);
-        assert_eq!(hml[Idx2(2, 0)].rank(), 0);
-        assert_eq!(hml[Idx2(2, 1)].rank(), 0);
-        assert_eq!(hml[Idx2(2, 2)].rank(), 0);
-        assert_eq!(hml[Idx2(2, 3)].rank(), 1);
-        assert_eq!(hml[Idx2(3, 0)].rank(), 0);
-        assert_eq!(hml[Idx2(3, 1)].rank(), 1);
-        assert_eq!(hml[Idx2(3, 2)].rank(), 0);
-        assert_eq!(hml[Idx2(3, 3)].rank(), 0);
+        assert_eq!(hml[(0, 0)].rank(), 0);
+        assert_eq!(hml[(0, 1)].rank(), 0);
+        assert_eq!(hml[(0, 2)].rank(), 0);
+        assert_eq!(hml[(0, 3)].rank(), 0);
+        assert_eq!(hml[(1, 0)].rank(), 0);
+        assert_eq!(hml[(1, 1)].rank(), 0);
+        assert_eq!(hml[(1, 2)].rank(), 0);
+        assert_eq!(hml[(1, 3)].rank(), 0);
+        assert_eq!(hml[(2, 0)].rank(), 0);
+        assert_eq!(hml[(2, 1)].rank(), 0);
+        assert_eq!(hml[(2, 2)].rank(), 0);
+        assert_eq!(hml[(2, 3)].rank(), 1);
+        assert_eq!(hml[(3, 0)].rank(), 0);
+        assert_eq!(hml[(3, 1)].rank(), 1);
+        assert_eq!(hml[(3, 2)].rank(), 0);
+        assert_eq!(hml[(3, 3)].rank(), 0);
     }
 }

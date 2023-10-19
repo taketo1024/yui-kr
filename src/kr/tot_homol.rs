@@ -1,18 +1,18 @@
 use std::cell::UnsafeCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use yui_core::{EucRing, EucRingOps};
-use yui_homology::{RModStr, GenericRModStr, Idx2, HomologyComputable};
+use yui_core::{EucRing, EucRingOps, isize2};
+use yui_homology::HomologySummand;
 use super::data::KRCubeData;
 use super::tot_cube::{KRTotCube, KRTotComplex};
 
-type KRTotHomolSummand<R> = GenericRModStr<R>;
+type KRTotHomolSummand<R> = HomologySummand<R>;
 
 pub(crate) struct KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     q_slice: isize,
     complex: KRTotComplex<R>,
-    cache: UnsafeCell<HashMap<Idx2, KRTotHomolSummand<R>>>
+    cache: UnsafeCell<HashMap<isize2, KRTotHomolSummand<R>>>
 } 
 
 impl<R> KRTotHomol<R>
@@ -26,10 +26,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn summand(&self, i: usize, j: usize) -> &KRTotHomolSummand<R> {
-        let idx = Idx2(i as isize, j as isize);
+        let idx = isize2(i as isize, j as isize);
         let cache = unsafe { &mut *self.cache.get() };
         cache.entry(idx).or_insert_with(|| {
-            self.complex.homology_at(idx)
+            self.complex.homology_at(idx, false)
         })
     }
 
