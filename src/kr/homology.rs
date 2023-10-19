@@ -54,7 +54,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn rank_all(&self) -> HashMap<isize3, usize> { 
         let i_range = self.data.i_range().step_by(2);
         let j_range = self.data.j_range().step_by(2);
-        let range = cartesian!(i_range.clone(), j_range.clone(), i_range.clone());
+        let k_range = self.data.k_range().step_by(2);
+
+        let range = cartesian!(i_range, j_range.clone(), k_range.clone());
 
         let ranks = range.filter_map(|(i, j, k)| {
             let r = self.rank(i, j, k);
@@ -87,7 +89,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     pub fn print_table(&self) { 
         let j_range = self.data.j_range().step_by(2);
-        let k_range = self.data.i_range().rev().step_by(2);
+        let k_range = self.data.k_range().rev().step_by(2);
         let polys = self.qpoly_table();   
 
         let table = yui_utils::table("k\\j", k_range, j_range, |&k, &j| { 
@@ -120,5 +122,6 @@ mod tests {
 
         // TODO
         println!("{ranks:?}");
+        h.print_table();
     }
 }

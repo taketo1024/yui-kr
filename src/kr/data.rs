@@ -144,19 +144,25 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         w - s + 1 ..= w + s - 1
     }
 
+    pub fn k_range(&self) -> RangeInclusive<isize> { 
+        self.i_range()
+    }
+
     pub fn is_triv(&self, grad: isize3) -> bool { 
         let isize3(i, j, k) = grad;
         let isize3(i0, j0, k0) = self.root_grad();
+
         let i_range = self.i_range();
         let j_range = self.j_range();
+        let k_range = self.k_range();
 
         let ok = (i - i0).is_even() 
             && (j - j0).is_even() 
             && (k - k0).is_even()
             && i_range.contains(&i)
             && j_range.contains(&j)
-            && i_range.contains(&k)
-            && i_range.contains(&(k + 2 * i));
+            && k_range.contains(&k)
+            && k_range.contains(&(k + 2 * i));
 
         !ok
     }
