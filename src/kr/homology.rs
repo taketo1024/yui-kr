@@ -4,11 +4,10 @@ use std::rc::Rc;
 
 use cartesian::{cartesian, TuplePrepend};
 use itertools::Itertools;
-use yui_core::{EucRing, EucRingOps, isize2};
+use yui_core::{EucRing, EucRingOps, isize2, isize3};
 use yui_link::Link;
 use yui_polynomial::LPoly;
 
-use super::base::TripGrad;
 use super::data::KRCubeData;
 use super::tot_homol::KRTotHomol;
 
@@ -40,19 +39,19 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return self.rank(-i, j, k + 2 * i)
         }
         
-        let grad = TripGrad(i, j, k);
+        let grad = isize3(i, j, k);
         if self.data.is_triv(grad) { 
             return 0
         }
 
-        let Some(TripGrad(h, v, q)) = self.data.to_inner_grad(grad) else { 
+        let Some(isize3(h, v, q)) = self.data.to_inner_grad(grad) else { 
             return 0
         };
 
         self.tot_hml(q).rank(h as usize, v as usize)
     }
 
-    pub fn rank_all(&self) -> HashMap<TripGrad, usize> { 
+    pub fn rank_all(&self) -> HashMap<isize3, usize> { 
         let i_range = self.data.i_range().step_by(2);
         let j_range = self.data.j_range().step_by(2);
         let range = cartesian!(i_range.clone(), j_range.clone(), i_range.clone());
@@ -60,7 +59,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let ranks = range.filter_map(|(i, j, k)| {
             let r = self.rank(i, j, k);
             if r > 0 { 
-                Some((TripGrad(i, j, k), r))
+                Some((isize3(i, j, k), r))
             } else { 
                 None
             }

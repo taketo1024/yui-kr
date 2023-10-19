@@ -4,10 +4,10 @@ use std::ops::RangeInclusive;
 use itertools::{Itertools, izip};
 use petgraph::{Graph, algo::min_spanning_tree};
 
-use yui_core::{Ring, RingOps, PowMod2, Sign};
+use yui_core::{Ring, RingOps, PowMod2, Sign, isize3};
 use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
 use yui_utils::bitseq::{BitSeq, Bit};
-use super::base::{EdgeRing, TripGrad};
+use super::base::EdgeRing;
 
 pub(crate) struct KRCubeData<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
@@ -81,38 +81,38 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         (-1).pow_mod2(e)
     }
 
-    fn l_grad_shift(&self) -> TripGrad { 
+    fn l_grad_shift(&self) -> isize3 { 
         let w = self.writhe;
         let s = self.n_seif;
-        TripGrad(-w + s - 1, w + s - 1, w - s + 1)
+        isize3(-w + s - 1, w + s - 1, w - s + 1)
     }
 
-    fn x_grad_shift(x_sign: Sign, h: Bit, v: Bit) -> TripGrad { 
+    fn x_grad_shift(x_sign: Sign, h: Bit, v: Bit) -> isize3 { 
         use Bit::{Bit0, Bit1};
         if x_sign.is_positive() {
             match (h, v) {
-                (Bit0, Bit0) => TripGrad(2, -2, -2),
-                (Bit1, Bit0) => TripGrad(0,  0, -2),
-                (Bit0, Bit1) => TripGrad(0, -2,  0),
-                (Bit1, Bit1) => TripGrad(0,  0,  0)
+                (Bit0, Bit0) => isize3(2, -2, -2),
+                (Bit1, Bit0) => isize3(0,  0, -2),
+                (Bit0, Bit1) => isize3(0, -2,  0),
+                (Bit1, Bit1) => isize3(0,  0,  0)
             }
         } else { 
             match (h, v) {
-                (Bit0, Bit0) => TripGrad( 0, -2, 0),
-                (Bit1, Bit0) => TripGrad( 0,  0, 0),
-                (Bit0, Bit1) => TripGrad( 0, -2, 2),
-                (Bit1, Bit1) => TripGrad(-2,  0, 2)
+                (Bit0, Bit0) => isize3( 0, -2, 0),
+                (Bit1, Bit0) => isize3( 0,  0, 0),
+                (Bit0, Bit1) => isize3( 0, -2, 2),
+                (Bit1, Bit1) => isize3(-2,  0, 2)
             }
         }
     }
 
-    pub fn root_grad(&self) -> TripGrad { 
+    pub fn root_grad(&self) -> isize3 { 
         let n = self.n_cross;
         let zero = BitSeq::zeros(n);
         self.grad_at(zero, zero)
     }
 
-    pub fn grad_at(&self, h_coords: BitSeq, v_coords: BitSeq) -> TripGrad { 
+    pub fn grad_at(&self, h_coords: BitSeq, v_coords: BitSeq) -> isize3 { 
         let n = self.n_cross;
 
         assert_eq!(h_coords.len(), n);
@@ -144,9 +144,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         w - s + 1 ..= w + s - 1
     }
 
-    pub fn is_triv(&self, grad: TripGrad) -> bool { 
-        let TripGrad(i, j, k) = grad;
-        let TripGrad(i0, j0, k0) = self.root_grad();
+    pub fn is_triv(&self, grad: isize3) -> bool { 
+        let isize3(i, j, k) = grad;
+        let isize3(i0, j0, k0) = self.root_grad();
         let i_range = self.i_range();
         let j_range = self.j_range();
 
@@ -161,15 +161,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         !ok
     }
 
-    pub fn to_inner_grad(&self, grad: TripGrad) -> Option<TripGrad> { 
-        let TripGrad(i, j, k) = grad;
-        let TripGrad(i0, j0, k0) = self.root_grad();
+    pub fn to_inner_grad(&self, grad: isize3) -> Option<isize3> { 
+        let isize3(i, j, k) = grad;
+        let isize3(i0, j0, k0) = self.root_grad();
         
         if (i - i0).is_even() && (j - j0).is_even() && (k - k0).is_even() {
             let h = (j - j0) / 2;
             let v = (k - k0) / 2;
             let q = ((i - i0) - (j - j0)) / 2;
-            Some(TripGrad(h, v, q))
+            Some(isize3(h, v, q))
         } else { 
             None
         }
@@ -423,7 +423,7 @@ mod tests {
     fn grad_shift() { 
         let l = Link::trefoil(); // (w, s) = (-3, 2)
         let data = KRCubeData::<R>::new(&l);
-        assert_eq!(data.l_grad_shift(), TripGrad(4,-2,-4));
+        assert_eq!(data.l_grad_shift(), isize3(4,-2,-4));
     }
 
     #[test]
@@ -431,12 +431,12 @@ mod tests {
         let l = Link::trefoil();
         let data = KRCubeData::<R>::new(&l);
         let grad0 = data.root_grad();
-        assert_eq!(grad0, TripGrad(4,-8,-4));
+        assert_eq!(grad0, isize3(4,-8,-4));
 
         let h = BitSeq::from_iter([1,0,0]);
         let v = BitSeq::from_iter([0,1,0]);
         let grad1 = data.grad_at(h, v);
-        assert_eq!(grad1, TripGrad(4,-6,-2));
+        assert_eq!(grad1, isize3(4,-6,-2));
     }
 }
 
