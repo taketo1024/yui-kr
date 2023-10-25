@@ -22,3 +22,4 @@ yui-matrix     = { git = "https://github.com/taketo1024/yui.git", branch = "deve
 yui-link       = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
 yui-homology   = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
 yui-khovanov   = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
+delegate = "0.10.0"
