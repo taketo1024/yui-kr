@@ -2,7 +2,7 @@ use std::rc::Rc;
 use delegate::delegate;
 
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{ReducedComplex, PrintSeq, Graded, Homology, HomologySummand};
+use yui_homology::{ReducedComplex, PrintSeq, Graded, Homology, HomologySummand, ChainComplexTrait};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::SpVec;
 use yui_utils::bitseq::BitSeq;
@@ -26,7 +26,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
         let cube = KRHorCube::new(data, v_coords, q_slice);
         let complex = cube.as_complex();
-        let reduced = complex.inner().reduced(true);
+        let reduced = complex.reduced(true);
         let homology = reduced.homology(true);
         
         let h_gens = homology.support().map(|i| { 

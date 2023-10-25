@@ -1,6 +1,6 @@
 use std::rc::Rc;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::Homology2;
+use yui_homology::{Homology2, ChainComplexTrait};
 
 use super::data::KRCubeData;
 use super::tot_cube::KRTotCube;
