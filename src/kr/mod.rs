@@ -8,6 +8,4 @@ mod tot_cube;
 mod tot_homol;
 mod homology;
 
-pub fn sample() {
-    println!("sample")
-}
+pub use homology::KRHomology;

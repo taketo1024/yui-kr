@@ -13,7 +13,7 @@ use super::tot_homol::KRTotHomol;
 
 type QPoly<R> = LPoly<'q', R>;
 
-struct KRHomology<R>
+pub struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Rc<KRCubeData<R>>,
     cache: UnsafeCell<HashMap<isize, KRTotHomol<R>>>
@@ -119,10 +119,8 @@ mod tests {
     fn rank() { 
         let l = Link::trefoil();
         let h = KRHomology::<R>::new(&l);
-        let ranks = h.rank_all();
 
         // TODO
-        println!("{ranks:?}");
         h.print_table();
     }
 }
