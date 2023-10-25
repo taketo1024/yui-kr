@@ -4,7 +4,7 @@ use std::ops::RangeInclusive;
 use itertools::{Itertools, izip};
 use petgraph::{Graph, algo::min_spanning_tree};
 
-use yui_core::{Ring, RingOps, PowMod2, Sign, isize3};
+use yui_core::{Ring, RingOps, PowMod2, Sign, isize3, GetSign};
 use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
 use yui_utils::bitseq::{BitSeq, Bit};
 use super::base::EdgeRing;
@@ -71,14 +71,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }    
 
     // TODO cache
-    pub fn edge_sign(&self, from: BitSeq, to: BitSeq) -> i32 { 
+    pub fn edge_sign(&self, from: BitSeq, to: BitSeq) -> Sign { 
         assert_eq!(to.weight() - from.weight(), 1);
         
         let n = self.n_cross;
         let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
         let e = (0..i).filter(|&j| from[j].is_one()).count() as i32;
 
-        (-1).pow_mod2(e)
+        (-1).pow_mod2(e).sign()
     }
 
     fn l_grad_shift(&self) -> isize3 { 
@@ -401,28 +401,29 @@ mod tests {
 
     #[test]
     fn edge_sign() {
+        use Sign::*;
         let l = Link::trefoil();
         let data = KRCubeData::<R>::new(&l);
 
         let e = data.edge_sign(
             BitSeq::from_iter([0,0,0]), 
             BitSeq::from_iter([1,0,0]));
-        assert_eq!(e, 1);
+        assert_eq!(e, Pos);
 
         let e = data.edge_sign(
             BitSeq::from_iter([0,0,0]), 
             BitSeq::from_iter([0,1,0]));
-        assert_eq!(e, 1);
+        assert_eq!(e, Pos);
 
         let e = data.edge_sign(
             BitSeq::from_iter([1,0,0]), 
             BitSeq::from_iter([1,1,0]));
-        assert_eq!(e, -1);
+        assert_eq!(e, Neg);
 
         let e = data.edge_sign(
             BitSeq::from_iter([0,1,0]), 
             BitSeq::from_iter([1,1,0]));
-        assert_eq!(e, 1);
+        assert_eq!(e, Pos);
     }
 
     #[test]

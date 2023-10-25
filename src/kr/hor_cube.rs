@@ -110,7 +110,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let v = v.clone();
         
         self.data.targets(h0).into_iter().flat_map(|h1| { 
-            let e = EdgeRing::from(self.data.edge_sign(h0, h1));
+            let s = self.data.edge_sign(h0, h1);
+            let e = EdgeRing::from_sign(s);
             let x = EdgeRing::from(x.clone());
             let p = self.edge_poly(h0, h1);
             let q = e * x * p; // result polynomial

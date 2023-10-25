@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use cartesian::cartesian;
 use num_traits::One;
-use yui_core::{EucRing, EucRingOps, isize2};
+use yui_core::{EucRing, EucRingOps, isize2, Ring};
 use yui_homology::{ChainComplex2};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpMat, SpVec};
@@ -100,7 +100,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let v0 = v.clone();
         
         self.data.targets(v0).into_iter().flat_map(|v1| { 
-            let e = EdgeRing::from(self.data.edge_sign(v0, v1));
+            let s = self.data.edge_sign(v0, v1);
+            let e = EdgeRing::from_sign(s);
             let x = EdgeRing::from(x.clone());
             let p = self.edge_poly(h, v0, v1);
             let q = e * x * p; // result polynomial
