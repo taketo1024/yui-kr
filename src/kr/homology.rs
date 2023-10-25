@@ -75,12 +75,13 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let polys = str.into_iter().into_group_map_by(|(idx, _)|
             isize2(idx.1, idx.2) // (j, k)
         ).into_iter().map(|(jk, list)| { 
+            let q = QPoly::mono;
             let elems = list.into_iter().map(|(idx, r)| {
                 let i = idx.0;
                 let a = R::from(r as i32);
-                (i, a) // a.q^i
+                (q(i), a) // a.q^i
             });
-            let p = QPoly::from_deg_iter(elems);
+            let p = QPoly::from_iter(elems);
             (jk, p)
         }).collect();
 

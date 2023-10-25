@@ -2,7 +2,7 @@ use std::cell::UnsafeCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{ChainComplexTrait, HomologyCalc, HomologySummand};
+use yui_homology::{ChainComplexTrait, HomologySummand, utils::HomologyCalc};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::SpVec;
 use yui_utils::bitseq::BitSeq;
@@ -76,7 +76,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             x.1 == self.v_coords
         ));
         let v = self.complex.vectorize(i as isize, z);
-        let v = self.summand(i).0.vectorize(&v);
+        let v = self.summand(i).0.trans_forward(&v);
         v
     }
 }
@@ -122,7 +122,7 @@ mod tests {
         assert_eq!(zs.len(), 1);
 
         let z = &zs[0];
-        let dz = hml.complex.differentiate(2, z); 
+        let dz = hml.complex.d(2, z); 
         assert!(dz.is_zero());
     }
 

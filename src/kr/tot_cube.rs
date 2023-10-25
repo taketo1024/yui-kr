@@ -101,7 +101,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         
         self.data.targets(v0).into_iter().flat_map(|v1| { 
             let e = EdgeRing::from(self.data.edge_sign(v0, v1));
-            let x = EdgeRing::from_term(x.clone(), R::one());
+            let x = EdgeRing::from(x.clone());
             let p = self.edge_poly(h, v0, v1);
             let q = e * x * p; // result polynomial
 
