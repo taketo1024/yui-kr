@@ -1,11 +1,8 @@
-use std::cell::UnsafeCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 use delegate::delegate;
 
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{ReducedComplex, PrintSeq, Graded};
-use yui_homology::{ChainComplexTrait, HomologySummand, utils::HomologyCalc};
+use yui_homology::{ReducedComplex, PrintSeq, Graded, Homology, HomologySummand};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::SpVec;
 use yui_utils::bitseq::BitSeq;
@@ -14,15 +11,14 @@ use super::base::VertGen;
 use super::data::KRCubeData;
 use super::hor_cube::{KRHorCube, KRHorComplex};
 
-type KRHorHomolSummand<R> = (HomologySummand<R>, Vec<LinComb<VertGen, R>>);
-
 pub(crate) struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     v_coords: BitSeq,
     q_slice: isize,
     complex: KRHorComplex<R>,
     reduced: ReducedComplex<R>,
-    cache: UnsafeCell<HashMap<usize, KRHorHomolSummand<R>>>
+    homology: Homology<R>,
+    h_gens: Vec<Vec<LinComb<VertGen, R>>>
 } 
 
 impl<R> KRHorHomol<R>
@@ -31,47 +27,38 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let cube = KRHorCube::new(data, v_coords, q_slice);
         let complex = cube.as_complex();
         let reduced = complex.inner().reduced(true);
-        let cache = UnsafeCell::new( HashMap::new() );
+        let homology = reduced.homology(true);
+        
+        let h_gens = homology.support().map(|i| { 
+            let xs = complex.gens(i);
+            let h = &homology[i];
+            let r = h.rank();
 
-        Self { v_coords, q_slice, complex, reduced, cache }
-    }
-
-    fn compute_summand(&self, i: usize) -> KRHorHomolSummand<R> { 
-        let i = i as isize;
-        let d0 = self.reduced.d_matrix(i - 1);
-        let d1 = self.reduced.d_matrix(i);
-
-        let h = HomologyCalc::calculate(d0, d1, true);
-        let r = h.rank();
-
-        let xs = self.complex.gens(i);
-        let gens: Vec<_> = (0..r).map(|k| { 
-            let v = h.gen(k);                           // vec for reduced.
-            let w = self.reduced.trans_backward(i, &v); // vec for original.
-
-            let terms = w.iter().map(|(i, a)| {
-                let x = &xs[i];
-                (x.clone(), a.clone())
-            });
-            LinComb::from_iter(terms)
+            (0..r).map(|k| { 
+                let v = h.gen(k);                      // vec for reduced.
+                let w = reduced.trans_backward(i, &v); // vec for original.
+    
+                let terms = w.iter().map(|(i, a)| {
+                    let x = &xs[i];
+                    (x.clone(), a.clone())
+                });
+                LinComb::from_iter(terms)
+            }).collect()
         }).collect();
 
-        (h, gens)
+        Self { v_coords, q_slice, complex, reduced, homology, h_gens }
     }
 
-    fn summand(&self, i: usize) -> &KRHorHomolSummand<R> {
-        let cache = unsafe { &mut *self.cache.get() };
-        cache.entry(i).or_insert_with(|| {
-            self.compute_summand(i)
-        })
+    pub fn summand(&self, i: usize) -> &HomologySummand<R> {
+        &self.homology[i as isize]
     }
 
     pub fn rank(&self, i: usize) -> usize { 
-        self.summand(i).0.rank()
+        self.summand(i).rank()
     }
 
     pub fn gens(&self, i: usize) -> &Vec<LinComb<VertGen, R>> { 
-        &self.summand(i).1
+        &self.h_gens[i]
     }
 
     pub fn vectorize(&self, i: usize, z: &LinComb<VertGen, R>) -> SpVec<R> {
@@ -80,7 +67,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             x.1 == self.v_coords
         ));
 
-        let h = &self.summand(i).0;
+        let h = &self.summand(i);
         let i = i as isize;
 
         let v = self.complex.vectorize(i, z);      // vec for complex 
@@ -90,11 +77,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         v
     }
 
-    pub fn print_complex(&self) { 
+    pub fn print_complex_seq(&self) { 
         self.complex.print_seq()
     }
 
-    pub fn print_reduced(&self) { 
+    pub fn print_reduced_seq(&self) { 
         self.reduced.print_seq()
     }
 }
@@ -110,7 +97,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn display(&self, i: isize) -> String {
-        self.summand(i as usize).0.to_string()
+        self.summand(i as usize).to_string()
     }
 }
 
