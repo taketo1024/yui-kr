@@ -1,18 +1,14 @@
-use std::cell::UnsafeCell;
-use std::collections::HashMap;
 use std::rc::Rc;
-use yui_core::{EucRing, EucRingOps, isize2};
-use yui_homology::HomologySummand;
-use super::data::KRCubeData;
-use super::tot_cube::{KRTotCube, KRTotComplex};
+use yui_core::{EucRing, EucRingOps};
+use yui_homology::Homology2;
 
-type KRTotHomolSummand<R> = HomologySummand<R>;
+use super::data::KRCubeData;
+use super::tot_cube::KRTotCube;
 
 pub(crate) struct KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     q_slice: isize,
-    complex: KRTotComplex<R>,
-    cache: UnsafeCell<HashMap<isize2, KRTotHomolSummand<R>>>
+    homology: Homology2<R>
 } 
 
 impl<R> KRTotHomol<R>
@@ -20,21 +16,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Rc<KRCubeData<R>>, q_slice: isize) -> Self { 
         let cube = KRTotCube::new(data, q_slice);
         let complex = cube.as_complex();
-        let cache = UnsafeCell::new( HashMap::new() );
+        let reduced = complex.reduced(false);
+        let homology = reduced.homology(false);
 
-        Self { q_slice, complex, cache }
-    }
-
-    fn summand(&self, i: usize, j: usize) -> &KRTotHomolSummand<R> {
-        let idx = isize2(i as isize, j as isize);
-        let cache = unsafe { &mut *self.cache.get() };
-        cache.entry(idx).or_insert_with(|| {
-            self.complex.homology_at(idx, false)
-        })
+        Self { q_slice, homology }
     }
 
     pub fn rank(&self, i: usize, j: usize) -> usize { 
-        self.summand(i, j).rank()
+        let (i, j) = (i as isize, j as isize);
+        self.homology[(i, j)].rank()
     }
 }
 
