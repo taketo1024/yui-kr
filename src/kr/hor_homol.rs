@@ -1,7 +1,10 @@
 use std::cell::UnsafeCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use delegate::delegate;
+
 use yui_core::{EucRing, EucRingOps};
+use yui_homology::{ReducedComplex, PrintSeq, Graded};
 use yui_homology::{ChainComplexTrait, HomologySummand, utils::HomologyCalc};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::SpVec;
@@ -18,6 +21,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     v_coords: BitSeq,
     q_slice: isize,
     complex: KRHorComplex<R>,
+    reduced: ReducedComplex<R>,
     cache: UnsafeCell<HashMap<usize, KRHorHomolSummand<R>>>
 } 
 
@@ -26,31 +30,31 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
         let cube = KRHorCube::new(data, v_coords, q_slice);
         let complex = cube.as_complex();
+        let reduced = complex.inner().reduced(true);
         let cache = UnsafeCell::new( HashMap::new() );
 
-        Self { v_coords, q_slice, complex, cache }
+        Self { v_coords, q_slice, complex, reduced, cache }
     }
 
     fn compute_summand(&self, i: usize) -> KRHorHomolSummand<R> { 
         let i = i as isize;
-        let d0 = self.complex.d_matrix(i - 1);
-        let d1 = self.complex.d_matrix(i);
+        let d0 = self.reduced.d_matrix(i - 1);
+        let d1 = self.reduced.d_matrix(i);
 
         let h = HomologyCalc::calculate(d0, d1, true);
         let r = h.rank();
 
         let xs = self.complex.gens(i);
         let gens: Vec<_> = (0..r).map(|k| { 
-            let v = h.gen(k); 
-            let terms = v.iter().map(|(i, a)| {
-                let x = xs[i].clone();
-                (x, a.clone())
+            let v = h.gen(k);                           // vec for reduced.
+            let w = self.reduced.trans_backward(i, &v); // vec for original.
+
+            let terms = w.iter().map(|(i, a)| {
+                let x = &xs[i];
+                (x.clone(), a.clone())
             });
             LinComb::from_iter(terms)
         }).collect();
-
-        // debug_assert!(gens.iter().all(|z| !z.is_zero()));
-        // debug_assert!(gens.iter().all(|z| self.complex.differentiate(i, z).is_zero()));
 
         (h, gens)
     }
@@ -75,9 +79,38 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             x.0.weight() == i && 
             x.1 == self.v_coords
         ));
-        let v = self.complex.vectorize(i as isize, z);
-        let v = self.summand(i).0.trans_forward(&v);
+
+        let h = &self.summand(i).0;
+        let i = i as isize;
+
+        let v = self.complex.vectorize(i, z);      // vec for complex 
+        let v = self.reduced.trans_forward(i, &v); // vec for reduced
+        let v = h.trans_forward(&v);               // vec for homology
+
         v
+    }
+
+    pub fn print_complex(&self) { 
+        self.complex.print_seq()
+    }
+
+    pub fn print_reduced(&self) { 
+        self.reduced.print_seq()
+    }
+}
+
+impl<R> Graded<isize> for KRHorHomol<R>
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    type Itr = std::vec::IntoIter<isize>;
+
+    delegate! { 
+        to self.complex { 
+            fn support(&self) -> Self::Itr;
+        }
+    }
+
+    fn display(&self, i: isize) -> String {
+        self.summand(i as usize).0.to_string()
     }
 }
 
@@ -108,6 +141,20 @@ mod tests {
         assert_eq!(hml.rank(0), 0);
         assert_eq!(hml.rank(1), 0);
         assert_eq!(hml.rank(2), 1);
+        assert_eq!(hml.rank(3), 1);
+    }
+
+
+    #[test]
+    fn rank2() { 
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let v = BitSeq::from_iter([1,0,0]);
+        let q = -4;
+        let hml = make_hml(&l, v, q);
+
+        assert_eq!(hml.rank(0), 0);
+        assert_eq!(hml.rank(1), 0);
+        assert_eq!(hml.rank(2), 0);
         assert_eq!(hml.rank(3), 1);
     }
 
