@@ -30,7 +30,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let homology = reduced.homology(true);
         
         let h_gens = homology.support().map(|i| { 
-            let xs = complex.gens(i);
             let h = &homology[i];
             let r = h.rank();
 
@@ -38,8 +37,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
                 let v = h.gen(k);                      // vec for reduced.
                 let w = reduced.trans_backward(i, &v); // vec for original.
     
-                let terms = w.iter().map(|(i, a)| {
-                    let x = &xs[i];
+                let terms = w.iter().map(|(j, a)| {
+                    let x = complex.gen_at(i, j);
                     (x.clone(), a.clone())
                 });
                 LinComb::from_iter(terms)
