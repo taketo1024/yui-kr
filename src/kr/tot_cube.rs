@@ -248,22 +248,22 @@ mod tests {
         let cube = make_cube(&l, q);
         let c = cube.as_complex();
 
-        assert_eq!(c[isize2(0, 0)].rank(), 0);
-        assert_eq!(c[isize2(0, 1)].rank(), 0);
-        assert_eq!(c[isize2(0, 2)].rank(), 0);
-        assert_eq!(c[isize2(0, 3)].rank(), 0);
-        assert_eq!(c[isize2(1, 0)].rank(), 0);
-        assert_eq!(c[isize2(1, 1)].rank(), 0);
-        assert_eq!(c[isize2(1, 2)].rank(), 0);
-        assert_eq!(c[isize2(1, 3)].rank(), 0);
-        assert_eq!(c[isize2(2, 0)].rank(), 0);
-        assert_eq!(c[isize2(2, 1)].rank(), 0);
-        assert_eq!(c[isize2(2, 2)].rank(), 0);
-        assert_eq!(c[isize2(2, 3)].rank(), 1);
-        assert_eq!(c[isize2(3, 0)].rank(), 0);
-        assert_eq!(c[isize2(3, 1)].rank(), 3);
-        assert_eq!(c[isize2(3, 2)].rank(), 6);
-        assert_eq!(c[isize2(3, 3)].rank(), 4);
+        assert_eq!(c[(0, 0)].rank(), 0);
+        assert_eq!(c[(0, 1)].rank(), 0);
+        assert_eq!(c[(0, 2)].rank(), 0);
+        assert_eq!(c[(0, 3)].rank(), 0);
+        assert_eq!(c[(1, 0)].rank(), 0);
+        assert_eq!(c[(1, 1)].rank(), 0);
+        assert_eq!(c[(1, 2)].rank(), 0);
+        assert_eq!(c[(1, 3)].rank(), 0);
+        assert_eq!(c[(2, 0)].rank(), 0);
+        assert_eq!(c[(2, 1)].rank(), 0);
+        assert_eq!(c[(2, 2)].rank(), 0);
+        assert_eq!(c[(2, 3)].rank(), 1);
+        assert_eq!(c[(3, 0)].rank(), 0);
+        assert_eq!(c[(3, 1)].rank(), 3);
+        assert_eq!(c[(3, 2)].rank(), 6);
+        assert_eq!(c[(3, 3)].rank(), 4);
 
         c.check_d_all();
     }
@@ -276,21 +276,21 @@ mod tests {
         let c = cube.as_complex();
         let h = c.homology(false);
 
-        assert_eq!(h[isize2(0, 0)].rank(), 0);
-        assert_eq!(h[isize2(0, 1)].rank(), 0);
-        assert_eq!(h[isize2(0, 2)].rank(), 0);
-        assert_eq!(h[isize2(0, 3)].rank(), 0);
-        assert_eq!(h[isize2(1, 0)].rank(), 0);
-        assert_eq!(h[isize2(1, 1)].rank(), 0);
-        assert_eq!(h[isize2(1, 2)].rank(), 0);
-        assert_eq!(h[isize2(1, 3)].rank(), 0);
-        assert_eq!(h[isize2(2, 0)].rank(), 0);
-        assert_eq!(h[isize2(2, 1)].rank(), 0);
-        assert_eq!(h[isize2(2, 2)].rank(), 0);
-        assert_eq!(h[isize2(2, 3)].rank(), 1);
-        assert_eq!(h[isize2(3, 0)].rank(), 0);
-        assert_eq!(h[isize2(3, 1)].rank(), 1);
-        assert_eq!(h[isize2(3, 2)].rank(), 0);
-        assert_eq!(h[isize2(3, 3)].rank(), 0);
+        assert_eq!(h[(0, 0)].rank(), 0);
+        assert_eq!(h[(0, 1)].rank(), 0);
+        assert_eq!(h[(0, 2)].rank(), 0);
+        assert_eq!(h[(0, 3)].rank(), 0);
+        assert_eq!(h[(1, 0)].rank(), 0);
+        assert_eq!(h[(1, 1)].rank(), 0);
+        assert_eq!(h[(1, 2)].rank(), 0);
+        assert_eq!(h[(1, 3)].rank(), 0);
+        assert_eq!(h[(2, 0)].rank(), 0);
+        assert_eq!(h[(2, 1)].rank(), 0);
+        assert_eq!(h[(2, 2)].rank(), 0);
+        assert_eq!(h[(2, 3)].rank(), 1);
+        assert_eq!(h[(3, 0)].rank(), 0);
+        assert_eq!(h[(3, 1)].rank(), 1);
+        assert_eq!(h[(3, 2)].rank(), 0);
+        assert_eq!(h[(3, 3)].rank(), 0);
     }
 }
