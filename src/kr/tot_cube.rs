@@ -146,7 +146,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 mod tests {
     use itertools::Itertools;
     use num_traits::One;
-    use yui_homology::ChainComplexTrait;
+    use yui_homology::{ChainComplexTrait, RModStr};
     use yui_ratio::Ratio;
     use yui_link::Link;
     use super::*;
@@ -246,26 +246,26 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
         let cube = make_cube(&l, q);
-        let cpx = cube.as_complex();
+        let c = cube.as_complex();
 
-        assert_eq!(cpx.rank(isize2(0, 0)), 0);
-        assert_eq!(cpx.rank(isize2(0, 1)), 0);
-        assert_eq!(cpx.rank(isize2(0, 2)), 0);
-        assert_eq!(cpx.rank(isize2(0, 3)), 0);
-        assert_eq!(cpx.rank(isize2(1, 0)), 0);
-        assert_eq!(cpx.rank(isize2(1, 1)), 0);
-        assert_eq!(cpx.rank(isize2(1, 2)), 0);
-        assert_eq!(cpx.rank(isize2(1, 3)), 0);
-        assert_eq!(cpx.rank(isize2(2, 0)), 0);
-        assert_eq!(cpx.rank(isize2(2, 1)), 0);
-        assert_eq!(cpx.rank(isize2(2, 2)), 0);
-        assert_eq!(cpx.rank(isize2(2, 3)), 1);
-        assert_eq!(cpx.rank(isize2(3, 0)), 0);
-        assert_eq!(cpx.rank(isize2(3, 1)), 3);
-        assert_eq!(cpx.rank(isize2(3, 2)), 6);
-        assert_eq!(cpx.rank(isize2(3, 3)), 4);
+        assert_eq!(c[isize2(0, 0)].rank(), 0);
+        assert_eq!(c[isize2(0, 1)].rank(), 0);
+        assert_eq!(c[isize2(0, 2)].rank(), 0);
+        assert_eq!(c[isize2(0, 3)].rank(), 0);
+        assert_eq!(c[isize2(1, 0)].rank(), 0);
+        assert_eq!(c[isize2(1, 1)].rank(), 0);
+        assert_eq!(c[isize2(1, 2)].rank(), 0);
+        assert_eq!(c[isize2(1, 3)].rank(), 0);
+        assert_eq!(c[isize2(2, 0)].rank(), 0);
+        assert_eq!(c[isize2(2, 1)].rank(), 0);
+        assert_eq!(c[isize2(2, 2)].rank(), 0);
+        assert_eq!(c[isize2(2, 3)].rank(), 1);
+        assert_eq!(c[isize2(3, 0)].rank(), 0);
+        assert_eq!(c[isize2(3, 1)].rank(), 3);
+        assert_eq!(c[isize2(3, 2)].rank(), 6);
+        assert_eq!(c[isize2(3, 3)].rank(), 4);
 
-        cpx.check_d_all();
+        c.check_d_all();
     }
 
     #[test]
@@ -273,24 +273,24 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
         let cube = make_cube(&l, q);
-        let cpx = cube.as_complex();
-        let hml = cpx.homology(false);
+        let c = cube.as_complex();
+        let h = c.homology(false);
 
-        assert_eq!(hml[(0, 0)].rank(), 0);
-        assert_eq!(hml[(0, 1)].rank(), 0);
-        assert_eq!(hml[(0, 2)].rank(), 0);
-        assert_eq!(hml[(0, 3)].rank(), 0);
-        assert_eq!(hml[(1, 0)].rank(), 0);
-        assert_eq!(hml[(1, 1)].rank(), 0);
-        assert_eq!(hml[(1, 2)].rank(), 0);
-        assert_eq!(hml[(1, 3)].rank(), 0);
-        assert_eq!(hml[(2, 0)].rank(), 0);
-        assert_eq!(hml[(2, 1)].rank(), 0);
-        assert_eq!(hml[(2, 2)].rank(), 0);
-        assert_eq!(hml[(2, 3)].rank(), 1);
-        assert_eq!(hml[(3, 0)].rank(), 0);
-        assert_eq!(hml[(3, 1)].rank(), 1);
-        assert_eq!(hml[(3, 2)].rank(), 0);
-        assert_eq!(hml[(3, 3)].rank(), 0);
+        assert_eq!(h[isize2(0, 0)].rank(), 0);
+        assert_eq!(h[isize2(0, 1)].rank(), 0);
+        assert_eq!(h[isize2(0, 2)].rank(), 0);
+        assert_eq!(h[isize2(0, 3)].rank(), 0);
+        assert_eq!(h[isize2(1, 0)].rank(), 0);
+        assert_eq!(h[isize2(1, 1)].rank(), 0);
+        assert_eq!(h[isize2(1, 2)].rank(), 0);
+        assert_eq!(h[isize2(1, 3)].rank(), 0);
+        assert_eq!(h[isize2(2, 0)].rank(), 0);
+        assert_eq!(h[isize2(2, 1)].rank(), 0);
+        assert_eq!(h[isize2(2, 2)].rank(), 0);
+        assert_eq!(h[isize2(2, 3)].rank(), 1);
+        assert_eq!(h[isize2(3, 0)].rank(), 0);
+        assert_eq!(h[isize2(3, 1)].rank(), 1);
+        assert_eq!(h[isize2(3, 2)].rank(), 0);
+        assert_eq!(h[isize2(3, 3)].rank(), 0);
     }
 }

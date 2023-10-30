@@ -142,7 +142,7 @@ mod tests {
     use std::collections::HashMap;
 
     use num_traits::One;
-    use yui_homology::ChainComplexTrait;
+    use yui_homology::{ChainComplexTrait, RModStr};
     use yui_ratio::Ratio;
     use yui_link::Link;
     use yui_utils::map;
@@ -341,10 +341,10 @@ mod tests {
         let cube = make_cube(&l, v, q);
         let c = cube.as_complex();
 
-        assert_eq!(c.rank(0), 1);
-        assert_eq!(c.rank(1), 12);
-        assert_eq!(c.rank(2), 26);
-        assert_eq!(c.rank(3), 15);
+        assert_eq!(c[0].rank(), 1);
+        assert_eq!(c[1].rank(), 12);
+        assert_eq!(c[2].rank(), 26);
+        assert_eq!(c[3].rank(), 15);
 
         c.check_d_all();
 
@@ -353,10 +353,10 @@ mod tests {
         let cube = make_cube(&l.mirror(), v, q);
         let c = cube.as_complex();
         
-        assert_eq!(c.rank(0), 6);
-        assert_eq!(c.rank(1), 40);
-        assert_eq!(c.rank(2), 70);
-        assert_eq!(c.rank(3), 36);
+        assert_eq!(c[0].rank(), 6);
+        assert_eq!(c[1].rank(), 40);
+        assert_eq!(c[2].rank(), 70);
+        assert_eq!(c[3].rank(), 36);
         
         c.check_d_all();
     }

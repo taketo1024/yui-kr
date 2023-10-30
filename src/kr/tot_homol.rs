@@ -1,6 +1,8 @@
 use std::rc::Rc;
-use yui_core::{EucRing, EucRingOps};
-use yui_homology::{Homology2, ChainComplexTrait};
+use delegate::delegate;
+
+use yui_core::{EucRing, EucRingOps, isize2};
+use yui_homology::{Homology2, ChainComplexTrait, RModStr, GridTrait, GridIter, HomologySummand};
 
 use super::data::KRCubeData;
 use super::tot_cube::KRTotCube;
@@ -23,8 +25,22 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn rank(&self, i: usize, j: usize) -> usize { 
-        let (i, j) = (i as isize, j as isize);
-        self.homology[(i, j)].rank()
+        let idx = isize2(i as isize, j as isize);
+        self.get(idx).rank()
+    }
+}
+
+impl<R> GridTrait<isize2> for KRTotHomol<R>
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    type Itr = GridIter<isize2>;
+    type E = HomologySummand<R>;
+
+    delegate! { 
+        to self.homology {
+            fn support(&self) -> Self::Itr;
+            fn is_supported(&self, i: isize2) -> bool;
+            fn get(&self, i: isize2) -> &Self::E;
+        }
     }
 }
 
@@ -43,23 +59,23 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
         let data = Rc::new( KRCubeData::<R>::new(&l) );
-        let hml = KRTotHomol::new(data, q);
+        let h = KRTotHomol::new(data, q);
 
-        assert_eq!(hml.rank(0, 0), 0);
-        assert_eq!(hml.rank(0, 1), 0);
-        assert_eq!(hml.rank(0, 2), 0);
-        assert_eq!(hml.rank(0, 3), 0);
-        assert_eq!(hml.rank(1, 0), 0);
-        assert_eq!(hml.rank(1, 1), 0);
-        assert_eq!(hml.rank(1, 2), 0);
-        assert_eq!(hml.rank(1, 3), 0);
-        assert_eq!(hml.rank(2, 0), 0);
-        assert_eq!(hml.rank(2, 1), 0);
-        assert_eq!(hml.rank(2, 2), 0);
-        assert_eq!(hml.rank(2, 3), 1);
-        assert_eq!(hml.rank(3, 0), 0);
-        assert_eq!(hml.rank(3, 1), 1);
-        assert_eq!(hml.rank(3, 2), 0);
-        assert_eq!(hml.rank(3, 3), 0);
+        assert_eq!(h.rank(0, 0), 0);
+        assert_eq!(h.rank(0, 1), 0);
+        assert_eq!(h.rank(0, 2), 0);
+        assert_eq!(h.rank(0, 3), 0);
+        assert_eq!(h.rank(1, 0), 0);
+        assert_eq!(h.rank(1, 1), 0);
+        assert_eq!(h.rank(1, 2), 0);
+        assert_eq!(h.rank(1, 3), 0);
+        assert_eq!(h.rank(2, 0), 0);
+        assert_eq!(h.rank(2, 1), 0);
+        assert_eq!(h.rank(2, 2), 0);
+        assert_eq!(h.rank(2, 3), 1);
+        assert_eq!(h.rank(3, 0), 0);
+        assert_eq!(h.rank(3, 1), 1);
+        assert_eq!(h.rank(3, 2), 0);
+        assert_eq!(h.rank(3, 3), 0);
      }
 }

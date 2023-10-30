@@ -2,7 +2,7 @@ use std::rc::Rc;
 use delegate::delegate;
 
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{ReducedComplex, PrintSeq, Graded, Homology, HomologySummand, ChainComplexTrait};
+use yui_homology::{ReducedComplex, Homology, HomologySummand, ChainComplexTrait, GridTrait, RModStr, DisplaySeq, GridIter};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::SpVec;
 use yui_utils::bitseq::BitSeq;
@@ -35,10 +35,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
             (0..r).map(|k| { 
                 let v = h.gen(k);                      // vec for reduced.
-                let w = reduced.trans_backward(i, &v); // vec for original.
+                let w = reduced.trans(i).backward(&v); // vec for original.
     
                 let terms = w.iter().map(|(j, a)| {
-                    let x = complex.gen_at(i, j);
+                    let x = complex[i].gen(j);
                     (x.clone(), a.clone())
                 });
                 LinComb::from_iter(terms)
@@ -48,12 +48,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self { v_coords, q_slice, complex, reduced, homology, h_gens }
     }
 
-    pub fn summand(&self, i: usize) -> &HomologySummand<R> {
-        &self.homology[i as isize]
-    }
-
-    pub fn rank(&self, i: usize) -> usize { 
-        self.summand(i).rank()
+    pub fn rank(&self, i: usize) -> usize {
+        self.homology.get(i as isize).rank()
     }
 
     pub fn gens(&self, i: usize) -> &Vec<LinComb<VertGen, R>> { 
@@ -66,12 +62,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             x.1 == self.v_coords
         ));
 
-        let h = &self.summand(i);
         let i = i as isize;
 
-        let v = self.complex.vectorize(i, z);      // vec for complex 
-        let v = self.reduced.trans_forward(i, &v); // vec for reduced
-        let v = h.trans_forward(&v);               // vec for homology
+        let v = self.complex[i].vectorize(z);       // vec for complex 
+        let v = self.reduced.trans(i).forward(&v);  // vec for reduced
+        let v = self.homology[i].trans_forward(&v); // vec for homology
 
         v
     }
@@ -85,18 +80,17 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 }
 
-impl<R> Graded<isize> for KRHorHomol<R>
+impl<R> GridTrait<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Itr = std::vec::IntoIter<isize>;
+    type Itr = GridIter<isize>;
+    type E = HomologySummand<R>;
 
     delegate! { 
-        to self.complex { 
+        to self.homology {
             fn support(&self) -> Self::Itr;
+            fn is_supported(&self, i: isize) -> bool;
+            fn get(&self, i: isize) -> &Self::E;
         }
-    }
-
-    fn display(&self, i: isize) -> String {
-        self.summand(i as usize).to_string()
     }
 }
 

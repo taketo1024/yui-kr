@@ -5,6 +5,7 @@ use std::rc::Rc;
 use cartesian::{cartesian, TuplePrepend};
 use itertools::Itertools;
 use yui_core::{EucRing, EucRingOps, isize2, isize3};
+use yui_homology::{GridTrait, RModStr};
 use yui_link::Link;
 use yui_polynomial::LPoly;
 
@@ -48,7 +49,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return 0
         };
 
-        self.tot_hml(q).rank(h as usize, v as usize)
+        self.tot_hml(q).get(isize2(h, v)).rank()
     }
 
     pub fn rank_all(&self) -> HashMap<isize3, usize> { 
