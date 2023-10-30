@@ -1,11 +1,12 @@
 use std::cell::UnsafeCell;
 use std::collections::HashMap;
+use std::ops::Index;
 use std::rc::Rc;
 
 use cartesian::{cartesian, TuplePrepend};
 use itertools::Itertools;
 use yui_core::{EucRing, EucRingOps, isize2, isize3};
-use yui_homology::{GridTrait, RModStr};
+use yui_homology::{GridTrait, RModStr, GridIter, HomologySummand};
 use yui_link::Link;
 use yui_polynomial::LPoly;
 
@@ -17,7 +18,8 @@ type QPoly<R> = LPoly<'q', R>;
 pub struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Rc<KRCubeData<R>>,
-    cache: UnsafeCell<HashMap<isize, KRTotHomol<R>>>
+    cache: UnsafeCell<HashMap<isize, KRTotHomol<R>>>,
+    zero: HomologySummand<R>
 }
 
 impl<R> KRHomology<R> 
@@ -25,7 +27,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(link: &Link) -> Self { 
         let data = Rc::new(KRCubeData::new(&link));
         let cache = UnsafeCell::new( HashMap::new() );
-        Self { data, cache }
+        let zero = HomologySummand::zero();
+        Self { data, cache, zero }
     }
 
     fn tot_hml(&self, q_slice: isize) -> &KRTotHomol<R> {
@@ -35,32 +38,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         })
     }
 
-    pub fn rank(&self, i: isize, j: isize, k: isize) -> usize { 
-        if i > 0 { 
-            return self.rank(-i, j, k + 2 * i)
-        }
-        
-        let grad = isize3(i, j, k);
-        if self.data.is_triv(grad) { 
-            return 0
-        }
-
-        let Some(isize3(h, v, q)) = self.data.to_inner_grad(grad) else { 
-            return 0
-        };
-
-        self.tot_hml(q).get(isize2(h, v)).rank()
-    }
-
-    pub fn rank_all(&self) -> HashMap<isize3, usize> { 
-        let i_range = self.data.i_range().step_by(2);
-        let j_range = self.data.j_range().step_by(2);
-        let k_range = self.data.k_range().step_by(2);
-
-        let range = cartesian!(i_range, j_range.clone(), k_range.clone());
-
-        let ranks = range.filter_map(|(i, j, k)| {
-            let r = self.rank(i, j, k);
+    fn rank_all(&self) -> HashMap<isize3, usize> { 
+        let ranks = self.support().filter_map(|isize3(i, j, k)| {
+            let r = self[(i, j, k)].rank();
             if r > 0 { 
                 Some((isize3(i, j, k), r))
             } else { 
@@ -98,11 +78,57 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             if let Some(p) = polys.get(&isize2(j, k)) { 
                 p.to_string()
             } else { 
-                "".to_string()
+                ".".to_string()
             }
         });
 
         println!("{table}");
+    }
+}
+
+impl<R> GridTrait<isize3> for KRHomology<R> 
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    type Itr = GridIter<isize3>;
+    type E = HomologySummand<R>;
+
+    fn support(&self) -> Self::Itr {
+        let i_range = self.data.i_range().step_by(2);
+        let j_range = self.data.j_range().step_by(2);
+        let k_range = self.data.k_range().step_by(2);
+        let range = cartesian!(i_range, j_range.clone(), k_range.clone());
+        
+        range.map(|idx| 
+            idx.into()
+        ).filter(|&idx| 
+            self.is_supported(idx)
+        ).collect_vec().into_iter()
+    }
+
+    fn is_supported(&self, idx: isize3) -> bool {
+        !self.data.is_triv(idx)
+    }
+
+    fn get(&self, idx: isize3) -> &Self::E {
+        let isize3(i, j, k) = idx;
+        if i > 0 { 
+            return self.get(isize3(-i, j, k + 2 * i))
+        }
+        
+        if !self.is_supported(idx) { 
+            return &self.zero
+        }
+
+        let isize3(h, v, q) = self.data.to_inner_grad(idx).unwrap();
+
+        self.tot_hml(q).get(isize2(h, v))
+    }
+}
+
+impl<R> Index<(isize, isize, isize)> for KRHomology<R>
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    type Output = HomologySummand<R>;
+    fn index(&self, index: (isize, isize, isize)) -> &Self::Output {
+        self.get(index.into())
     }
 }
 
