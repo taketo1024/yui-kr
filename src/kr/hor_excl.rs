@@ -2,25 +2,42 @@ use std::collections::{HashSet, HashMap};
 use std::hash::Hash;
 
 use itertools::Itertools;
-use num_traits::Zero;
-use yui_core::{Ring, RingOps, IndexList};
+use num_traits::{Zero, One};
+use yui_core::{Ring, RingOps, IndexList, Sign};
 use yui_homology::XModStr;
 use yui_lin_comb::LinComb;
-use yui_link::Edge;
 use yui_matrix::sparse::{Trans, SpMat};
 use yui_polynomial::MonoGen;
-use super::base::{EdgeRing, VertGen};
+use super::base::{EdgeRing, VertGen, MonGen};
 use super::hor_cube::KRHorCube;
+
+struct Divisor<R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    dir: usize,
+    var: usize,
+    poly: EdgeRing<R>
+}
+
+impl<R> Divisor<R> 
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    fn new(dir: usize, var: usize, poly: EdgeRing<R>) -> Self { 
+        Self { dir, var, poly }
+    }
+
+    fn get(&self) -> (usize, usize, &EdgeRing<R>) {
+        (self.dir, self.var, &self.poly)
+    }
+}
 
 pub(crate) struct KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     level: usize,
-    edge_polys: HashMap<usize, EdgeRing<R>>,
+    edge_polys: Vec<HashMap<usize, EdgeRing<R>>>,
+    divisors: Vec<Divisor<R>>,
     exc_dirs: HashSet<usize>,
     fst_exc_vars: HashSet<usize>,
     snd_exc_vars: HashSet<usize>,
     remain_vars: HashSet<usize>,
-    divisors: Vec<(EdgeRing<R>, usize)>,
 }
 
 impl<R> KRHorExcl<R>
@@ -29,12 +46,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         assert!(level <= 2);
         Self { 
             level,
-            edge_polys,
+            edge_polys: vec![edge_polys],
+            divisors: vec![], 
             exc_dirs: HashSet::new(), 
             fst_exc_vars: HashSet::new(), 
             snd_exc_vars: HashSet::new(),
             remain_vars: (0..n).collect(),
-            divisors: vec![], 
         }
     }
 
@@ -55,10 +72,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         res
     }
 
+    fn current_edge_polys(&self) -> &HashMap<usize, EdgeRing<R>> {
+        &self.edge_polys.last().unwrap()
+    }
+
     fn process_excl(&mut self, deg: usize) {
         assert!(deg == 1 || deg == 2);
 
-        let inds = self.edge_polys.keys().sorted().cloned().collect_vec();
+        let current = self.current_edge_polys();
+        let inds = current.keys().sorted().cloned().collect_vec();
+
         for i in inds { 
             if let Some(k) = self.find_excl_var(deg, i) { 
                 self.update_excl(deg, i, k);
@@ -71,7 +94,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             return None;
         }
 
-        let p = &self.edge_polys[&i];
+        let current = self.current_edge_polys();
+        let p = &current[&i];
 
         // search for the term (x_k)^d in p.
         for (x, _) in p.iter() {
@@ -90,11 +114,21 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     fn update_excl(&mut self, deg: usize, i: usize, k: usize) {
         debug_assert!(deg == 1 || deg == 2);
 
-        // update polys
-        let p = self.edge_polys.remove(&k).unwrap();
-        self.edge_polys = self.edge_polys.iter().map(|(&j, f)|
-            (j, rem(f, &p, i))
+        // insert new edge-polys
+        let mut next = self.current_edge_polys().clone();
+        let p = next.remove(&k).unwrap();
+        let next = next.into_iter().map(|(j, f)|
+            (j, rem(&f, &p, i))
         ).collect();
+        self.edge_polys.push(next);
+
+        // update other infos
+        self.exc_dirs.insert(i);
+        if deg == 1 { 
+            self.fst_exc_vars.insert(k);
+        } else { 
+            self.snd_exc_vars.insert(k);
+        }
 
         // update indep vars
         if deg == 1 { 
@@ -109,15 +143,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             }
         }
 
-        // insert results
-        self.divisors.push((p, k));
-        self.exc_dirs.insert(i);
-        
-        if deg == 1 { 
-            self.fst_exc_vars.insert(k);
-        } else { 
-            self.snd_exc_vars.insert(k);
-        }
+        // insert new divisor
+        let d = Divisor::new(i, k, p);
+        self.divisors.push(d);
     }
 
     pub fn trans_for(&self, v: &XModStr<VertGen, R>) -> Trans<R> {
@@ -165,25 +193,84 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
         
         let f = EdgeRing::from(v.2.clone());
-        let f = self.divisors.iter().fold(f, |f, (p, k)| { 
+        let f = self.divisors.iter().fold(f, |f, d| { 
+            let Divisor{var: k, poly: p, ..} = d;
             rem(&f, p, *k) // f mod p by x_k
         });
 
-        f.as_lincomb().iter().map(|(x, a)| {
-            let v = VertGen(v.0, v.1, x.clone());
-            let a = a.clone();
+        f.into_iter().map(|(x, a)| {
+            let v = VertGen(v.0, v.1, x);
             (v, a)
         }).collect()
     }
 
     fn backward(&self, w: &VertGen) -> Vec<(VertGen, R)> {
+        // MEMO convert LinComb<VertGen, R> -> LinComb<VertGen, EdgeRing<R>> 
+        type F<R> = LinComb<VertGen, EdgeRing<R>>;
+
+        let w0 = VertGen(w.0.clone(), w.1.clone(), MonGen::one());
+        let p = EdgeRing::from(w.2.clone());
+        let init = F::from((w0, p));
+
+        let l = self.divisors.len();
+        let res = if l > 1 { 
+            self.backward_itr(init, l - 1)
+        } else { 
+            init
+        };
+
+        res.into_iter().flat_map(|(v, p)| { 
+            p.into_iter().map(move |(x, a)| {
+                let v = VertGen(v.0.clone(), v.1.clone(), x);
+                (v, a)
+            })
+        }).collect()
+    }
+
+    fn backward_itr(&self, res: LinComb<VertGen, EdgeRing<R>>, step: usize) -> LinComb<VertGen, EdgeRing<R>> {
+        assert!(step > 0);
+        type F<R> = LinComb<VertGen, EdgeRing<R>>;
+
+        let (i, k, p) = self.divisors[step].get();
+        let ep = &self.edge_polys[step];
+
+        let res = res.into_iter().map(|(v, f)| { 
+            let w1 = F::from(v.clone());
+            let u1 = self.d(&v, step);
+            let u2 = self.d(&v, step - 1);
+            let e1 = R::from_sign(Sign::Pos);
+            let e2 = R::from_sign(Sign::Pos);
+            // let w2 = (u1 * e1 + u2 * e2).into_map_coeffs(||)
+            w1
+        }).sum();
+
+        if step > 1 { 
+            self.backward_itr(res, step - 1)
+        } else { 
+            res
+        }
+    }
+
+    fn d(&self, v: &VertGen, step: usize) -> LinComb<VertGen, EdgeRing<R>> { 
         todo!()
     }
 }
 
-fn rem<R>(f: &EdgeRing<R>, p: &EdgeRing<R>, i: usize) -> EdgeRing<R>
+fn div_rem<R>(f: &EdgeRing<R>, p: &EdgeRing<R>, i: usize) -> (EdgeRing<R>, EdgeRing<R>)
 where R: Ring, for<'x> &'x R: RingOps<R> {
     todo!()
+}
+
+fn div<R>(f: &EdgeRing<R>, p: &EdgeRing<R>, i: usize) -> EdgeRing<R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    let (q, r) = div_rem(f, p, i);
+    debug_assert!(r.is_zero());
+    q
+}
+
+fn rem<R>(f: &EdgeRing<R>, p: &EdgeRing<R>, i: usize) -> EdgeRing<R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    div_rem(f, p, i).1
 }
 
 fn make_matrix<'a, X, Y, R, F>(from: &IndexList<&X>, to: &IndexList<&Y>, f: F) -> SpMat<R>
