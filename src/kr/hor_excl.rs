@@ -1,29 +1,18 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::HashSet;
 use std::hash::Hash;
 
-use yui_core::{Ring, RingOps};
+use yui_core::{Ring, RingOps, IndexList};
+use yui_homology::XModStr;
 use yui_matrix::sparse::{Trans, SpMat};
 use yui_polynomial::MonoGen;
 use super::base::{EdgeRing, VertGen};
 
-pub struct Indexer<'a, V>
-where V: Eq + Hash { 
-    dict: HashMap<&'a V, usize>
-}
-
-impl<'a, V> Indexer<'a, V>
-where V: Eq + Hash { 
-    pub fn index_of(&self, v: &V) -> Option<usize> { 
-        self.dict.get(v).cloned()
-    }
-}
-
-impl<'a, V> From<&'a Vec<V>> for Indexer<'a, V>
-where V: Eq + Hash {
-    fn from(vec: &'a Vec<V>) -> Self {
-        let dict = vec.iter().enumerate().map(|(i, v)| (v, i)).collect();
-        Self { dict }
-    }
+struct KRHorExclElem<R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    h_index: usize,
+    var_index: usize,
+    deg: usize, 
+    poly: EdgeRing<R>
 }
 
 pub(crate) struct KRHorExcl<R>
@@ -36,38 +25,23 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    fn trans_for(&self, gens: &Vec<VertGen>) -> Trans<R> {
-        let red_gens = self.reduce_gens(gens);
-        let i_org = Indexer::from(gens);
-        let i_red = Indexer::from(&red_gens);
+    pub fn trans_for(&self, v: &XModStr<VertGen, R>) -> Trans<R> {
+        let from = v.gens().iter().collect();
+        let to = self.reduce_gens(&from);
 
-        let n = gens.len();
-        let m = red_gens.len();
-
-        let fwd = SpMat::generate((m, n), |set| {
-            for (j, v) in gens.iter().enumerate() {
-                for (w, r) in self.forward(v).into_iter() {
-                    let i = i_org.index_of(&w).unwrap();
-                    set(i, j, r)
-                }
-            }
-        });
-
-        let bwd = SpMat::generate((n, m), |set| {
-            for (j, w) in red_gens.iter().enumerate() {
-                for (v, r) in self.backward(w).into_iter() {
-                    let i = i_red.index_of(&&v).unwrap();
-                    set(i, j, r)
-                }
-            }
-        });
+        let fwd = make_matrix(&from, &to, |x| self.forward(x));
+        let bwd = make_matrix(&to, &from, |x| self.backward(x));
 
         Trans::new(fwd, bwd)
     }
 
-    fn reduce_gens<'a>(&self, gens: &'a Vec<VertGen>) -> Vec<&'a VertGen> {
-        gens.iter().filter(|v| 
-            !self.should_reduce(v)
+    fn reduce_gens<'a>(&self, gens: &IndexList<&'a VertGen>) -> IndexList<&'a VertGen> {
+        gens.iter().filter_map(|&v| 
+            if self.should_reduce(v) { 
+                None
+            } else {
+                Some(v)
+            }
         ).collect()
     }
 
@@ -95,10 +69,20 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     todo!()
 }
 
-pub struct KRHorExclElem<R>
-where R: Ring, for<'x> &'x R: RingOps<R> {
-    pub h_index: usize,
-    pub var_index: usize,
-    pub deg: usize, 
-    pub poly: EdgeRing<R>
+fn make_matrix<'a, X, Y, R, F>(from: &IndexList<&X>, to: &IndexList<&Y>, f: F) -> SpMat<R>
+where 
+    X: Hash + Eq, Y: Hash + Eq, 
+    R: Ring, for<'x> &'x R: RingOps<R>,
+    F: Fn(&X) -> Vec<(Y, R)> 
+{
+    let (m, n) = (to.len(), from.len());
+    SpMat::generate((m, n), |set|
+        for (j, &x) in from.iter().enumerate() {
+            let ys = f(x);
+            for (y, a) in ys {
+                let i = to.index_of(&&y).unwrap();
+                set(i, j, a);
+            }
+        }
+    )
 }
