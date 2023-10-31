@@ -1,3 +1,4 @@
+use std::ops::Index;
 use std::rc::Rc;
 use delegate::delegate;
 
@@ -44,6 +45,17 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 }
 
+impl<R> Index<(isize, isize)> for KRTotHomol<R>
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    type Output = HomologySummand<R>;
+
+    delegate! { 
+        to self.homology { 
+            fn index(&self, index: (isize, isize)) -> &Self::Output;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests { 
     use yui_link::Link;
@@ -61,21 +73,21 @@ mod tests {
         let data = Rc::new( KRCubeData::<R>::new(&l) );
         let h = KRTotHomol::new(data, q);
 
-        assert_eq!(h.rank(0, 0), 0);
-        assert_eq!(h.rank(0, 1), 0);
-        assert_eq!(h.rank(0, 2), 0);
-        assert_eq!(h.rank(0, 3), 0);
-        assert_eq!(h.rank(1, 0), 0);
-        assert_eq!(h.rank(1, 1), 0);
-        assert_eq!(h.rank(1, 2), 0);
-        assert_eq!(h.rank(1, 3), 0);
-        assert_eq!(h.rank(2, 0), 0);
-        assert_eq!(h.rank(2, 1), 0);
-        assert_eq!(h.rank(2, 2), 0);
-        assert_eq!(h.rank(2, 3), 1);
-        assert_eq!(h.rank(3, 0), 0);
-        assert_eq!(h.rank(3, 1), 1);
-        assert_eq!(h.rank(3, 2), 0);
-        assert_eq!(h.rank(3, 3), 0);
+        assert_eq!(h[(0, 0)].rank(), 0);
+        assert_eq!(h[(0, 1)].rank(), 0);
+        assert_eq!(h[(0, 2)].rank(), 0);
+        assert_eq!(h[(0, 3)].rank(), 0);
+        assert_eq!(h[(1, 0)].rank(), 0);
+        assert_eq!(h[(1, 1)].rank(), 0);
+        assert_eq!(h[(1, 2)].rank(), 0);
+        assert_eq!(h[(1, 3)].rank(), 0);
+        assert_eq!(h[(2, 0)].rank(), 0);
+        assert_eq!(h[(2, 1)].rank(), 0);
+        assert_eq!(h[(2, 2)].rank(), 0);
+        assert_eq!(h[(2, 3)].rank(), 1);
+        assert_eq!(h[(3, 0)].rank(), 0);
+        assert_eq!(h[(3, 1)].rank(), 1);
+        assert_eq!(h[(3, 2)].rank(), 0);
+        assert_eq!(h[(3, 3)].rank(), 0);
      }
 }
