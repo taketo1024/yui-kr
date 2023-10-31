@@ -1,8 +1,9 @@
+use std::ops::Index;
 use std::rc::Rc;
 use delegate::delegate;
 
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{Homology, HomologySummand, GridTrait, RModStr, GridIter};
+use yui_homology::{Homology, HomologySummand, GridTrait, RModStr, GridIter, Grid};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::SpVec;
 use yui_utils::bitseq::BitSeq;
@@ -17,7 +18,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     q_slice: isize,
     complex: KRHorComplex<R>,
     homology: Homology<R>,
-    h_gens: Vec<Vec<LinComb<VertGen, R>>>
+    h_gens: Grid<Vec<LinComb<VertGen, R>>>
 } 
 
 impl<R> KRHorHomol<R>
@@ -26,7 +27,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let complex = KRHorComplex::new(data, v_coords, q_slice);
         let homology = complex.homology();
 
-        let h_gens = homology.support().map(|i| { 
+        let h_gens = Grid::new(homology.support(), |i| { 
             let h = &homology[i];
             let r = h.rank();
 
@@ -35,17 +36,17 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
                 let z = complex.as_chain(i, &v);
                 z
             }).collect()
-        }).collect();
+        });
 
         Self { v_coords, q_slice, complex, homology, h_gens }
     }
 
     pub fn rank(&self, i: usize) -> usize {
-        self.homology.get(i as isize).rank()
+        self.homology[i as isize].rank()
     }
 
     pub fn gens(&self, i: usize) -> &Vec<LinComb<VertGen, R>> { 
-        &self.h_gens[i]
+        &self.h_gens[i as isize]
     }
 
     pub fn vectorize(&self, i: usize, z: &LinComb<VertGen, R>) -> SpVec<R> {
@@ -76,6 +77,16 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 }
 
+impl<R> Index<isize> for KRHorHomol<R>
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    type Output = HomologySummand<R>;
+    delegate! { 
+        to self.homology { 
+            fn index(&self, index: isize) -> &Self::Output;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests { 
     use num_traits::Zero;
@@ -100,10 +111,10 @@ mod tests {
         let q = 0;
         let hml = make_hml(&l, v, q);
 
-        assert_eq!(hml.rank(0), 0);
-        assert_eq!(hml.rank(1), 0);
-        assert_eq!(hml.rank(2), 1);
-        assert_eq!(hml.rank(3), 1);
+        assert_eq!(hml[0].rank(), 0);
+        assert_eq!(hml[1].rank(), 0);
+        assert_eq!(hml[2].rank(), 1);
+        assert_eq!(hml[3].rank(), 1);
     }
 
 
@@ -114,10 +125,10 @@ mod tests {
         let q = -4;
         let hml = make_hml(&l, v, q);
 
-        assert_eq!(hml.rank(0), 0);
-        assert_eq!(hml.rank(1), 0);
-        assert_eq!(hml.rank(2), 0);
-        assert_eq!(hml.rank(3), 1);
+        assert_eq!(hml[0].rank(), 0);
+        assert_eq!(hml[1].rank(), 0);
+        assert_eq!(hml[2].rank(), 0);
+        assert_eq!(hml[3].rank(), 1);
     }
 
     #[test]
