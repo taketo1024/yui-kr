@@ -34,7 +34,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             let r = h.rank();
 
             (0..r).map(|k| { 
-                let v = h.gen(k);                      // vec for reduced.
+                let v = h.gen_vec(k).unwrap();         // vec for reduced.
                 let w = reduced.trans(i).backward(&v); // vec for original.
     
                 let terms = w.iter().map(|(j, a)| {
@@ -66,9 +66,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let v = self.complex[i].vectorize(z);       // vec for complex 
         let v = self.reduced.trans(i).forward(&v);  // vec for reduced
-        let v = self.homology[i].trans_forward(&v); // vec for homology
+        let v = self.homology[i].vec_from_cpx(&v);  // vec for homology
 
-        v
+        v.unwrap()
     }
 
     pub fn print_complex_seq(&self) { 
