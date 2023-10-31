@@ -3,6 +3,7 @@
 mod base;
 mod data;
 mod hor_cube;
+mod hor_cpx;
 mod hor_excl;
 mod hor_homol;
 mod tot_cube;

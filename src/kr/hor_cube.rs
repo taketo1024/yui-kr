@@ -10,8 +10,6 @@ use yui_utils::bitseq::{BitSeq, Bit};
 use super::base::{EdgeRing, MonGen, VertGen};
 use super::data::KRCubeData;
 
-pub(crate) type KRHorComplex<R> = XChainComplex<VertGen, R>;
-
 pub(crate) struct KRHorCube<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     data: Rc<KRCubeData<R>>,
@@ -64,7 +62,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }).collect()
     }
 
-    fn vert_gens(&self, h_coords: BitSeq) -> Vec<VertGen> {
+    pub fn vert_gens(&self, h_coords: BitSeq) -> Vec<VertGen> {
         let deg = self.mon_deg(h_coords);
         if deg < 0 { 
             return vec![]
@@ -79,13 +77,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         ).collect()
     }
 
-    fn gens(&self, i: usize) -> Vec<VertGen> {
+    pub fn gens(&self, i: usize) -> Vec<VertGen> {
         self.data.verts(i).into_iter().flat_map(|v| 
             self.vert_gens(v)
         ).collect()
     }
 
-    fn edge_poly(&self, from: BitSeq, to: BitSeq) -> EdgeRing<R> {
+    pub fn edge_poly(&self, from: BitSeq, to: BitSeq) -> EdgeRing<R> {
         use Bit::{Bit0, Bit1};
         assert_eq!(to.weight() - from.weight(), 1);
 
@@ -104,7 +102,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         a
     }
 
-    fn differentiate(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
+    pub fn differentiate(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
         let VertGen(h, v, x) = e;
         let h0 = h.clone();
         let v = v.clone();
@@ -122,7 +120,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }).collect_vec()
     }
 
-    pub fn as_complex(self) -> KRHorComplex<R> {
+    pub fn as_complex(self) -> XChainComplex<VertGen, R> {
         let n = self.data.dim() as isize;
         let range = 0..=n;
         

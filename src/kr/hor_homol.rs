@@ -2,21 +2,20 @@ use std::rc::Rc;
 use delegate::delegate;
 
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{ReducedComplex, Homology, HomologySummand, ChainComplexTrait, GridTrait, RModStr, DisplaySeq, GridIter};
+use yui_homology::{Homology, HomologySummand, GridTrait, RModStr, GridIter};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::SpVec;
 use yui_utils::bitseq::BitSeq;
 
 use super::base::VertGen;
 use super::data::KRCubeData;
-use super::hor_cube::{KRHorCube, KRHorComplex};
+use super::hor_cpx::KRHorComplex;
 
 pub(crate) struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     v_coords: BitSeq,
     q_slice: isize,
     complex: KRHorComplex<R>,
-    reduced: ReducedComplex<R>,
     homology: Homology<R>,
     h_gens: Vec<Vec<LinComb<VertGen, R>>>
 } 
@@ -24,28 +23,21 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
-        let cube = KRHorCube::new(data, v_coords, q_slice);
-        let complex = cube.as_complex();
-        let reduced = complex.reduced(true);
-        let homology = reduced.homology(true);
-        
+        let complex = KRHorComplex::new(data, v_coords, q_slice);
+        let homology = complex.homology();
+
         let h_gens = homology.support().map(|i| { 
             let h = &homology[i];
             let r = h.rank();
 
             (0..r).map(|k| { 
-                let v = h.gen_vec(k).unwrap();         // vec for reduced.
-                let w = reduced.trans(i).backward(&v); // vec for original.
-    
-                let terms = w.iter().map(|(j, a)| {
-                    let x = complex[i].gen(j);
-                    (x.clone(), a.clone())
-                });
-                LinComb::from_iter(terms)
+                let v = h.gen_vec(k).unwrap();
+                let z = complex.as_chain(i, &v);
+                z
             }).collect()
         }).collect();
 
-        Self { v_coords, q_slice, complex, reduced, homology, h_gens }
+        Self { v_coords, q_slice, complex, homology, h_gens }
     }
 
     pub fn rank(&self, i: usize) -> usize {
@@ -64,19 +56,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let i = i as isize;
 
-        let v = self.complex[i].vectorize(z);       // vec for complex 
-        let v = self.reduced.trans(i).forward(&v);  // vec for reduced
-        let v = self.homology[i].vec_from_cpx(&v);  // vec for homology
-
-        v.unwrap()
-    }
-
-    pub fn print_complex_seq(&self) { 
-        self.complex.print_seq()
-    }
-
-    pub fn print_reduced_seq(&self) { 
-        self.reduced.print_seq()
+        let v = self.complex.vectorize(i, z);
+        let v = self.homology[i].vec_from_cpx(&v).unwrap();
+        v
     }
 }
 
