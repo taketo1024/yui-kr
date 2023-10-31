@@ -28,6 +28,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
+    pub fn data(&self) -> &KRCubeData<R> { 
+        self.data.as_ref()
+    }
+
     fn mon_deg(&self, h_coords: BitSeq) -> isize { 
         let i0 = self.data.root_grad().0;
         let i  = self.data.grad_at(h_coords, self.v_coords).0; // <= i0
@@ -84,11 +88,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn edge_poly(&self, from: BitSeq, to: BitSeq) -> EdgeRing<R> {
-        use Bit::{Bit0, Bit1};
         assert_eq!(to.weight() - from.weight(), 1);
 
         let n = from.len();
         let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
+
+        self.edge_poly_dir(i)
+    }
+
+    pub fn edge_poly_dir(&self, i: usize) -> EdgeRing<R> {
+        use Bit::{Bit0, Bit1};
 
         let sign = self.data.x_signs()[i];
         let v = self.v_coords[i];
