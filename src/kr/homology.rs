@@ -51,6 +51,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         ranks
     }
 
+    pub fn tot_rank(&self) -> usize { 
+        self.rank_all().iter().map(|(_, r)| r).sum()
+    }
+
     pub fn qpoly_table(&self) -> HashMap<isize2, QPoly<R>> { 
         let str = self.rank_all();        
         let polys = str.into_iter().into_group_map_by(|(idx, _)|
@@ -147,7 +151,9 @@ mod tests {
         let l = Link::trefoil();
         let h = KRHomology::<R>::new(&l);
 
-        // TODO
-        h.print_table();
+        assert_eq!(h.tot_rank(), 3);
+        assert_eq!(h[( 0,-4, 2)].rank(), 1);
+        assert_eq!(h[(-2,-2, 2)].rank(), 1);
+        assert_eq!(h[( 2,-2,-2)].rank(), 1);
     }
 }
