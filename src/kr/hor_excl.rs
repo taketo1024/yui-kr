@@ -2,31 +2,25 @@ use std::collections::{HashSet, HashMap};
 use std::hash::Hash;
 
 use itertools::Itertools;
+use num_traits::Zero;
 use yui_core::{Ring, RingOps, IndexList};
 use yui_homology::XModStr;
+use yui_lin_comb::LinComb;
 use yui_link::Edge;
 use yui_matrix::sparse::{Trans, SpMat};
 use yui_polynomial::MonoGen;
 use super::base::{EdgeRing, VertGen};
 use super::hor_cube::KRHorCube;
 
-struct KRHorExclElem<R>
-where R: Ring, for<'x> &'x R: RingOps<R> {
-    dir: usize, // direction of edge = index of crossing
-    var: usize, // index of excluded var
-    deg: usize, // either 1 or 2
-    poly: EdgeRing<R> // divisor polynomial
-}
-
 pub(crate) struct KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     level: usize,
     edge_polys: HashMap<usize, EdgeRing<R>>,
-    elements: Vec<KRHorExclElem<R>>,
     exc_dirs: HashSet<usize>,
     fst_exc_vars: HashSet<usize>,
     snd_exc_vars: HashSet<usize>,
     remain_vars: HashSet<usize>,
+    divisors: Vec<(EdgeRing<R>, usize)>,
 }
 
 impl<R> KRHorExcl<R>
@@ -36,11 +30,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         Self { 
             level,
             edge_polys,
-            elements: vec![], 
             exc_dirs: HashSet::new(), 
             fst_exc_vars: HashSet::new(), 
             snd_exc_vars: HashSet::new(),
             remain_vars: (0..n).collect(),
+            divisors: vec![], 
         }
     }
 
@@ -116,8 +110,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
 
         // insert results
-        let e = KRHorExclElem { dir: i, var: k, deg, poly: p };
-        self.elements.push(e);
+        self.divisors.push((p, k));
         self.exc_dirs.insert(i);
         
         if deg == 1 { 
@@ -139,7 +132,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     fn reduce_gens<'a>(&self, gens: &IndexList<&'a VertGen>) -> IndexList<&'a VertGen> {
         gens.iter().filter_map(|&v| 
-            if self.should_reduce(v) { 
+            if self.should_vanish(v) || self.should_reduce(v) { 
                 None
             } else {
                 Some(v)
@@ -147,18 +140,40 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         ).collect()
     }
 
+    fn should_vanish(&self, v: &VertGen) -> bool { 
+        let h = &v.0;
+        self.exc_dirs.iter().any(|&i| 
+            h[i].is_zero()
+        )
+    }
+
     fn should_reduce(&self, v: &VertGen) -> bool { 
-        let (h, x) = (&v.0, &v.2);
-        
-        self.exc_dirs.iter().any(|&i| h[i].is_zero()) || 
-        x.deg().iter().any(|(i, &d_i)| 
-            self.fst_exc_vars.contains(i) || 
-            (self.snd_exc_vars.contains(i) && d_i >= 2)
+        let x = &v.2;
+        x.deg().iter().any(|(k, &d)| 
+            self.fst_exc_vars.contains(k) || 
+            (self.snd_exc_vars.contains(k) && d >= 2)
         )
     }
 
     fn forward(&self, v: &VertGen) -> Vec<(VertGen, R)> {
-        todo!()
+        if self.should_vanish(v) { 
+            return vec![]
+        } 
+        
+        if !self.should_reduce(v) {
+            return vec![(v.clone(), R::one())]
+        }
+        
+        let f = EdgeRing::from(v.2.clone());
+        let f = self.divisors.iter().fold(f, |f, (p, k)| { 
+            rem(&f, p, *k) // f mod p by x_k
+        });
+
+        f.as_lincomb().iter().map(|(x, a)| {
+            let v = VertGen(v.0, v.1, x.clone());
+            let a = a.clone();
+            (v, a)
+        }).collect()
     }
 
     fn backward(&self, w: &VertGen) -> Vec<(VertGen, R)> {
