@@ -9,7 +9,7 @@ use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
 use yui_utils::bitseq::{BitSeq, Bit};
 use crate::kr::base::sign_between;
 
-use super::base::EdgeRing;
+use super::base::Poly;
 
 pub(crate) struct KRCubeData<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
@@ -214,7 +214,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             link.traverse_edges((0, 0), |i, j| { 
                 let x = &link.data()[i];
                 let e = x.edge(j);
-                let x_i = EdgeRing::variable(i);
+                let x_i = Poly::variable(i);
                 let p_i = match (is_vert(x, signs[i]), j) {
                     (true, 0) | (false, 3) =>  x_i,
                     (true, 1) | (false, 0) => -x_i,
@@ -234,7 +234,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             (path, mons)
         };
 
-        let traverse = |from: Edge, to: Edge| -> EdgeRing<R> { 
+        let traverse = |from: Edge, to: Edge| -> Poly<R> { 
             let m = path.len(); // == 2 * n
             let i = path.iter().find_position(|&&e| e == from).unwrap().0;
             let j = path.iter().find_position(|&&e| e == to  ).unwrap().0;
@@ -331,8 +331,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
  */
 pub(crate) struct KRCubeX<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    pub x_ac: EdgeRing<R>,
-    pub x_bc: EdgeRing<R>
+    pub x_ac: Poly<R>,
+    pub x_bc: Poly<R>
 }
 
 #[cfg(test)]
@@ -342,7 +342,7 @@ mod tests {
     use super::*;
 
     type R = Ratio<i64>;
-    type P = EdgeRing<R>;
+    type P = Poly<R>;
 
     #[test]
     fn collect_x_polys() { 

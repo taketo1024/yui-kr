@@ -140,11 +140,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 mod tests { 
     use yui_link::Link;
     use yui_ratio::Ratio;
-    use crate::kr::base::EdgeRing;
+    use crate::kr::base::Poly;
     use super::*;
 
     type R = Ratio<i64>;
-    type P = EdgeRing<R>;
+    type P = Poly<R>;
 
     #[test]
     fn rank() { 

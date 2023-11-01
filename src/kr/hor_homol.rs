@@ -92,11 +92,11 @@ mod tests {
     use num_traits::Zero;
     use yui_link::Link;
     use yui_ratio::Ratio;
-    use crate::kr::base::EdgeRing;
+    use crate::kr::base::Poly;
     use super::*;
 
     type R = Ratio<i64>;
-    type P = EdgeRing<R>;
+    type P = Poly<R>;
 
     fn make_hml(l: &Link, v: BitSeq, q: isize) -> KRHorHomol<R> {
         let data = KRCubeData::<R>::new(&l);

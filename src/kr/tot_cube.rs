@@ -9,7 +9,7 @@ use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpMat, SpVec};
 use yui_utils::bitseq::{BitSeq, Bit};
 
-use super::base::{VertGen, EdgeRing};
+use super::base::{VertGen, Poly};
 use super::data::KRCubeData;
 use super::hor_homol::KRHorHomol;
 
@@ -77,7 +77,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         SpVec::from_entries(r, entries)
     }
 
-    fn edge_poly(&self, h_coords: BitSeq, from: BitSeq, to: BitSeq) -> EdgeRing<R> {
+    fn edge_poly(&self, h_coords: BitSeq, from: BitSeq, to: BitSeq) -> Poly<R> {
         use Bit::{Bit0, Bit1};
         assert_eq!(to.weight() - from.weight(), 1);
 
@@ -90,7 +90,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         match (sign.is_positive(), h) {
             (true, Bit0) | (false, Bit1) => p.x_bc.clone(),
-            (true, Bit1) | (false, Bit0) => EdgeRing::one()
+            (true, Bit1) | (false, Bit0) => Poly::one()
         }
     }
 
@@ -101,8 +101,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         
         self.data.targets(v0).into_iter().flat_map(|v1| { 
             let s = self.data.edge_sign(v0, v1);
-            let e = EdgeRing::from_sign(s);
-            let x = EdgeRing::from(x.clone());
+            let e = Poly::from_sign(s);
+            let x = Poly::from(x.clone());
             let p = self.edge_poly(h, v0, v1);
             let q = e * x * p; // result polynomial
 
@@ -152,7 +152,7 @@ mod tests {
     use super::*;
 
     type R = Ratio<i64>;
-    type P = EdgeRing<R>;
+    type P = Poly<R>;
 
     fn make_cube(l: &Link, q: isize) -> KRTotCube<R> {
         let data = KRCubeData::<R>::new(&l);
