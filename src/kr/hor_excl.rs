@@ -113,7 +113,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         // update edge-polys.
         self.edge_polys = self.edge_polys.iter().map(|(&j, f)|
-            (j, rem(f, &p, i))
+            (j, rem(f, &p, k))
         ).collect();
 
         // update other infos.
@@ -295,21 +295,21 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
-fn div_rem<R>(f: &Poly<R>, p: &Poly<R>, i: usize) -> (Poly<R>, Poly<R>)
+fn div_rem<R>(f: &Poly<R>, p: &Poly<R>, k: usize) -> (Poly<R>, Poly<R>)
 where R: Ring, for<'x> &'x R: RingOps<R> {
     todo!()
 }
 
-fn div<R>(f: &Poly<R>, p: &Poly<R>, i: usize) -> Poly<R>
+fn div<R>(f: &Poly<R>, p: &Poly<R>, k: usize) -> Poly<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    let (q, r) = div_rem(f, p, i);
+    let (q, r) = div_rem(f, p, k);
     debug_assert!(r.is_zero());
     q
 }
 
-fn rem<R>(f: &Poly<R>, p: &Poly<R>, i: usize) -> Poly<R>
+fn rem<R>(f: &Poly<R>, p: &Poly<R>, k: usize) -> Poly<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    div_rem(f, p, i).1
+    div_rem(f, p, k).1
 }
 
 fn make_matrix<'a, X, Y, R, F>(from: &IndexList<&X>, to: &IndexList<&Y>, f: F) -> SpMat<R>
