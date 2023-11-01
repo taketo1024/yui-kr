@@ -273,9 +273,9 @@ checksum = "d77f7ec81a6d05a3abb01ab6eb7590f6083d08449fe5a1c8b1e620283546ccb7"
 
 [[package]]
 name = "indexmap"
-version = "2.0.2"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8adf3ddd720272c6ea8bf59463c04e0f93d0bbf7c5439b691bca2987e0270897"
+checksum = "d530e1a18b1cb4c484e6e34556a0d948706958449fca0cab753d649f2bce3d1f"
 dependencies = [
  "equivalent",
  "hashbrown",
@@ -901,7 +901,7 @@ checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
 [[package]]
 name = "yui-core"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#8a3483a30b5a4ed431c318e27afae0e8686ecb9a"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#462937ff934e464302f48b9b4b3b5f69a35ccd2c"
 dependencies = [
  "bimap",
  "derive_more",
@@ -914,7 +914,7 @@ dependencies = [
 [[package]]
 name = "yui-homology"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#8a3483a30b5a4ed431c318e27afae0e8686ecb9a"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#462937ff934e464302f48b9b4b3b5f69a35ccd2c"
 dependencies = [
  "bimap",
  "cartesian",
@@ -934,7 +934,7 @@ dependencies = [
 [[package]]
 name = "yui-khovanov"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#8a3483a30b5a4ed431c318e27afae0e8686ecb9a"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#462937ff934e464302f48b9b4b3b5f69a35ccd2c"
 dependencies = [
  "auto-impl-ops",
  "cartesian",
@@ -978,7 +978,7 @@ dependencies = [
 [[package]]
 name = "yui-lin-comb"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#8a3483a30b5a4ed431c318e27afae0e8686ecb9a"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#462937ff934e464302f48b9b4b3b5f69a35ccd2c"
 dependencies = [
  "auto-impl-ops",
  "derive_more",
@@ -991,7 +991,7 @@ dependencies = [
 [[package]]
 name = "yui-link"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#8a3483a30b5a4ed431c318e27afae0e8686ecb9a"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#462937ff934e464302f48b9b4b3b5f69a35ccd2c"
 dependencies = [
  "derive_more",
  "itertools",
@@ -1006,7 +1006,7 @@ dependencies = [
 [[package]]
 name = "yui-matrix"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#8a3483a30b5a4ed431c318e27afae0e8686ecb9a"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#462937ff934e464302f48b9b4b3b5f69a35ccd2c"
 dependencies = [
  "auto-impl-ops",
  "derive_more",
@@ -1029,7 +1029,7 @@ dependencies = [
 [[package]]
 name = "yui-polynomial"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#8a3483a30b5a4ed431c318e27afae0e8686ecb9a"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#462937ff934e464302f48b9b4b3b5f69a35ccd2c"
 dependencies = [
  "auto-impl-ops",
  "itertools",
@@ -1044,7 +1044,7 @@ dependencies = [
 [[package]]
 name = "yui-quad-int"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#8a3483a30b5a4ed431c318e27afae0e8686ecb9a"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#462937ff934e464302f48b9b4b3b5f69a35ccd2c"
 dependencies = [
  "auto-impl-ops",
  "num-bigint",
@@ -1056,7 +1056,7 @@ dependencies = [
 [[package]]
 name = "yui-ratio"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#8a3483a30b5a4ed431c318e27afae0e8686ecb9a"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#462937ff934e464302f48b9b4b3b5f69a35ccd2c"
 dependencies = [
  "auto-impl-ops",
  "num-traits",
@@ -1067,7 +1067,7 @@ dependencies = [
 [[package]]
 name = "yui-utils"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#8a3483a30b5a4ed431c318e27afae0e8686ecb9a"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#462937ff934e464302f48b9b4b3b5f69a35ccd2c"
 dependencies = [
  "bit_reverse",
  "derive_more",
