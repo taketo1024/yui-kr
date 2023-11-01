@@ -65,25 +65,27 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let mut res = Self::new(n, edge_polys, level);
 
         for d in 1..=level { 
-            res.process_excl(d);
+            res.excl_all(d);
         }
 
         res
     }
 
-    fn process_excl(&mut self, deg: usize) {
+    fn excl_all(&mut self, deg: usize) {
         assert!(deg == 1 || deg == 2);
 
         let inds = self.edge_polys.keys().sorted().cloned().collect_vec();
 
         for i in inds { 
             if let Some(k) = self.find_excl_var(deg, i) { 
-                self.update_excl(deg, i, k);
+                self.perform_excl(deg, i, k);
             }
         }
     }
 
     fn find_excl_var(&self, deg: usize, i: usize) -> Option<usize> { 
+        assert!(deg == 1 || deg == 2);
+
         if self.remain_vars.is_empty() { 
             return None;
         }
@@ -91,11 +93,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let p = &self.edge_polys[&i];
 
         // search for the term (x_k)^d in p.
-        for (x, _) in p.iter() {
-            let mdeg = x.deg();
-            if mdeg.total() != deg { continue; }
-            for &k in self.remain_vars.iter() {
-                if mdeg.of(k) == deg { 
+        for &k in self.remain_vars.iter().sorted() {
+            for (x, _) in p.iter() {
+                let mdeg = x.deg();
+                if mdeg.total() == deg && mdeg.of(k) == deg { 
                     return Some(k)
                 }
             }
@@ -104,12 +105,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         None
     }
 
-    fn update_excl(&mut self, deg: usize, i: usize, k: usize) {
+    fn perform_excl(&mut self, deg: usize, i: usize, k: usize) {
         debug_assert!(deg == 1 || deg == 2);
 
         // take divisor and preserve edge_polys.
-        let p = self.edge_polys.remove(&k).unwrap();
+        let p = self.edge_polys.remove(&i).unwrap();
         let edge_polys = self.edge_polys.clone();
+
+        debug_assert_eq!(p.lead_term_for(k).0.deg().total(), deg);
+        debug_assert_eq!(p.lead_term_for(k).0.deg().of(k),   deg);
 
         // update edge-polys.
         self.edge_polys = self.edge_polys.iter().map(|(&j, f)|
@@ -293,6 +297,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             }).collect::<F<R>>()
         }).sum()
     }
+
+    #[cfg(test)]
+    #[allow(dead_code)]
+    fn print_current(&self) { 
+        for (i, p) in self.edge_polys.iter().sorted_by_key(|(&i, _)| i) { 
+            println!("{i}: {p}")
+        }
+    }
 }
 
 fn div_rem<R>(f: &BasePoly<R>, g: &BasePoly<R>, k: usize) -> (BasePoly<R>, BasePoly<R>)
@@ -351,4 +363,190 @@ where
             }
         }
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use std::rc::Rc;
+
+    use yui_link::Link;
+    use yui_ratio::Ratio;
+    use yui_utils::{bitseq::BitSeq, map};
+
+    use crate::kr::data::KRCubeData;
+
+    use super::*;
+
+    type R = Ratio<i64>;
+    type P = BasePoly<R>;
+
+    fn make_excl(l: &Link, v: BitSeq, q: isize, level: usize) -> KRHorExcl<R> {
+        let data = KRCubeData::<R>::new(&l);
+        let rc = Rc::new(data);
+        let cube = KRHorCube::new(rc, v, q);
+        KRHorExcl::from(cube, level)
+    }
+
+    fn vars(l: usize) -> Vec<P> {
+        (0..l).map(|i| P::variable(i)).collect_vec()
+    }
+
+    #[test]
+    fn init() { 
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+        let excl = make_excl(&l, v, q, 0);
+
+        assert_eq!(excl.level, 0);
+        assert!(excl.exc_dirs.is_empty());
+        assert!(excl.fst_exc_vars.is_empty());
+        assert!(excl.snd_exc_vars.is_empty());
+        assert_eq!(excl.remain_vars, [0,1,2].into());
+        assert!(excl.process.is_empty());
+
+        let xs = vars(3);
+        let x0 = &xs[0];
+        let x1 = &xs[1];
+        let x2 = &xs[2];
+
+        assert_eq!(excl.edge_polys, map!{ 
+            0 => x1 - x2,
+            1 => -x0 + x2,
+            2 => x0 * x2 - x1 * x2
+        });
+    }
+
+    #[test]
+    fn find_excl_var() { 
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+        let excl = make_excl(&l, v, q, 0);
+
+        assert_eq!(excl.find_excl_var(1, 0), Some(1));
+        assert_eq!(excl.find_excl_var(1, 1), Some(0));
+        assert_eq!(excl.find_excl_var(1, 2), None);
+        
+        assert_eq!(excl.find_excl_var(2, 0), None);
+        assert_eq!(excl.find_excl_var(2, 1), None);
+        assert_eq!(excl.find_excl_var(1, 2), None);
+    }
+
+    #[test]
+    fn perform_excl() { 
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+        let mut excl = make_excl(&l, v, q, 0);
+
+        // replaces x1 -> x2
+        excl.perform_excl(1, 0, 1);
+
+        let xs = vars(3);
+        let x0 = &xs[0];
+        let x1 = &xs[1];
+        let x2 = &xs[2];
+
+        assert_eq!(excl.edge_polys, map!{ 
+            1 => -x0 + x2,
+            2 => x0 * x2 - x2 * x2
+        });
+
+        assert_eq!(excl.exc_dirs, [0].into());
+        assert_eq!(excl.fst_exc_vars, [1].into());
+        assert_eq!(excl.snd_exc_vars, [].into());
+        assert_eq!(excl.remain_vars, [0, 2].into());
+        assert_eq!(excl.process.len(), 1);
+
+        let proc = &excl.process[0];
+
+        assert_eq!(proc.dir, 0);
+        assert_eq!(proc.var, 1);
+        assert_eq!(proc.divisor, x1 - x2);
+        assert_eq!(proc.edge_polys, map!{ 
+            1 => -x0 + x2,
+            2 => x0 * x2 - x1 * x2
+        });
+    }
+
+    #[test]
+    fn perform_excl_2() { 
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+        let mut excl = make_excl(&l, v, q, 0);
+
+        // replaces x1 -> x2
+        excl.perform_excl(1, 0, 1);
+
+        assert_eq!(excl.find_excl_var(1, 1), Some(0));
+        assert_eq!(excl.find_excl_var(1, 2), None);
+
+        // replaces x0 -> x2
+        excl.perform_excl(1, 1, 0);
+
+        let xs = vars(3);
+        let x0 = &xs[0];
+        let x2 = &xs[2];
+
+        assert_eq!(excl.edge_polys, map!{ 
+            2 => P::zero()
+        });
+
+        assert_eq!(excl.exc_dirs, [0,1].into());
+        assert_eq!(excl.fst_exc_vars, [0,1].into());
+        assert_eq!(excl.snd_exc_vars, [].into());
+        assert_eq!(excl.remain_vars, [2].into());
+        assert_eq!(excl.process.len(), 2);
+
+        let proc = &excl.process[1];
+        
+        assert_eq!(proc.dir, 1);
+        assert_eq!(proc.var, 0);
+        assert_eq!(proc.divisor, -x0 + x2);
+        assert_eq!(proc.edge_polys, map!{ 
+            2 => x0 * x2 - x2 * x2
+        });
+    }
+
+    #[test]
+    fn perform_excl_3() { 
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+        let mut excl = make_excl(&l, v, q, 0);
+
+        // replaces x1 -> x2
+        excl.perform_excl(1, 0, 1);
+
+        assert_eq!(excl.find_excl_var(2, 1), None);
+        assert_eq!(excl.find_excl_var(2, 2), Some(2));
+
+        // replaces x2 * x2 -> x0 * x2
+        excl.perform_excl(2, 2, 2);
+
+        let xs = vars(3);
+        let x0 = &xs[0];
+        let x2 = &xs[2];
+
+        assert_eq!(excl.edge_polys, map!{ 
+            1 => -x0 + x2
+        });
+
+        assert_eq!(excl.exc_dirs, [0,2].into());
+        assert_eq!(excl.fst_exc_vars, [1].into());
+        assert_eq!(excl.snd_exc_vars, [2].into());
+        assert_eq!(excl.remain_vars, [].into()); // no indep vars.
+        assert_eq!(excl.process.len(), 2);
+
+        let proc = &excl.process[1];
+
+        assert_eq!(proc.dir, 2);
+        assert_eq!(proc.var, 2);
+        assert_eq!(proc.divisor, x0 * x2 - x2 * x2);
+        assert_eq!(proc.edge_polys, map!{ 
+            1 => -x0 + x2
+        });
+    }
 }
