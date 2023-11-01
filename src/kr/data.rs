@@ -4,9 +4,11 @@ use std::ops::RangeInclusive;
 use itertools::{Itertools, izip};
 use petgraph::{Graph, algo::min_spanning_tree};
 
-use yui_core::{Ring, RingOps, PowMod2, Sign, isize3, GetSign};
+use yui_core::{Ring, RingOps, Sign, isize3};
 use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
 use yui_utils::bitseq::{BitSeq, Bit};
+use crate::kr::base::sign_between;
+
 use super::base::EdgeRing;
 
 pub(crate) struct KRCubeData<R>
@@ -54,10 +56,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         &self.x_polys[i]
     }
 
+    pub fn all_verts(&self) -> Vec<BitSeq> { 
+        BitSeq::generate(self.n_cross)
+    }
+
     // TODO cache
     pub fn verts(&self, k: usize) -> Vec<BitSeq> {
-        let n = self.n_cross;
-        BitSeq::generate(n).into_iter().filter(|v| v.weight() == k).collect()
+        self.all_verts().into_iter().filter(|v| v.weight() == k).collect()
     }
 
     // TODO cache
@@ -72,13 +77,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     // TODO cache
     pub fn edge_sign(&self, from: BitSeq, to: BitSeq) -> Sign { 
-        assert_eq!(to.weight() - from.weight(), 1);
-        
-        let n = self.n_cross;
-        let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
-        let e = (0..i).filter(|&j| from[j].is_one()).count() as i32;
-
-        (-1).pow_mod2(e).sign()
+        sign_between(from, to)
     }
 
     fn l_grad_shift(&self) -> isize3 { 
