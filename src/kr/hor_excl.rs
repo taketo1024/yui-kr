@@ -295,9 +295,32 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
-fn div_rem<R>(f: &Poly<R>, p: &Poly<R>, k: usize) -> (Poly<R>, Poly<R>)
+fn div_rem<R>(f: &Poly<R>, g: &Poly<R>, k: usize) -> (Poly<R>, Poly<R>)
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    todo!()
+    let mut q = Poly::zero();
+    let mut r = f.clone();
+    
+    let (e0, a0) = g.lead_term_for(k);
+
+    assert!(e0.deg().of(k) > 0);
+    assert!(a0.is_unit()); // ±1
+
+    let a0_inv = a0.inv().unwrap();
+
+    while !r.is_zero() { 
+        let (e1, a1) = r.lead_term_for(k);
+        if !e0.divides(e1) {
+            break
+        }
+
+        let b = a1 * &a0_inv;
+        let x = Poly::from((e1 / e0, b));
+
+        r -= &x * g;
+        q += x;
+    }
+    
+    (q, r)
 }
 
 fn div<R>(f: &Poly<R>, p: &Poly<R>, k: usize) -> Poly<R>
