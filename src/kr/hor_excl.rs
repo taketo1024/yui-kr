@@ -95,7 +95,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             let mdeg = x.deg();
             if mdeg.total() != deg { continue; }
             for &k in self.remain_vars.iter() {
-                if mdeg.deg(k) == deg { 
+                if mdeg.of(k) == deg { 
                     return Some(k)
                 }
             }
