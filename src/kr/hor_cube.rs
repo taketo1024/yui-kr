@@ -7,7 +7,7 @@ use yui_homology::XChainComplex;
 use yui_polynomial::MultiDeg;
 use yui_utils::bitseq::{BitSeq, Bit};
 
-use super::base::{Poly, Mono, VertGen};
+use super::base::{BasePoly, BaseMono, VertGen};
 use super::data::KRCubeData;
 
 pub(crate) struct KRHorCube<R>
@@ -40,7 +40,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.q_slice + h + (i0 - i) / 2
     }
 
-    fn make_mons(tot_deg: usize, n: usize) -> Vec<Mono> { 
+    fn make_mons(tot_deg: usize, n: usize) -> Vec<BaseMono> { 
         fn gen_iter(tot_deg: usize, n: usize, res: &mut Vec<BTreeMap<usize, usize>>, prev: BTreeMap<usize, usize>, i: usize, rem: usize) {
             if i < n - 1 { 
                 for d_i in (0..=rem).rev() { 
@@ -62,7 +62,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         res.into_iter().map(|d| {
             let mdeg = MultiDeg::new(d);
-            Mono::from(mdeg)
+            BaseMono::from(mdeg)
         }).collect()
     }
 
@@ -87,7 +87,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         ).collect()
     }
 
-    pub fn edge_poly(&self, from: BitSeq, to: BitSeq) -> Poly<R> {
+    pub fn edge_poly(&self, from: BitSeq, to: BitSeq) -> BasePoly<R> {
         assert_eq!(to.weight() - from.weight(), 1);
 
         let n = from.len();
@@ -96,7 +96,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.edge_poly_dir(i)
     }
 
-    pub fn edge_poly_dir(&self, i: usize) -> Poly<R> {
+    pub fn edge_poly_dir(&self, i: usize) -> BasePoly<R> {
         use Bit::{Bit0, Bit1};
 
         let sign = self.data.x_signs()[i];
@@ -118,8 +118,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         
         self.data.targets(h0).into_iter().flat_map(|h1| { 
             let s = self.data.edge_sign(h0, h1);
-            let e = Poly::from_sign(s);
-            let x = Poly::from(x.clone());
+            let e = BasePoly::from_sign(s);
+            let x = BasePoly::from(x.clone());
             let p = self.edge_poly(h0, h1);
             let q = e * x * p; // result polynomial
 
@@ -156,7 +156,7 @@ mod tests {
     use super::*;
 
     type R = Ratio<i64>;
-    type P = Poly<R>;
+    type P = BasePoly<R>;
 
     fn make_cube(l: &Link, v: BitSeq, q: isize) -> KRHorCube<R> {
         let data = KRCubeData::<R>::new(&l);
@@ -267,8 +267,8 @@ mod tests {
 
     #[test]
     fn differentiate() { 
-        let one = Mono::one();
-        let x = (0..3).map(|i| Mono::from(MultiDeg::from((i, 1)))).collect_vec();
+        let one = BaseMono::one();
+        let x = (0..3).map(|i| BaseMono::from(MultiDeg::from((i, 1)))).collect_vec();
 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let v = BitSeq::from_iter([0,0,0]);
