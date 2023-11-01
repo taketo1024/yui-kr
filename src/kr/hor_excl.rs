@@ -204,9 +204,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn backward(&self, w: &VertGen) -> Vec<(VertGen, R)> {
-        // MEMO convert LinComb<VertGen, R> -> LinComb<VertGen, EdgeRing<R>> 
         type F<R> = LinComb<VertGen, EdgeRing<R>>;
 
+        // convert LinComb<VertGen, R> -> LinComb<VertGen, EdgeRing<R>> 
         let w0 = VertGen(w.0.clone(), w.1.clone(), MonGen::one());
         let p = EdgeRing::from(w.2.clone());
         let init = F::from((w0, p));
@@ -227,6 +227,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn backward_itr(&self, z: LinComb<VertGen, EdgeRing<R>>, step: usize) -> LinComb<VertGen, EdgeRing<R>> {
+        let res = self.backward_step(z, step);
+        if step > 0 { 
+            self.backward_itr(res, step - 1)
+        } else { 
+            res
+        }
+    }
+
+    fn backward_step(&self, z: LinComb<VertGen, EdgeRing<R>>, step: usize) -> LinComb<VertGen, EdgeRing<R>> {
         type F<R> = LinComb<VertGen, EdgeRing<R>>;
 
         let d = &self.process[step];
@@ -250,13 +259,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             div(f, p, k)
         );
         
-        let res = z + w;
-
-        if step > 0 { 
-            self.backward_itr(res, step - 1)
-        } else { 
-            res
-        }
+        z + w
     }
 
     fn send_back(&self, z: &LinComb<VertGen, EdgeRing<R>>, dir: usize) -> LinComb<VertGen, EdgeRing<R>> {
