@@ -1,5 +1,5 @@
 use derive_more::Display;
-use yui_core::{Elem, Sign, PowMod2, GetSign};
+use yui_core::Elem;
 use yui_lin_comb::Gen;
 use yui_polynomial::{PolyN, MultiVar};
 use yui_utils::bitseq::BitSeq;
@@ -20,15 +20,5 @@ impl Elem for VertGen {
         String::from("")
     }
 }
+
 impl Gen for VertGen {}
-
-pub fn sign_between(from: BitSeq, to: BitSeq) -> Sign { 
-    assert_eq!(from.len(), to.len());
-    assert_eq!(to.weight() - from.weight(), 1);
-    
-    let n = from.len();
-    let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
-    let e = (0..i).filter(|&j| from[j].is_one()).count() as i32;
-
-    (-1).pow_mod2(e).sign()
-}

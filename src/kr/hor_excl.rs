@@ -8,9 +8,9 @@ use yui_homology::XModStr;
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{Trans, SpMat};
 use yui_polynomial::Mono;
-use crate::kr::base::sign_between;
 
-use super::base::{BasePoly, VertGen, BaseMono};
+use super::base::{BaseMono, BasePoly, VertGen};
+use super::data::sign_between;
 use super::hor_cube::KRHorCube;
 
 struct Process<R>

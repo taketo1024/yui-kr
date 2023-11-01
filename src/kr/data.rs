@@ -4,10 +4,9 @@ use std::ops::RangeInclusive;
 use itertools::{Itertools, izip};
 use petgraph::{Graph, algo::min_spanning_tree};
 
-use yui_core::{Ring, RingOps, Sign, isize3};
+use yui_core::{Ring, RingOps, Sign, isize3, PowMod2, GetSign};
 use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
 use yui_utils::bitseq::{BitSeq, Bit};
-use crate::kr::base::sign_between;
 
 use super::base::BasePoly;
 
@@ -333,6 +332,17 @@ pub(crate) struct KRCubeX<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     pub x_ac: BasePoly<R>,
     pub x_bc: BasePoly<R>
+}
+
+pub fn sign_between(from: BitSeq, to: BitSeq) -> Sign { 
+    assert_eq!(from.len(), to.len());
+    assert_eq!(to.weight() - from.weight(), 1);
+    
+    let n = from.len();
+    let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
+    let e = (0..i).filter(|&j| from[j].is_one()).count() as i32;
+
+    (-1).pow_mod2(e).sign()
 }
 
 #[cfg(test)]
