@@ -7,7 +7,7 @@ use yui_core::{Ring, RingOps, IndexList};
 use yui_homology::XModStr;
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{Trans, SpMat};
-use yui_polynomial::MonoGen;
+use yui_polynomial::PolyGen;
 use crate::kr::base::sign_between;
 
 use super::base::{EdgeRing, VertGen, MonGen};

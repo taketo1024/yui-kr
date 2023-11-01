@@ -1,10 +1,10 @@
 use derive_more::Display;
 use yui_core::{Elem, Sign, PowMod2, GetSign};
 use yui_lin_comb::Gen;
-use yui_polynomial::{PolyN, Mono, MultiDeg};
+use yui_polynomial::{PolyN, MultiVar};
 use yui_utils::bitseq::BitSeq;
 
-pub(crate) type MonGen = Mono<'x', MultiDeg<usize>>;
+pub(crate) type MonGen = MultiVar<'x', usize>;
 pub(crate) type EdgeRing<R> = PolyN<'x', R>;
 
 #[derive(PartialEq, Eq, Hash, Default, Clone, Debug, Display, PartialOrd, Ord)]
