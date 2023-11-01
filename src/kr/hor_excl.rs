@@ -3,41 +3,40 @@ use std::hash::Hash;
 
 use itertools::Itertools;
 use num_traits::{Zero, One};
-use yui_core::{Ring, RingOps, IndexList, Sign};
+use yui_core::{Ring, RingOps, IndexList};
 use yui_homology::XModStr;
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{Trans, SpMat};
 use yui_polynomial::MonoGen;
+use crate::kr::base::sign_between;
+
 use super::base::{EdgeRing, VertGen, MonGen};
 use super::hor_cube::KRHorCube;
 
-struct Divisor<R>
+struct Process<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     dir: usize,
     var: usize,
-    poly: EdgeRing<R>
+    divisor: EdgeRing<R>,
+    edge_polys: HashMap<usize, EdgeRing<R>>
 }
 
-impl<R> Divisor<R> 
+impl<R> Process<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    fn new(dir: usize, var: usize, poly: EdgeRing<R>) -> Self { 
-        Self { dir, var, poly }
-    }
-
-    fn get(&self) -> (usize, usize, &EdgeRing<R>) {
-        (self.dir, self.var, &self.poly)
+    fn divisor(&self) -> (&EdgeRing<R>, usize) { 
+        (&self.divisor, self.var)
     }
 }
 
 pub(crate) struct KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     level: usize,
-    edge_polys: Vec<HashMap<usize, EdgeRing<R>>>,
-    divisors: Vec<Divisor<R>>,
+    edge_polys: HashMap<usize, EdgeRing<R>>,
     exc_dirs: HashSet<usize>,
     fst_exc_vars: HashSet<usize>,
     snd_exc_vars: HashSet<usize>,
     remain_vars: HashSet<usize>,
+    process: Vec<Process<R>>,
 }
 
 impl<R> KRHorExcl<R>
@@ -46,12 +45,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         assert!(level <= 2);
         Self { 
             level,
-            edge_polys: vec![edge_polys],
-            divisors: vec![], 
+            edge_polys,
             exc_dirs: HashSet::new(), 
             fst_exc_vars: HashSet::new(), 
             snd_exc_vars: HashSet::new(),
             remain_vars: (0..n).collect(),
+            process: vec![], 
         }
     }
 
@@ -72,15 +71,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         res
     }
 
-    fn current_edge_polys(&self) -> &HashMap<usize, EdgeRing<R>> {
-        &self.edge_polys.last().unwrap()
-    }
-
     fn process_excl(&mut self, deg: usize) {
         assert!(deg == 1 || deg == 2);
 
-        let current = self.current_edge_polys();
-        let inds = current.keys().sorted().cloned().collect_vec();
+        let inds = self.edge_polys.keys().sorted().cloned().collect_vec();
 
         for i in inds { 
             if let Some(k) = self.find_excl_var(deg, i) { 
@@ -94,8 +88,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             return None;
         }
 
-        let current = self.current_edge_polys();
-        let p = &current[&i];
+        let p = &self.edge_polys[&i];
 
         // search for the term (x_k)^d in p.
         for (x, _) in p.iter() {
@@ -114,15 +107,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     fn update_excl(&mut self, deg: usize, i: usize, k: usize) {
         debug_assert!(deg == 1 || deg == 2);
 
-        // insert new edge-polys
-        let mut next = self.current_edge_polys().clone();
-        let p = next.remove(&k).unwrap();
-        let next = next.into_iter().map(|(j, f)|
-            (j, rem(&f, &p, i))
-        ).collect();
-        self.edge_polys.push(next);
+        // take divisor and preserve edge_polys.
+        let p = self.edge_polys.remove(&k).unwrap();
+        let edge_polys = self.edge_polys.clone();
 
-        // update other infos
+        // update edge-polys.
+        self.edge_polys = self.edge_polys.iter().map(|(&j, f)|
+            (j, rem(f, &p, i))
+        ).collect();
+
+        // update other infos.
         self.exc_dirs.insert(i);
         if deg == 1 { 
             self.fst_exc_vars.insert(k);
@@ -130,7 +124,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             self.snd_exc_vars.insert(k);
         }
 
-        // update indep vars
+        // update indep vars.
         if deg == 1 { 
             // vars except x_k remain indep.
             self.remain_vars.remove(&k);
@@ -143,9 +137,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             }
         }
 
-        // insert new divisor
-        let d = Divisor::new(i, k, p);
-        self.divisors.push(d);
+        // insert new process.
+        let d = Process {
+            dir: i,
+            var: k,
+            divisor: p,
+            edge_polys,
+        };
+        self.process.push(d);
     }
 
     pub fn trans_for(&self, v: &XModStr<VertGen, R>) -> Trans<R> {
@@ -193,9 +192,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
         
         let f = EdgeRing::from(v.2.clone());
-        let f = self.divisors.iter().fold(f, |f, d| { 
-            let Divisor{var: k, poly: p, ..} = d;
-            rem(&f, p, *k) // f mod p by x_k
+        let f = self.process.iter().fold(f, |f, d| { 
+            let (p, k) = d.divisor();
+            rem(&f, p, k) // f mod p by x_k
         });
 
         f.into_iter().map(|(x, a)| {
@@ -212,8 +211,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let p = EdgeRing::from(w.2.clone());
         let init = F::from((w0, p));
 
-        let l = self.divisors.len();
-        let res = if l > 1 { 
+        let l = self.process.len();
+        let res = if l > 0 { 
             self.backward_itr(init, l - 1)
         } else { 
             init
@@ -227,32 +226,69 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }).collect()
     }
 
-    fn backward_itr(&self, res: LinComb<VertGen, EdgeRing<R>>, step: usize) -> LinComb<VertGen, EdgeRing<R>> {
-        assert!(step > 0);
+    fn backward_itr(&self, z: LinComb<VertGen, EdgeRing<R>>, step: usize) -> LinComb<VertGen, EdgeRing<R>> {
         type F<R> = LinComb<VertGen, EdgeRing<R>>;
 
-        let (i, k, p) = self.divisors[step].get();
-        let ep = &self.edge_polys[step];
+        let d = &self.process[step];
+        let i = d.dir;
+        let (p, k) = d.divisor();
 
-        let res = res.into_iter().map(|(v, f)| { 
-            let w1 = F::from(v.clone());
-            let u1 = self.d(&v, step);
-            let u2 = self.d(&v, step - 1);
-            let e1 = R::from_sign(Sign::Pos);
-            let e2 = R::from_sign(Sign::Pos);
-            // let w2 = (u1 * e1 + u2 * e2).into_map_coeffs(||)
-            w1
-        }).sum();
+        //              i-th
+        //         z . . . . . > z0
+        //         |             |
+        // d mod p |             | d
+        //         V             V
+        //        w1 . . . > w0, u0 ~> w = (w0 + u0)/p
+        //
 
-        if step > 1 { 
+        let w1 = self.d(&z, step, true);
+        let w0 = self.send_back(&w1, i);
+        let z0 = self.send_back(&z, i);
+        let u0 = self.d(&z0, step, false);
+
+        let w = (w0 + u0).map_coeffs::<EdgeRing<R>, _>(|f| 
+            div(f, p, k)
+        );
+        
+        let res = z + w;
+
+        if step > 0 { 
             self.backward_itr(res, step - 1)
         } else { 
             res
         }
     }
 
-    fn d(&self, v: &VertGen, step: usize) -> LinComb<VertGen, EdgeRing<R>> { 
-        todo!()
+    fn send_back(&self, z: &LinComb<VertGen, EdgeRing<R>>, dir: usize) -> LinComb<VertGen, EdgeRing<R>> {
+        let i = dir;
+        z.map::<_, EdgeRing<R>, _>(|v, f| { 
+            debug_assert!(v.0[i].is_one());
+            let u = VertGen(v.0.edit(|b| b.set_0(i)), v.1, v.2.clone());
+            let e = R::from_sign( sign_between(u.0, v.0) );
+            (u, f * e)
+        })
+    }
+
+    fn d(&self, z: &LinComb<VertGen, EdgeRing<R>>, step: usize, mod_p: bool) -> LinComb<VertGen, EdgeRing<R>> { 
+        type F<R> = LinComb<VertGen, EdgeRing<R>>;
+        
+        let d = &self.process[step];
+        let (p, k) = d.divisor();
+
+        z.iter().map(|(v, f)| { 
+            d.edge_polys.iter().filter(|(&i, _)|
+                v.0[i].is_zero()
+            ).map(|(&i, g)| {
+                let w = VertGen(v.0.edit(|b| b.set_1(i)), v.1, v.2.clone());
+                let e = R::from_sign( sign_between(v.0, w.0) );
+                let h = if mod_p { 
+                    rem(&(f * g), p, k) * e
+                } else { 
+                    f * g * e
+                };
+                (w, h)
+            }).collect::<F<R>>()
+        }).sum()
     }
 }
 
