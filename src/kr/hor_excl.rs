@@ -68,8 +68,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn excl_all(&mut self, deg: usize) {
-        assert!(deg == 1 || deg == 2);
-
         let inds = self.edge_polys.keys().sorted().cloned().collect_vec();
 
         for i in inds { 
@@ -80,8 +78,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn find_excl_var(&self, deg: usize, i: usize) -> Option<usize> { 
-        assert!(deg == 1 || deg == 2);
-
         if self.remain_vars.is_empty() { 
             return None;
         }
@@ -101,14 +97,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn perform_excl(&mut self, deg: usize, i: usize, k: usize) {
-        debug_assert!(deg == 1 || deg == 2);
-
         // take divisor and preserve edge_polys.
         let p = self.edge_polys.remove(&i).unwrap();
         let edge_polys = self.edge_polys.clone();
-
-        debug_assert_eq!(p.lead_term_for(k).0.total_deg(), deg);
-        debug_assert_eq!(p.lead_term_for(k).0.deg_for(k),  deg);
 
         // update edge-polys.
         self.edge_polys = self.edge_polys.iter().map(|(&j, f)|
@@ -202,10 +193,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn backward(&self, w: &VertGen) -> Vec<(VertGen, R)> {
-        debug_assert!(w.0.iter().enumerate().all(|(i, b)| 
-            !self.exc_dirs.contains(&i) || b.is_one() // <==> exc_dirs.contains(&i) -> b.is_one()
-        ));
-
         // convert LinComb<VertGen, R> -> LinComb<VertGen, EdgeRing<R>> 
         type F<R> = LinComb<VertGen, BasePoly<R>>;
         let w0 = VertGen(w.0.clone(), w.1.clone(), BaseMono::one());
@@ -306,9 +293,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 fn div_rem<R>(f: &BasePoly<R>, g: &BasePoly<R>, k: usize) -> (BasePoly<R>, BasePoly<R>)
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    let mut q = BasePoly::zero();
-    let mut r = f.clone();
-    
     let (e0, a0) = g.lead_term_for(k);
 
     assert!(e0.deg_for(k) > 0);
@@ -316,6 +300,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     let a0_inv = a0.inv().unwrap();
 
+    let mut q = BasePoly::zero();
+    let mut r = f.clone();
+    
     while !r.is_zero() { 
         let (e1, a1) = r.lead_term_for(k);
         if !e0.divides(e1) {
@@ -345,11 +332,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 }
 
 #[cfg(test)]
-#[allow(unused_imports)] // TODO remove later
 mod tests {
     use std::rc::Rc;
 
-    use yui_homology::{ChainComplexDisplay, DisplaySeq};
     use yui_link::Link;
     use yui_matrix::sparse::MatType;
     use yui_polynomial::MultiVar;
@@ -375,6 +360,10 @@ mod tests {
 
     fn vgen<const N: usize, const M: usize>(h: [usize; N], v: [usize; N], m: [usize; M]) -> VertGen {
         VertGen(BitSeq::from(h), BitSeq::from(v), MultiVar::from(m))
+    }
+
+    fn sort(v: Vec<(VertGen, R)>) -> Vec<(VertGen, R)> {
+        v.into_iter().sorted_by_key(|v| v.0.0).collect()
     }
 
     #[test]
@@ -738,11 +727,6 @@ mod tests {
         
         excl.perform_excl(1, 0, 1); // x1 -> x2
 
-        // MEMO: must sort for comparison.
-        fn sort(v: Vec<(VertGen, R)>) -> Vec<(VertGen, R)> {
-            v.into_iter().sorted_by_key(|v| v.0.0).collect()
-        }
-
         assert_eq!(sort(
             excl.backward(&vgen([1,0,0], [0,0,1], [0,0,0]))
         ), vec![
@@ -782,11 +766,6 @@ mod tests {
         excl.perform_excl(1, 0, 1); // x1 -> x2
         excl.perform_excl(1, 1, 0); // x0 -> x2
 
-        // MEMO: must sort for comparison.
-        fn sort(v: Vec<(VertGen, R)>) -> Vec<(VertGen, R)> {
-            v.into_iter().sorted_by_key(|v| v.0.0).collect()
-        }
-        
         assert_eq!(sort(
             excl.backward(&vgen([1,1,0], [0,0,1], [0,0,0]))
         ), vec![
