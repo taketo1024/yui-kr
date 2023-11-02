@@ -202,9 +202,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn backward(&self, w: &VertGen) -> Vec<(VertGen, R)> {
-        type F<R> = LinComb<VertGen, BasePoly<R>>;
+        debug_assert!(w.0.iter().enumerate().all(|(i, b)| 
+            !self.exc_dirs.contains(&i) || b.is_one() // <==> exc_dirs.contains(&i) -> b.is_one()
+        ));
 
         // convert LinComb<VertGen, R> -> LinComb<VertGen, EdgeRing<R>> 
+        type F<R> = LinComb<VertGen, BasePoly<R>>;
         let w0 = VertGen(w.0.clone(), w.1.clone(), BaseMono::one());
         let p = BasePoly::from(w.2.clone());
         let init = F::from((w0, p));
@@ -720,6 +723,100 @@ mod tests {
         ]);
         assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [1,1,1])), vec![
             (vgen([1,0,1], [0,0,1], [2,0,1]), R::one()) // x0x1x2 -> x0^2 x2
+        ]);
+    }
+
+    #[test]
+    fn backward() {
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
+        
+        excl.perform_excl(1, 0, 1); // x1 -> x2
+
+        // MEMO: must sort for comparison.
+        fn sort(v: Vec<(VertGen, R)>) -> Vec<(VertGen, R)> {
+            v.into_iter().sorted_by_key(|v| v.0.0).collect()
+        }
+
+        assert_eq!(sort(
+            excl.backward(&vgen([1,0,0], [0,0,1], [0,0,0]))
+        ), vec![
+            (vgen([1,0,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,0,0]
+            (vgen([0,0,1], [0,0,1], [0,0,1]), -R::one())  // -x2 at [0,0,1]
+        ]);
+
+        assert_eq!(sort(
+            excl.backward(&vgen([1,1,0], [0,0,1], [0,0,0]))
+        ), vec![
+            (vgen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,0]
+            (vgen([0,1,1], [0,0,1], [0,0,1]),  R::one())  //  x2 at [0,1,1]
+        ]);
+
+        assert_eq!(
+            excl.backward(&vgen([1,0,1], [0,0,1], [0,0,0]))
+        , vec![
+            (vgen([1,0,1], [0,0,1], [0,0,0]),  R::one()), //  id at [1,0,1]
+        ]);
+
+        assert_eq!(
+            excl.backward(&vgen([1,1,1], [0,0,1], [0,0,0]))
+        , vec![
+            (vgen([1,1,1], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,1]
+        ]);
+    }
+
+    #[test]
+    fn backward_2() {
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
+        
+        excl.perform_excl(1, 0, 1); // x1 -> x2
+        excl.perform_excl(1, 1, 0); // x0 -> x2
+
+        // MEMO: must sort for comparison.
+        fn sort(v: Vec<(VertGen, R)>) -> Vec<(VertGen, R)> {
+            v.into_iter().sorted_by_key(|v| v.0.0).collect()
+        }
+        
+        assert_eq!(sort(
+            excl.backward(&vgen([1,1,0], [0,0,1], [0,0,0]))
+        ), vec![
+            (vgen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,0]
+            (vgen([1,0,1], [0,0,1], [0,0,1]), -R::one()), // -x2 at [1,0,1]
+            (vgen([0,1,1], [0,0,1], [0,0,1]),  R::one()), //  x2 at [0,1,1]
+        ]);
+        assert_eq!(
+            excl.backward(&vgen([1,1,1], [0,0,1], [0,0,0]))
+        , vec![
+            (vgen([1,1,1], [0,0,1], [0,0,0]), R::one())
+        ]);
+    }
+
+    #[test]
+    fn backward_3() {
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
+        
+        excl.perform_excl(1, 0, 1); // x1 -> x2
+        excl.perform_excl(2, 2, 2); // x2^2 -> x0 x2
+
+        assert_eq!(excl.backward(&vgen([1,0,1], [0,0,1], [0,0,0])), vec![
+            (vgen([1,0,1], [0,0,1], [0,0,0]), R::one())
+        ]);
+        assert_eq!(excl.backward(&vgen([1,1,1], [0,0,1], [0,0,0])), vec![
+            (vgen([1,1,1], [0,0,1], [0,0,0]), R::one())
         ]);
     }
 }
