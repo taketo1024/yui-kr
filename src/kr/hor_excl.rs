@@ -351,6 +351,7 @@ mod tests {
 
     use yui_homology::{ChainComplexDisplay, DisplaySeq};
     use yui_link::Link;
+    use yui_matrix::sparse::MatType;
     use yui_polynomial::MultiVar;
     use yui_ratio::Ratio;
     use yui_utils::{bitseq::BitSeq, map};
@@ -818,5 +819,36 @@ mod tests {
         assert_eq!(excl.backward(&vgen([1,1,1], [0,0,1], [0,0,0])), vec![
             (vgen([1,1,1], [0,0,1], [0,0,0]), R::one())
         ]);
+    }
+
+    #[test]
+    fn trans() { 
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
+
+        let s2 = XModStr::from_iter(cube.gens(2));
+        let t0 = excl.trans_for(&s2);
+
+        assert_eq!(t0.forward_mat().shape(), (26, 26));
+        assert!(t0.forward_mat().is_id());
+        assert!(t0.backward_mat().is_id());
+
+        excl.perform_excl(1, 0, 1); // x1 -> x2
+
+        let t1 = excl.trans_for(&s2);
+
+        assert_eq!(t1.forward_mat().shape(), (7, 26));
+        assert!((t1.forward_mat() * t1.backward_mat()).is_id());
+
+        excl.perform_excl(1, 1, 0); // x0 -> x2
+
+        let t2 = excl.trans_for(&s2);
+
+        assert_eq!(t2.forward_mat().shape(), (1, 26));
+        assert!((t2.forward_mat() * t2.backward_mat()).is_id());
     }
 }
