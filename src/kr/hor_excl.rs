@@ -661,4 +661,65 @@ mod tests {
         assert_eq!(rg[2].len(), 2);
         assert_eq!(rg[3].len(), 2);
     }
+
+    #[test]
+    fn forward() {
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
+
+        excl.perform_excl(1, 0, 1); // x1 -> x2
+
+        assert_eq!(excl.forward(&vgen([0,0,0], [0,0,1], [0,0,0])), vec![]); // vanish
+        assert_eq!(excl.forward(&vgen([1,0,0], [0,0,1], [0,0,0])), vec![
+            (vgen([1,0,0], [0,0,1], [0,0,0]), R::one()) // 1: id
+        ]);
+        assert_eq!(excl.forward(&vgen([1,0,0], [0,0,1], [1,0,0])), vec![
+            (vgen([1,0,0], [0,0,1], [1,0,0]), R::one()) // x0: id
+        ]);
+        assert_eq!(excl.forward(&vgen([1,0,0], [0,0,1], [0,1,0])), vec![
+            (vgen([1,0,0], [0,0,1], [0,0,1]), R::one()) // x1 -> x2
+        ]);
+        assert_eq!(excl.forward(&vgen([1,0,0], [0,0,1], [0,0,1])), vec![
+            (vgen([1,0,0], [0,0,1], [0,0,1]), R::one()) // x2: id
+        ]);
+    }
+
+    #[test]
+    fn forward_2() {
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
+
+        excl.perform_excl(1, 0, 1); // x1 -> x2
+        excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
+
+        assert_eq!(excl.forward(&vgen([0,1,1], [0,0,1], [0,0,0])), vec![]); // vanish
+        assert_eq!(excl.forward(&vgen([1,1,0], [0,0,1], [0,0,0])), vec![]); // vanish
+
+        assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [0,0,0])), vec![
+            (vgen([1,0,1], [0,0,1], [0,0,0]), R::one()) // 1: id
+        ]);
+        assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [1,0,0])), vec![
+            (vgen([1,0,1], [0,0,1], [1,0,0]), R::one()) // x1: id
+        ]);
+        assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [0,1,0])), vec![
+            (vgen([1,0,1], [0,0,1], [0,0,1]), R::one()) // x1 -> x2
+        ]);
+        assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [0,0,1])), vec![
+            (vgen([1,0,1], [0,0,1], [0,0,1]), R::one()) // x2: id
+        ]);
+        assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [0,0,2])), vec![
+            (vgen([1,0,1], [0,0,1], [1,0,1]), R::one()) // x2^2 -> x0 x2
+        ]);
+        assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [1,1,1])), vec![
+            (vgen([1,0,1], [0,0,1], [2,0,1]), R::one()) // x0x1x2 -> x0^2 x2
+        ]);
+    }
 }
