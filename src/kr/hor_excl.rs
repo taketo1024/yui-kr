@@ -8,8 +8,9 @@ use yui_lin_comb::LinComb;
 use yui_matrix::sparse::Trans;
 use yui_polynomial::Mono;
 
+use crate::kr::base::sign_between;
+
 use super::base::{BaseMono, BasePoly, VertGen};
-use super::data::sign_between;
 use super::hor_cube::KRHorCube;
 
 struct Process<R>
@@ -55,7 +56,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         let n = cube.data().dim();
         let edge_polys = (0..n).map(|i| 
-            (i, cube.edge_poly_dir(i))
+            (i, cube.edge_poly(i))
         ).collect();
 
         let mut res = Self::new(n, edge_polys);

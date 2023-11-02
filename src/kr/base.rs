@@ -1,8 +1,11 @@
+use std::iter::zip;
+
 use derive_more::Display;
-use yui_core::Elem;
+use itertools::{Itertools, FoldWhile};
+use yui_core::{Elem, Sign, PowMod2, GetSign};
 use yui_lin_comb::Gen;
 use yui_polynomial::{PolyN, MultiVar};
-use yui_utils::bitseq::BitSeq;
+use yui_utils::bitseq::{BitSeq, Bit};
 
 pub(crate) type BaseMono = MultiVar<'x', usize>;
 pub(crate) type BasePoly<R> = PolyN<'x', R>;
@@ -22,3 +25,53 @@ impl Elem for VertGen {
 }
 
 impl Gen for VertGen {}
+
+pub(crate) fn sign_between(from: BitSeq, to: BitSeq) -> Sign { 
+    use Bit::*;
+    
+    assert_eq!(from.len(), to.len());
+    debug_assert_eq!(to.weight() - from.weight(), 1);
+    
+    let e = zip(from.iter(), to.iter()).fold_while(0, |c, (f, t)| 
+        match (f, t) {
+            (Bit0, Bit0) => FoldWhile::Continue(c),
+            (Bit1, Bit1) => FoldWhile::Continue(c + 1),
+            (Bit0, Bit1) => FoldWhile::Done(c),
+            (Bit1, Bit0) => panic!()
+        }
+    ).into_inner() as u32;
+
+    (-1).pow_mod2(e).sign()
+}
+
+#[cfg(test)]
+mod tests { 
+    use super::*;
+
+    #[test]
+    fn edge_sign() {
+        use Sign::*;
+        
+        let e = sign_between(
+            BitSeq::from([0,0,0]), 
+            BitSeq::from([1,0,0]));
+        assert_eq!(e, Pos);
+
+        let e = sign_between(
+            BitSeq::from([0,0,0]), 
+            BitSeq::from([0,1,0]));
+        assert_eq!(e, Pos);
+
+        let e = sign_between(
+            BitSeq::from([1,0,0]), 
+            BitSeq::from([1,1,0]));
+        assert_eq!(e, Neg);
+
+        let e = sign_between(
+            BitSeq::from([0,1,0]), 
+            BitSeq::from([1,1,0]));
+        assert_eq!(e, Pos);
+    }
+
+
+}

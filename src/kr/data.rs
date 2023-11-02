@@ -1,14 +1,30 @@
 use std::collections::HashSet;
-use std::marker::PhantomData;
 use std::ops::RangeInclusive;
 use itertools::{Itertools, izip};
+use num_integer::Integer;
 use petgraph::{Graph, algo::min_spanning_tree};
 
-use yui_core::{Ring, RingOps, Sign, isize3, PowMod2, GetSign};
+use yui_core::{Ring, RingOps, Sign, isize3};
 use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
 use yui_utils::bitseq::{BitSeq, Bit};
 
 use super::base::BasePoly;
+
+/*
+ *    a   b
+ *     \ /
+ *      X
+ *     / \
+ *    c   d
+ * 
+ * x_ac = x_a - x_c = -(x_b - x_d),
+ * x_bc = x_b - x_c = -(x_a - x_d)
+ */
+pub(crate) struct KRCubeX<R> 
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    pub x_ac: BasePoly<R>,
+    pub x_bc: BasePoly<R>
+}
 
 pub(crate) struct KRCubeData<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
@@ -16,8 +32,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     writhe: isize, 
     n_seif: isize,
     x_signs: Vec<Sign>,
-    x_polys: Vec<KRCubeX<R>>,
-    _base_ring: PhantomData<R>
+    x_polys: Vec<KRCubeX<R>>
 }
 
 impl<R> KRCubeData<R> 
@@ -34,8 +49,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             writhe: w,
             n_seif: s,
             x_signs,
-            x_polys,
-            _base_ring: PhantomData,
+            x_polys
         }
     }
 
@@ -55,28 +69,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         &self.x_polys[i]
     }
 
-    pub fn all_verts(&self) -> Vec<BitSeq> { 
-        BitSeq::generate(self.n_cross)
-    }
-
     // TODO cache
     pub fn verts(&self, k: usize) -> Vec<BitSeq> {
-        self.all_verts().into_iter().filter(|v| v.weight() == k).collect()
-    }
-
-    // TODO cache
-    pub fn targets(&self, from: BitSeq) -> Vec<BitSeq> { 
-        let n = self.n_cross;
-        (0..n).filter(|&i| from[i].is_zero() ).map(|i| { 
-            let mut t = from.clone();
-            t.set_1(i);
-            t
-        }).collect()
-    }    
-
-    // TODO cache
-    pub fn edge_sign(&self, from: BitSeq, to: BitSeq) -> Sign { 
-        sign_between(from, to)
+        let n = self.dim();
+        BitSeq::generate(n).into_iter().filter(|v| v.weight() == k).collect()
     }
 
     fn l_grad_shift(&self) -> isize3 { 
@@ -318,37 +314,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
-/*
- *    a   b
- *     \ /
- *      X
- *     / \
- *    c   d
- * 
- * x_ac = x_a - x_c = -(x_b - x_d),
- * x_bc = x_b - x_c = -(x_a - x_d)
- */
-pub(crate) struct KRCubeX<R> 
-where R: Ring, for<'x> &'x R: RingOps<R> {
-    pub x_ac: BasePoly<R>,
-    pub x_bc: BasePoly<R>
-}
-
-pub fn sign_between(from: BitSeq, to: BitSeq) -> Sign { 
-    assert_eq!(from.len(), to.len());
-    assert_eq!(to.weight() - from.weight(), 1);
-    
-    let n = from.len();
-    let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
-    let e = (0..i).filter(|&j| from[j].is_one()).count() as i32;
-
-    (-1).pow_mod2(e).sign()
-}
-
 #[cfg(test)]
 mod tests {
     use yui_ratio::Ratio;
     use yui_link::Link;
+
     use super::*;
 
     type R = Ratio<i64>;
@@ -385,57 +355,6 @@ mod tests {
     }
 
     #[test]
-    fn targets() {
-        let l = Link::trefoil();
-        let data = KRCubeData::<R>::new(&l);
-
-        let ts = data.targets(BitSeq::from([0,0,0]));
-        assert_eq!(ts, vec![
-            BitSeq::from([1,0,0]), 
-            BitSeq::from([0,1,0]), 
-            BitSeq::from([0,0,1])]
-        );
-
-        let ts = data.targets(BitSeq::from([1,0,0]));
-        assert_eq!(ts, vec![
-            BitSeq::from([1,1,0]), 
-            BitSeq::from([1,0,1])]
-        );
-
-        let ts = data.targets(BitSeq::from([1,1,0]));
-        assert_eq!(ts, vec![
-            BitSeq::from([1,1,1])]
-        )
-    }
-
-    #[test]
-    fn edge_sign() {
-        use Sign::*;
-        let l = Link::trefoil();
-        let data = KRCubeData::<R>::new(&l);
-
-        let e = data.edge_sign(
-            BitSeq::from([0,0,0]), 
-            BitSeq::from([1,0,0]));
-        assert_eq!(e, Pos);
-
-        let e = data.edge_sign(
-            BitSeq::from([0,0,0]), 
-            BitSeq::from([0,1,0]));
-        assert_eq!(e, Pos);
-
-        let e = data.edge_sign(
-            BitSeq::from([1,0,0]), 
-            BitSeq::from([1,1,0]));
-        assert_eq!(e, Neg);
-
-        let e = data.edge_sign(
-            BitSeq::from([0,1,0]), 
-            BitSeq::from([1,1,0]));
-        assert_eq!(e, Pos);
-    }
-
-    #[test]
     fn grad_shift() { 
         let l = Link::trefoil(); // (w, s) = (-3, 2)
         let data = KRCubeData::<R>::new(&l);
@@ -453,15 +372,5 @@ mod tests {
         let v = BitSeq::from([0,1,0]);
         let grad1 = data.grad_at(h, v);
         assert_eq!(grad1, isize3(4,-6,-2));
-    }
-}
-
-trait IsEven { 
-    fn is_even(&self) -> bool;
-}
-
-impl IsEven for isize {
-    fn is_even(&self) -> bool {
-        self & 1 == 0
     }
 }

@@ -6,7 +6,7 @@ use yui_core::{Ring, RingOps};
 use yui_homology::XChainComplex;
 use yui_utils::bitseq::{BitSeq, Bit};
 
-use super::base::{BasePoly, BaseMono, VertGen};
+use super::base::{BasePoly, BaseMono, VertGen, sign_between};
 use super::data::KRCubeData;
 
 pub(crate) struct KRHorCube<R>
@@ -85,16 +85,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         ).collect()
     }
 
-    pub fn edge_poly(&self, from: BitSeq, to: BitSeq) -> BasePoly<R> {
+    pub fn edge_poly_between(&self, from: BitSeq, to: BitSeq) -> BasePoly<R> {
         assert_eq!(to.weight() - from.weight(), 1);
 
         let n = from.len();
         let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
 
-        self.edge_poly_dir(i)
+        self.edge_poly(i)
     }
 
-    pub fn edge_poly_dir(&self, i: usize) -> BasePoly<R> {
+    pub fn edge_poly(&self, i: usize) -> BasePoly<R> {
         use Bit::{Bit0, Bit1};
 
         let sign = self.data.x_signs()[i];
@@ -110,21 +110,23 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn differentiate(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
-        let VertGen(h, v, x) = e;
-        let h0 = h.clone();
-        let v = v.clone();
-        
-        self.data.targets(h0).into_iter().flat_map(|h1| { 
-            let s = self.data.edge_sign(h0, h1);
-            let e = BasePoly::from_sign(s);
-            let x = BasePoly::from(x.clone());
-            let p = self.edge_poly(h0, h1);
-            let q = e * x * p; // result polynomial
+        let (h0, v0) = (e.0, e.1);
+        let x0 = &e.2;
+        let n = self.data.dim();
 
-            q.into_iter().map(move |(x, r)| 
-                (VertGen(h1, v, x), r)
+        (0..n).filter(|&i| 
+            h0[i].is_zero()
+        ).flat_map(|i| {
+            let h1 = h0.edit(|b| b.set_1(i));
+            let e = R::from_sign( sign_between(h0, h1) );
+            let p = BasePoly::from( (x0.clone(), e ) );
+            let f = self.edge_poly(i);
+            let q = f * p;
+
+            q.into_iter().map(move |(x1, r)| 
+                (VertGen(h1, v0, x1), r)
             )
-        }).collect_vec()
+         }).collect_vec()
     }
 
     pub fn as_complex(self) -> XChainComplex<VertGen, R> {
@@ -228,7 +230,7 @@ mod tests {
 
         let h0 = BitSeq::from([0,0,0]);
         let h1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly(h0, h1); // x_ac
+        let p = cube.edge_poly_between(h0, h1); // x_ac
         assert_eq!(p, -&x[1] + &x[2]);
 
         // p: neg, v: 1, h: 0 -> 1
@@ -238,7 +240,7 @@ mod tests {
 
         let h0 = BitSeq::from([0,0,0]);
         let h1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly(h0, h1); // x_ac * x_bc
+        let p = cube.edge_poly_between(h0, h1); // x_ac * x_bc
         assert_eq!(p, (-&x[1] + &x[2]) * &x[0]);
 
         // p: pos, v: 0, h: 0 -> 1
@@ -249,7 +251,7 @@ mod tests {
 
         let h0 = BitSeq::from([0,0,0]);
         let h1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly(h0, h1); // x_ac * x_bc
+        let p = cube.edge_poly_between(h0, h1); // x_ac * x_bc
         assert_eq!(p, (-&x[1] + &x[2]) * &x[0]);
 
         // p: pos, v: 1, h: 0 -> 1
@@ -259,7 +261,7 @@ mod tests {
 
         let h0 = BitSeq::from([0,0,0]);
         let h1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly(h0, h1); // x_ac
+        let p = cube.edge_poly_between(h0, h1); // x_ac
         assert_eq!(p, -&x[1] + &x[2]);
     }
 

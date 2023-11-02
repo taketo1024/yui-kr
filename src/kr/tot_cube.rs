@@ -3,13 +3,13 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use cartesian::cartesian;
 use num_traits::One;
-use yui_core::{EucRing, EucRingOps, isize2, Ring};
+use yui_core::{EucRing, EucRingOps, isize2};
 use yui_homology::ChainComplex2;
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpMat, SpVec};
 use yui_utils::bitseq::{BitSeq, Bit};
 
-use super::base::{VertGen, BasePoly};
+use super::base::{VertGen, BasePoly, sign_between};
 use super::data::KRCubeData;
 use super::hor_homol::KRHorHomol;
 
@@ -77,12 +77,16 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         SpVec::from_entries(r, entries)
     }
 
-    fn edge_poly(&self, h_coords: BitSeq, from: BitSeq, to: BitSeq) -> BasePoly<R> {
-        use Bit::{Bit0, Bit1};
+    fn edge_poly_between(&self, h_coords: BitSeq, from: BitSeq, to: BitSeq) -> BasePoly<R> {
         assert_eq!(to.weight() - from.weight(), 1);
 
         let n = from.len();
         let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
+        self.edge_poly(h_coords, i)
+    }
+
+    fn edge_poly(&self, h_coords: BitSeq, i: usize) -> BasePoly<R> {
+        use Bit::{Bit0, Bit1};
 
         let sign = self.data.x_signs()[i];
         let h = h_coords[i];
@@ -95,21 +99,23 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn differentiate(&self, e: &VertGen) -> LinComb<VertGen, R> { 
-        let VertGen(h, v, x) = e;
-        let h = h.clone();
-        let v0 = v.clone();
-        
-        self.data.targets(v0).into_iter().flat_map(|v1| { 
-            let s = self.data.edge_sign(v0, v1);
-            let e = BasePoly::from_sign(s);
-            let x = BasePoly::from(x.clone());
-            let p = self.edge_poly(h, v0, v1);
-            let q = e * x * p; // result polynomial
+        let (h0, v0) = (e.0, e.1);
+        let x0 = &e.2;
+        let n = self.data.dim();
 
-            q.into_iter().map(move |(x, r)| 
-                (VertGen(h, v1, x), r)
+        (0..n).filter(|&i| 
+            v0[i].is_zero()
+        ).flat_map(|i| {
+            let v1 = v0.edit(|b| b.set_1(i));
+            let e = R::from_sign( sign_between(v0, v1) );
+            let p = BasePoly::from( (x0.clone(), e ) );
+            let f = self.edge_poly(h0, i);
+            let q = f * p;
+
+            q.into_iter().map(move |(x1, r)| 
+                (VertGen(h0, v1, x1), r)
             )
-        }).collect()
+         }).collect()
     }
 
     fn d_matrix(&self, i: usize, j: usize) -> SpMat<R> { 
@@ -172,14 +178,14 @@ mod tests {
         let h  = BitSeq::from([0,0,0]);
         let v0 = BitSeq::from([0,0,0]);
         let v1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly(h, v0, v1); // 1
+        let p = cube.edge_poly_between(h, v0, v1); // 1
         assert_eq!(p, P::one());
 
         // p: neg, h: 1, v: 0 -> 1
         let h  = BitSeq::from([1,0,0]);
         let v0 = BitSeq::from([0,0,0]);
         let v1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly(h, v0, v1); // x_bc
+        let p = cube.edge_poly_between(h, v0, v1); // x_bc
         assert_eq!(p, x[0]);
 
         let l = l.mirror(); // trefoil
@@ -189,14 +195,14 @@ mod tests {
         let h  = BitSeq::from([0,0,0]);
         let v0 = BitSeq::from([0,0,0]);
         let v1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly(h, v0, v1); // x_bc
+        let p = cube.edge_poly_between(h, v0, v1); // x_bc
         assert_eq!(p, x[0]);
 
         // p: pos, h: 1, v: 0 -> 1
         let h  = BitSeq::from([1,0,0]);
         let v0 = BitSeq::from([0,0,0]);
         let v1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly(h, v0, v1); // x_bc
+        let p = cube.edge_poly_between(h, v0, v1); // x_bc
         assert_eq!(p, P::one());
     }
 
