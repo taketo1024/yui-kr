@@ -95,8 +95,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         // search for the term (x_k)^d in p.
         for &k in self.remain_vars.iter().sorted() {
             for (x, _) in p.iter() {
-                let mdeg = x.deg();
-                if mdeg.total() == deg && mdeg.of(k) == deg { 
+                if x.total_deg() == deg && x.deg_for(k) == deg { 
                     return Some(k)
                 }
             }
@@ -112,8 +111,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let p = self.edge_polys.remove(&i).unwrap();
         let edge_polys = self.edge_polys.clone();
 
-        debug_assert_eq!(p.lead_term_for(k).0.deg().total(), deg);
-        debug_assert_eq!(p.lead_term_for(k).0.deg().of(k),   deg);
+        debug_assert_eq!(p.lead_term_for(k).0.total_deg(), deg);
+        debug_assert_eq!(p.lead_term_for(k).0.deg_for(k),  deg);
 
         // update edge-polys.
         self.edge_polys = self.edge_polys.iter().map(|(&j, f)|
@@ -314,7 +313,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     
     let (e0, a0) = g.lead_term_for(k);
 
-    assert!(e0.deg().of(k) > 0);
+    assert!(e0.deg_for(k) > 0);
     assert!(a0.is_unit()); // ±1
 
     let a0_inv = a0.inv().unwrap();
@@ -394,7 +393,7 @@ mod tests {
     #[test]
     fn init() { 
         let l = Link::trefoil();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = BitSeq::from([0,0,1]);
         let q = 0;
         let excl = make_excl(&l, v, q, 0);
 
@@ -420,7 +419,7 @@ mod tests {
     #[test]
     fn find_excl_var() { 
         let l = Link::trefoil();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = BitSeq::from([0,0,1]);
         let q = 0;
         let excl = make_excl(&l, v, q, 0);
 
@@ -436,7 +435,7 @@ mod tests {
     #[test]
     fn perform_excl() { 
         let l = Link::trefoil();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = BitSeq::from([0,0,1]);
         let q = 0;
         let mut excl = make_excl(&l, v, q, 0);
 
@@ -473,7 +472,7 @@ mod tests {
     #[test]
     fn perform_excl_2() { 
         let l = Link::trefoil();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = BitSeq::from([0,0,1]);
         let q = 0;
         let mut excl = make_excl(&l, v, q, 0);
 
@@ -513,7 +512,7 @@ mod tests {
     #[test]
     fn perform_excl_3() { 
         let l = Link::trefoil();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = BitSeq::from([0,0,1]);
         let q = 0;
         let mut excl = make_excl(&l, v, q, 0);
 

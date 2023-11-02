@@ -169,16 +169,16 @@ mod tests {
         let cube = make_cube(&l, 0);
 
         // p: neg, h: 0, v: 0 -> 1
-        let h  = BitSeq::from_iter([0,0,0]);
-        let v0 = BitSeq::from_iter([0,0,0]);
-        let v1 = BitSeq::from_iter([1,0,0]);
+        let h  = BitSeq::from([0,0,0]);
+        let v0 = BitSeq::from([0,0,0]);
+        let v1 = BitSeq::from([1,0,0]);
         let p = cube.edge_poly(h, v0, v1); // 1
         assert_eq!(p, P::one());
 
         // p: neg, h: 1, v: 0 -> 1
-        let h  = BitSeq::from_iter([1,0,0]);
-        let v0 = BitSeq::from_iter([0,0,0]);
-        let v1 = BitSeq::from_iter([1,0,0]);
+        let h  = BitSeq::from([1,0,0]);
+        let v0 = BitSeq::from([0,0,0]);
+        let v1 = BitSeq::from([1,0,0]);
         let p = cube.edge_poly(h, v0, v1); // x_bc
         assert_eq!(p, x[0]);
 
@@ -186,16 +186,16 @@ mod tests {
         let cube = make_cube(&l, 0);
 
         // p: pos, h: 0, v: 0 -> 1
-        let h  = BitSeq::from_iter([0,0,0]);
-        let v0 = BitSeq::from_iter([0,0,0]);
-        let v1 = BitSeq::from_iter([1,0,0]);
+        let h  = BitSeq::from([0,0,0]);
+        let v0 = BitSeq::from([0,0,0]);
+        let v1 = BitSeq::from([1,0,0]);
         let p = cube.edge_poly(h, v0, v1); // x_bc
         assert_eq!(p, x[0]);
 
         // p: pos, h: 1, v: 0 -> 1
-        let h  = BitSeq::from_iter([1,0,0]);
-        let v0 = BitSeq::from_iter([0,0,0]);
-        let v1 = BitSeq::from_iter([1,0,0]);
+        let h  = BitSeq::from([1,0,0]);
+        let v0 = BitSeq::from([0,0,0]);
+        let v1 = BitSeq::from([1,0,0]);
         let p = cube.edge_poly(h, v0, v1); // x_bc
         assert_eq!(p, P::one());
     }

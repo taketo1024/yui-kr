@@ -107,7 +107,7 @@ mod tests {
     #[test]
     fn rank() { 
         let l = Link::trefoil();
-        let v = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from([1,0,0]);
         let q = 0;
         let hml = make_hml(&l, v, q);
 
@@ -121,7 +121,7 @@ mod tests {
     #[test]
     fn rank2() { 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
-        let v = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from([1,0,0]);
         let q = -4;
         let hml = make_hml(&l, v, q);
 
@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn gens() { 
         let l = Link::trefoil();
-        let v = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from([1,0,0]);
         let q = 0;
         let hml = make_hml(&l, v, q);
 
@@ -149,7 +149,7 @@ mod tests {
     #[test]
     fn vectorize() { 
         let l = Link::trefoil().mirror();
-        let v = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from([1,0,0]);
         let q = 1;
         let hml = make_hml(&l, v, q);
 

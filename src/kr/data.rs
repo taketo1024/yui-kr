@@ -389,22 +389,22 @@ mod tests {
         let l = Link::trefoil();
         let data = KRCubeData::<R>::new(&l);
 
-        let ts = data.targets(BitSeq::from_iter([0,0,0]));
+        let ts = data.targets(BitSeq::from([0,0,0]));
         assert_eq!(ts, vec![
-            BitSeq::from_iter([1,0,0]), 
-            BitSeq::from_iter([0,1,0]), 
-            BitSeq::from_iter([0,0,1])]
+            BitSeq::from([1,0,0]), 
+            BitSeq::from([0,1,0]), 
+            BitSeq::from([0,0,1])]
         );
 
-        let ts = data.targets(BitSeq::from_iter([1,0,0]));
+        let ts = data.targets(BitSeq::from([1,0,0]));
         assert_eq!(ts, vec![
-            BitSeq::from_iter([1,1,0]), 
-            BitSeq::from_iter([1,0,1])]
+            BitSeq::from([1,1,0]), 
+            BitSeq::from([1,0,1])]
         );
 
-        let ts = data.targets(BitSeq::from_iter([1,1,0]));
+        let ts = data.targets(BitSeq::from([1,1,0]));
         assert_eq!(ts, vec![
-            BitSeq::from_iter([1,1,1])]
+            BitSeq::from([1,1,1])]
         )
     }
 
@@ -415,23 +415,23 @@ mod tests {
         let data = KRCubeData::<R>::new(&l);
 
         let e = data.edge_sign(
-            BitSeq::from_iter([0,0,0]), 
-            BitSeq::from_iter([1,0,0]));
+            BitSeq::from([0,0,0]), 
+            BitSeq::from([1,0,0]));
         assert_eq!(e, Pos);
 
         let e = data.edge_sign(
-            BitSeq::from_iter([0,0,0]), 
-            BitSeq::from_iter([0,1,0]));
+            BitSeq::from([0,0,0]), 
+            BitSeq::from([0,1,0]));
         assert_eq!(e, Pos);
 
         let e = data.edge_sign(
-            BitSeq::from_iter([1,0,0]), 
-            BitSeq::from_iter([1,1,0]));
+            BitSeq::from([1,0,0]), 
+            BitSeq::from([1,1,0]));
         assert_eq!(e, Neg);
 
         let e = data.edge_sign(
-            BitSeq::from_iter([0,1,0]), 
-            BitSeq::from_iter([1,1,0]));
+            BitSeq::from([0,1,0]), 
+            BitSeq::from([1,1,0]));
         assert_eq!(e, Pos);
     }
 
@@ -449,8 +449,8 @@ mod tests {
         let grad0 = data.root_grad();
         assert_eq!(grad0, isize3(4,-8,-4));
 
-        let h = BitSeq::from_iter([1,0,0]);
-        let v = BitSeq::from_iter([0,1,0]);
+        let h = BitSeq::from([1,0,0]);
+        let v = BitSeq::from([0,1,0]);
         let grad1 = data.grad_at(h, v);
         assert_eq!(grad1, isize3(4,-6,-2));
     }

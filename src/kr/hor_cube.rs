@@ -1,10 +1,9 @@
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use itertools::Itertools;
 use yui_core::{Ring, RingOps};
 use yui_homology::XChainComplex;
-use yui_polynomial::MultiDeg;
 use yui_utils::bitseq::{BitSeq, Bit};
 
 use super::base::{BasePoly, BaseMono, VertGen};
@@ -41,7 +40,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn make_mons(tot_deg: usize, n: usize) -> Vec<BaseMono> { 
-        fn gen_iter(tot_deg: usize, n: usize, res: &mut Vec<BTreeMap<usize, usize>>, prev: BTreeMap<usize, usize>, i: usize, rem: usize) {
+        fn gen_iter(tot_deg: usize, n: usize, res: &mut Vec<HashMap<usize, usize>>, prev: HashMap<usize, usize>, i: usize, rem: usize) {
             if i < n - 1 { 
                 for d_i in (0..=rem).rev() { 
                     let mut curr = prev.clone();
@@ -56,13 +55,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
 
         let mut res = vec![];
-        let prev = BTreeMap::new();
+        let prev = HashMap::new();
 
         gen_iter(tot_deg, n, &mut res, prev, 0, tot_deg);
 
         res.into_iter().map(|d| {
-            let mdeg = MultiDeg::new(d);
-            BaseMono::from(mdeg)
+            BaseMono::from_iter(d)
         }).collect()
     }
 
@@ -177,40 +175,40 @@ mod tests {
     fn mon_deg() { 
         let l = Link::trefoil();
 
-        let v = BitSeq::from_iter([0,0,0]);
-        let h = BitSeq::from_iter([0,0,0]);
+        let v = BitSeq::from([0,0,0]);
+        let h = BitSeq::from([0,0,0]);
         let q = 0;
 
         let cube = make_cube(&l, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 0);
 
-        let v = BitSeq::from_iter([0,0,0]);
-        let h = BitSeq::from_iter([0,0,0]);
+        let v = BitSeq::from([0,0,0]);
+        let h = BitSeq::from([0,0,0]);
         let q = 1;
 
         let cube = make_cube(&l, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 1);
 
-        let v = BitSeq::from_iter([1,0,0]);
-        let h = BitSeq::from_iter([0,0,0]);
+        let v = BitSeq::from([1,0,0]);
+        let h = BitSeq::from([0,0,0]);
         let q = 0;
 
         let cube = make_cube(&l, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 0);
 
-        let v = BitSeq::from_iter([0,0,0]);
-        let h = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from([0,0,0]);
+        let h = BitSeq::from([1,0,0]);
         let q = 0;
 
         let cube = make_cube(&l, v, q);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 1);
 
-        let v = BitSeq::from_iter([1,0,0]);
-        let h = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from([1,0,0]);
+        let h = BitSeq::from([1,0,0]);
         let q = 0;
 
         let cube = make_cube(&l, v, q);
@@ -224,43 +222,43 @@ mod tests {
 
         // p: neg, v: 0, h: 0 -> 1
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
-        let v = BitSeq::from_iter([0,0,0]);
+        let v = BitSeq::from([0,0,0]);
         let q = 0;
         let cube = make_cube(&l, v, q);
 
-        let h0 = BitSeq::from_iter([0,0,0]);
-        let h1 = BitSeq::from_iter([1,0,0]);
+        let h0 = BitSeq::from([0,0,0]);
+        let h1 = BitSeq::from([1,0,0]);
         let p = cube.edge_poly(h0, h1); // x_ac
         assert_eq!(p, -&x[1] + &x[2]);
 
         // p: neg, v: 1, h: 0 -> 1
-        let v = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from([1,0,0]);
         let q = 0;
         let cube = make_cube(&l, v, q);
 
-        let h0 = BitSeq::from_iter([0,0,0]);
-        let h1 = BitSeq::from_iter([1,0,0]);
+        let h0 = BitSeq::from([0,0,0]);
+        let h1 = BitSeq::from([1,0,0]);
         let p = cube.edge_poly(h0, h1); // x_ac * x_bc
         assert_eq!(p, (-&x[1] + &x[2]) * &x[0]);
 
         // p: pos, v: 0, h: 0 -> 1
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]).mirror(); // trefoil
-        let v = BitSeq::from_iter([0,0,0]);
+        let v = BitSeq::from([0,0,0]);
         let q = 0;
         let cube = make_cube(&l, v, q);
 
-        let h0 = BitSeq::from_iter([0,0,0]);
-        let h1 = BitSeq::from_iter([1,0,0]);
+        let h0 = BitSeq::from([0,0,0]);
+        let h1 = BitSeq::from([1,0,0]);
         let p = cube.edge_poly(h0, h1); // x_ac * x_bc
         assert_eq!(p, (-&x[1] + &x[2]) * &x[0]);
 
         // p: pos, v: 1, h: 0 -> 1
-        let v = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from([1,0,0]);
         let q = 0;
         let cube = make_cube(&l, v, q);
 
-        let h0 = BitSeq::from_iter([0,0,0]);
-        let h1 = BitSeq::from_iter([1,0,0]);
+        let h0 = BitSeq::from([0,0,0]);
+        let h1 = BitSeq::from([1,0,0]);
         let p = cube.edge_poly(h0, h1); // x_ac
         assert_eq!(p, -&x[1] + &x[2]);
     }
@@ -268,38 +266,40 @@ mod tests {
     #[test]
     fn differentiate() { 
         let one = BaseMono::one();
-        let x = (0..3).map(|i| BaseMono::from(MultiDeg::from((i, 1)))).collect_vec();
+        let x = (0..3).map(|i| 
+            BaseMono::from((i, 1)) // x_i
+        ).collect_vec();
 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
-        let v = BitSeq::from_iter([0,0,0]);
+        let v = BitSeq::from([0,0,0]);
         let q = 0;
         let cube = make_cube(&l, v, q);
 
-        let h = BitSeq::from_iter([0,0,0]);
+        let h = BitSeq::from([0,0,0]);
         let z = VertGen(h, v, one.clone());
         let ys = cube.differentiate(&z);
 
         assert_eq!(ys.into_iter().collect::<HashMap<_, _>>(), map!{
-            VertGen(BitSeq::from_iter([1,0,0]), v, x[1].clone()) => -R::one(),
-            VertGen(BitSeq::from_iter([1,0,0]), v, x[2].clone()) =>  R::one(),
-            VertGen(BitSeq::from_iter([0,1,0]), v, x[2].clone()) => -R::one(),
-            VertGen(BitSeq::from_iter([0,1,0]), v, x[0].clone()) =>  R::one(),
-            VertGen(BitSeq::from_iter([0,0,1]), v, x[0].clone()) => -R::one(),
-            VertGen(BitSeq::from_iter([0,0,1]), v, x[1].clone()) =>  R::one()
+            VertGen(BitSeq::from([1,0,0]), v, x[1].clone()) => -R::one(),
+            VertGen(BitSeq::from([1,0,0]), v, x[2].clone()) =>  R::one(),
+            VertGen(BitSeq::from([0,1,0]), v, x[2].clone()) => -R::one(),
+            VertGen(BitSeq::from([0,1,0]), v, x[0].clone()) =>  R::one(),
+            VertGen(BitSeq::from([0,0,1]), v, x[0].clone()) => -R::one(),
+            VertGen(BitSeq::from([0,0,1]), v, x[1].clone()) =>  R::one()
         });
 
-        let h = BitSeq::from_iter([0,1,0]);
+        let h = BitSeq::from([0,1,0]);
         let z = VertGen(h, v, one.clone());
         let ys = cube.differentiate(&z);
 
         assert_eq!(ys.into_iter().collect::<HashMap<_, _>>(), map! {
-            VertGen(BitSeq::from_iter([1,1,0]), v, x[1].clone()) => -R::one(),
-            VertGen(BitSeq::from_iter([1,1,0]), v, x[2].clone()) =>  R::one(),
-            VertGen(BitSeq::from_iter([0,1,1]), v, x[0].clone()) =>  R::one(),
-            VertGen(BitSeq::from_iter([0,1,1]), v, x[1].clone()) => -R::one()
+            VertGen(BitSeq::from([1,1,0]), v, x[1].clone()) => -R::one(),
+            VertGen(BitSeq::from([1,1,0]), v, x[2].clone()) =>  R::one(),
+            VertGen(BitSeq::from([0,1,1]), v, x[0].clone()) =>  R::one(),
+            VertGen(BitSeq::from([0,1,1]), v, x[1].clone()) => -R::one()
         });
 
-        let h = BitSeq::from_iter([1,1,1]);
+        let h = BitSeq::from([1,1,1]);
         let z = VertGen(h, v, one.clone());
         let ys = cube.differentiate(&z);
 
@@ -309,17 +309,17 @@ mod tests {
     #[test]
     fn vert_gens() {
         let l = Link::trefoil();
-        let v = BitSeq::from_iter([0,0,0]);
+        let v = BitSeq::from([0,0,0]);
         let q = 0;
 
         let cube = make_cube(&l, v, q);
-        let h = BitSeq::from_iter([0, 0, 0]);
+        let h = BitSeq::from([0, 0, 0]);
         let gens = cube.vert_gens(h);
 
         assert_eq!(gens.len(), 1);
         assert!(gens.iter().all(|x| x.0 == h));
 
-        let h = BitSeq::from_iter([1, 0, 0]);
+        let h = BitSeq::from([1, 0, 0]);
         let gens = cube.vert_gens(h);
 
         assert_eq!(gens.len(), 3);
@@ -329,7 +329,7 @@ mod tests {
     #[test]
     fn gens() {
         let l = Link::trefoil();
-        let v = BitSeq::from_iter([0,0,0]);
+        let v = BitSeq::from([0,0,0]);
         let q = 0;
         let cube = make_cube(&l, v, q);
 
@@ -343,7 +343,7 @@ mod tests {
     #[test]
     fn as_complex() { 
         let l = Link::trefoil();
-        let v = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from([1,0,0]);
         let q = 0;
         let cube = make_cube(&l, v, q);
         let c = cube.as_complex();
@@ -355,7 +355,7 @@ mod tests {
 
         c.check_d_all();
 
-        let v = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from([1,0,0]);
         let q = 1;
         let cube = make_cube(&l.mirror(), v, q);
         let c = cube.as_complex();
@@ -371,7 +371,7 @@ mod tests {
     #[test]
     fn homology() { 
         let l = Link::trefoil();
-        let v = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from([1,0,0]);
         let q = 0;
         let cube = make_cube(&l, v, q);
 
@@ -384,7 +384,7 @@ mod tests {
         assert_eq!(h[3].rank(), 1);
 
         let l = Link::trefoil().mirror();
-        let v = BitSeq::from_iter([1,0,0]);
+        let v = BitSeq::from([1,0,0]);
         let q = 1;
         let cube = make_cube(&l, v, q);
         let c = cube.as_complex();
