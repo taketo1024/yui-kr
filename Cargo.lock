@@ -962,6 +962,7 @@ dependencies = [
  "derive_more",
  "itertools",
  "num-bigint",
+ "num-integer",
  "num-traits",
  "petgraph",
  "yui-core",
