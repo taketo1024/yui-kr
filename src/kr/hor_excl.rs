@@ -1,12 +1,11 @@
 use std::collections::{HashSet, HashMap};
-use std::hash::Hash;
 
 use itertools::Itertools;
 use num_traits::{Zero, One};
 use yui_core::{Ring, RingOps, IndexList};
-use yui_homology::XModStr;
+use yui_homology::{XModStr, make_matrix};
 use yui_lin_comb::LinComb;
-use yui_matrix::sparse::{Trans, SpMat};
+use yui_matrix::sparse::Trans;
 use yui_polynomial::Mono;
 
 use super::base::{BaseMono, BasePoly, VertGen};
@@ -30,7 +29,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 pub(crate) struct KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    level: usize,
     edge_polys: HashMap<usize, BasePoly<R>>,
     exc_dirs: HashSet<usize>,
     fst_exc_vars: HashSet<usize>,
@@ -41,10 +39,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    fn new(n: usize, edge_polys: HashMap<usize, BasePoly<R>>, level: usize) -> Self { 
-        assert!(level <= 2);
+    fn new(n: usize, edge_polys: HashMap<usize, BasePoly<R>>) -> Self { 
         Self { 
-            level,
             edge_polys,
             exc_dirs: HashSet::new(), 
             fst_exc_vars: HashSet::new(), 
@@ -54,7 +50,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    pub fn from(cube: KRHorCube<R>, level: usize) -> Self { 
+    pub fn from(cube: &KRHorCube<R>, level: usize) -> Self { 
         assert!(level <= 2);
 
         let n = cube.data().dim();
@@ -62,7 +58,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             (i, cube.edge_poly_dir(i))
         ).collect();
 
-        let mut res = Self::new(n, edge_polys, level);
+        let mut res = Self::new(n, edge_polys);
 
         for d in 1..=level { 
             res.excl_all(d);
@@ -151,7 +147,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn trans_for(&self, v: &XModStr<VertGen, R>) -> Trans<R> {
-        let from = v.gens().iter().collect();
+        let from = v.gens();
         let to = self.reduce_gens(&from);
 
         let fwd = make_matrix(&from, &to, |x| self.forward(x));
@@ -160,12 +156,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         Trans::new(fwd, bwd)
     }
 
-    fn reduce_gens<'a>(&self, gens: &IndexList<&'a VertGen>) -> IndexList<&'a VertGen> {
-        gens.iter().filter_map(|&v| 
-            if self.should_vanish(v) || self.should_reduce(v) { 
+    fn reduce_gens<'a>(&self, gens: &IndexList<VertGen>) -> IndexList<VertGen> {
+        gens.iter().filter_map(|v| 
+            if self.should_vanish(v) || self.should_reduce(&v.2) { 
                 None
             } else {
-                Some(v)
+                Some(v.clone())
             }
         ).collect()
     }
@@ -177,8 +173,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         )
     }
 
-    fn should_reduce(&self, v: &VertGen) -> bool { 
-        let x = &v.2;
+    fn should_reduce(&self, x: &BaseMono) -> bool { 
         x.deg().iter().any(|(k, &d)| 
             self.fst_exc_vars.contains(k) || 
             (self.snd_exc_vars.contains(k) && d >= 2)
@@ -190,7 +185,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             return vec![]
         } 
         
-        if !self.should_reduce(v) {
+        if !self.should_reduce(&v.2) {
             return vec![(v.clone(), R::one())]
         }
         
@@ -346,29 +341,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     div_rem(f, p, k).1
 }
 
-fn make_matrix<'a, X, Y, R, F>(from: &IndexList<&X>, to: &IndexList<&Y>, f: F) -> SpMat<R>
-where 
-    X: Hash + Eq, Y: Hash + Eq, 
-    R: Ring, for<'x> &'x R: RingOps<R>,
-    F: Fn(&X) -> Vec<(Y, R)> 
-{
-    let (m, n) = (to.len(), from.len());
-    SpMat::generate((m, n), |set|
-        for (j, &x) in from.iter().enumerate() {
-            let ys = f(x);
-            for (y, a) in ys {
-                let i = to.index_of(&&y).unwrap();
-                set(i, j, a);
-            }
-        }
-    )
-}
-
 #[cfg(test)]
+#[allow(unused_imports)] // TODO remove later
 mod tests {
     use std::rc::Rc;
 
+    use yui_homology::{ChainComplexDisplay, DisplaySeq};
     use yui_link::Link;
+    use yui_polynomial::MultiVar;
     use yui_ratio::Ratio;
     use yui_utils::{bitseq::BitSeq, map};
 
@@ -379,15 +359,18 @@ mod tests {
     type R = Ratio<i64>;
     type P = BasePoly<R>;
 
-    fn make_excl(l: &Link, v: BitSeq, q: isize, level: usize) -> KRHorExcl<R> {
+    fn make_cube(l: &Link, v: BitSeq, q: isize) -> KRHorCube<R> {
         let data = KRCubeData::<R>::new(&l);
         let rc = Rc::new(data);
-        let cube = KRHorCube::new(rc, v, q);
-        KRHorExcl::from(cube, level)
+        KRHorCube::new(rc, v, q)
     }
 
     fn vars(l: usize) -> Vec<P> {
         (0..l).map(|i| P::variable(i)).collect_vec()
+    }
+
+    fn vgen<const N: usize, const M: usize>(h: [usize; N], v: [usize; N], m: [usize; M]) -> VertGen {
+        VertGen(BitSeq::from(h), BitSeq::from(v), MultiVar::from(m))
     }
 
     #[test]
@@ -395,9 +378,10 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
         let q = 0;
-        let excl = make_excl(&l, v, q, 0);
 
-        assert_eq!(excl.level, 0);
+        let cube = make_cube(&l, v, q);
+        let excl = KRHorExcl::from(&cube, 0);
+
         assert!(excl.exc_dirs.is_empty());
         assert!(excl.fst_exc_vars.is_empty());
         assert!(excl.snd_exc_vars.is_empty());
@@ -421,7 +405,9 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
         let q = 0;
-        let excl = make_excl(&l, v, q, 0);
+
+        let cube = make_cube(&l, v, q);
+        let excl = KRHorExcl::from(&cube, 0);
 
         assert_eq!(excl.find_excl_var(1, 0), Some(1));
         assert_eq!(excl.find_excl_var(1, 1), Some(0));
@@ -437,7 +423,9 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
         let q = 0;
-        let mut excl = make_excl(&l, v, q, 0);
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
 
         // replaces x1 -> x2
         excl.perform_excl(1, 0, 1);
@@ -474,7 +462,9 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
         let q = 0;
-        let mut excl = make_excl(&l, v, q, 0);
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
 
         // replaces x1 -> x2
         excl.perform_excl(1, 0, 1);
@@ -514,7 +504,9 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
         let q = 0;
-        let mut excl = make_excl(&l, v, q, 0);
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
 
         // replaces x1 -> x2
         excl.perform_excl(1, 0, 1);
@@ -547,5 +539,126 @@ mod tests {
         assert_eq!(proc.edge_polys, map!{ 
             1 => -x0 + x2
         });
+    }
+
+    #[test]
+    fn should_vanish_before() {
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let excl = KRHorExcl::from(&cube, 0);
+
+        assert!((0..=3).all(|i| 
+            cube.gens(i).iter().all(|v| 
+                !excl.should_vanish(v)
+            )
+        ));
+    }
+
+    #[test]
+    fn should_vanish() {
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
+        excl.perform_excl(1, 0, 1);
+
+        assert!( excl.should_vanish(&vgen([0,1,0], [0,0,1], [1,2,3]))); // h[0] = 0
+        assert!(!excl.should_vanish(&vgen([1,0,0], [0,0,1], [1,2,3])));
+    }
+
+    #[test]
+    fn should_reduce_before() {
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let excl = KRHorExcl::from(&cube, 0);
+
+        assert!((0..=3).all(|i| 
+            cube.gens(i).iter().all(|v| 
+                !excl.should_reduce(&v.2)
+            )
+        ));
+    }
+
+    #[test]
+    fn should_reduce() {
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
+        excl.perform_excl(1, 0, 1); // x_1 is reduced
+
+        assert!(!excl.should_reduce(&MultiVar::from([0,0,0])));
+        assert!(!excl.should_reduce(&MultiVar::from([1,0,0])));
+        assert!( excl.should_reduce(&MultiVar::from([0,1,0])));
+        assert!(!excl.should_reduce(&MultiVar::from([0,0,1])));
+    }
+
+    #[test]
+    fn should_reduce_2() {
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
+        excl.perform_excl(1, 0, 1); // x_1 is reduced.
+        excl.perform_excl(2, 2, 2); // (x_2)^2 is reduced.
+
+        assert!(!excl.should_reduce(&MultiVar::from([0,0,0])));
+        assert!(!excl.should_reduce(&MultiVar::from([1,0,0])));
+        assert!( excl.should_reduce(&MultiVar::from([0,1,0])));
+        assert!(!excl.should_reduce(&MultiVar::from([0,0,1])));
+        assert!( excl.should_reduce(&MultiVar::from([0,0,2])));
+    }
+
+    #[test]
+    fn reduce_gens() {
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+        let q = 0;
+
+        let cube = make_cube(&l, v, q);
+        let mut excl = KRHorExcl::from(&cube, 0);
+
+        let g = (0..=3).map(|i| 
+            IndexList::from_iter(cube.gens(i))
+        ).collect_vec();
+
+        assert_eq!(g[0].len(),  1);
+        assert_eq!(g[1].len(), 12);
+        assert_eq!(g[2].len(), 26);
+        assert_eq!(g[3].len(), 15);
+
+        excl.perform_excl(1, 0, 1); // x_1 is reduced.
+
+        let rg = g.iter().map(|g| 
+            excl.reduce_gens(g)
+        ).collect_vec();
+
+        assert_eq!(rg[0].len(), 0);
+        assert_eq!(rg[1].len(), 2);
+        assert_eq!(rg[2].len(), 7);
+        assert_eq!(rg[3].len(), 5);
+
+        excl.perform_excl(2, 2, 2); // (x_2)^2 is reduced.
+
+        let rg = g.iter().map(|g| 
+            excl.reduce_gens(g)
+        ).collect_vec();
+
+        assert_eq!(rg[0].len(), 0);
+        assert_eq!(rg[1].len(), 0);
+        assert_eq!(rg[2].len(), 2);
+        assert_eq!(rg[3].len(), 2);
     }
 }
