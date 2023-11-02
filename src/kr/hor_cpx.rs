@@ -1,8 +1,9 @@
+use std::ops::Index;
 use std::rc::Rc;
 use delegate::delegate;
 
 use yui_core::{Ring, RingOps, EucRing, EucRingOps};
-use yui_homology::{ReducedComplex, Grid, ChainComplexTrait, XModStr, GridTrait, GridIter, ChainComplexSummand, Homology};
+use yui_homology::{ReducedComplex, Grid, ChainComplexTrait, XModStr, GridTrait, GridIter, ChainComplexSummand, Homology, make_matrix};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpVec, SpMat};
 use yui_utils::bitseq::BitSeq;
@@ -11,6 +12,7 @@ use crate::kr::hor_cube::KRHorCube;
 
 use super::base::VertGen;
 use super::data::KRCubeData;
+use super::hor_excl::KRHorExcl;
 
 pub(crate) struct KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
@@ -23,6 +25,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     pub fn new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
+        Self::_new(data, v_coords, q_slice, 2, true)
+    }
+
+    fn _new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize, excl_level: usize, _ch_red: bool) -> Self { 
+        assert!(excl_level <= 2);
+
         let n = data.dim() as isize;
         let range = 0..=n;
 
@@ -31,10 +39,24 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             XModStr::from_iter( cube.gens(i as usize) )
         );
 
-        // TODO use exclusion.
-        let inner = cube.as_complex().reduced(true);
+        let inner = Self::excl(&cube, &gens, excl_level);
+
+        // TODO also compose ch-red.
 
         Self { v_coords, q_slice, gens, inner }
+    }
+
+    fn excl(cube: &KRHorCube<R>, gens: &Grid<XModStr<VertGen, R>>, level: usize) -> ReducedComplex<R> {
+        let excl = KRHorExcl::from(cube, level);
+        let red_gens = Grid::new(gens.support(), |i|
+            excl.reduce_gens(&gens[i].gens())
+        );
+
+        ReducedComplex::new(
+            gens.support(), 1, 
+            |i| make_matrix(&red_gens[i], &red_gens[i + 1], |v| excl.diff_red(v)),
+            Some( |i| excl.trans_for(&gens[i].gens(), &red_gens[i]) )
+        )
     }
 
     pub fn vectorize(&self, i: isize, z: &LinComb<VertGen, R>) -> SpVec<R> {
@@ -71,6 +93,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
+impl<R> Index<isize> for KRHorComplex<R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    type Output = ChainComplexSummand<R>;
+
+    fn index(&self, i: isize) -> &Self::Output {
+        self.get(i)
+    }
+}
+
+
 impl<R> ChainComplexTrait<isize> for KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     type R = R;
@@ -87,5 +119,111 @@ impl<R> KRHorComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn homology(&self) -> Homology<R> { 
         self.inner.homology(true)
+    }
+}
+
+#[cfg(test)]
+mod tests { 
+    use yui_homology::{RModStr, DisplaySeq};
+    use yui_link::Link;
+    use yui_ratio::Ratio;
+
+    use crate::kr::base::BasePoly;
+
+    use super::*;
+
+    type R = Ratio<i64>;
+    type P = BasePoly<R>;
+
+    fn make_cube(l: &Link, v: BitSeq, q: isize) -> KRHorCube<R> {
+        let data = KRCubeData::<R>::new(&l);
+        let rc = Rc::new(data);
+        let cube = KRHorCube::new(rc, v, q);
+        cube
+    }
+
+    #[test]
+    fn no_red() { 
+        let l = Link::trefoil().mirror();
+        let v = BitSeq::from([1,0,0]);
+        let q = 0;
+        
+        let data = Rc::new(KRCubeData::<R>::new(&l));
+        let c = KRHorComplex::_new(data, v, q, 0, false);
+
+        assert_eq!(c[0].rank(), 3);
+        assert_eq!(c[1].rank(), 26);
+        assert_eq!(c[2].rank(), 51);
+        assert_eq!(c[3].rank(), 28);
+
+        c.check_d_all();
+
+        let h = c.inner.homology(false);
+        
+        assert_eq!(h[0].rank(), 0);
+        assert_eq!(h[1].rank(), 0);
+        assert_eq!(h[2].rank(), 2);
+        assert_eq!(h[3].rank(), 2);
+    }
+
+    #[test]
+    fn excl_level1() { 
+        let l = Link::trefoil().mirror();
+        let v = BitSeq::from([1,0,0]);
+        let q = 0;
+        
+        let data = Rc::new(KRCubeData::<R>::new(&l));
+        let c = KRHorComplex::_new(data, v, q, 1, false);
+
+        assert_eq!(c[0].rank(), 0);
+        assert_eq!(c[1].rank(), 3);
+        assert_eq!(c[2].rank(), 10);
+        assert_eq!(c[3].rank(), 7);
+
+        c.check_d_all();
+
+        let h = c.inner.homology(false);
+        
+        assert_eq!(h[0].rank(), 0);
+        assert_eq!(h[1].rank(), 0);
+        assert_eq!(h[2].rank(), 2);
+        assert_eq!(h[3].rank(), 2);
+    }
+
+    #[test]
+    fn excl_level2() { 
+        let l = Link::trefoil().mirror();
+        let v = BitSeq::from([1,0,0]);
+        let q = 0;
+        
+        let data = Rc::new(KRCubeData::<R>::new(&l));
+        let c = KRHorComplex::_new(data, v, q, 2, false);
+
+        assert_eq!(c[0].rank(), 0);
+        assert_eq!(c[1].rank(), 0);
+        assert_eq!(c[2].rank(), 2);
+        assert_eq!(c[3].rank(), 2);
+
+        c.check_d_all();
+
+        let h = c.inner.homology(false);
+        
+        assert_eq!(h[0].rank(), 0);
+        assert_eq!(h[1].rank(), 0);
+        assert_eq!(h[2].rank(), 2);
+        assert_eq!(h[3].rank(), 2);
+    }
+
+    #[test]
+    fn crash() { 
+        let l = Link::from_pd_code([[1,6,2,7],[3,8,4,9],[5,10,6,1],[7,2,8,3],[9,4,10,5]]).mirror();
+        let v = BitSeq::from([1,0,0,0,0]);
+        let q = 0;
+        
+        let data = Rc::new(KRCubeData::<R>::new(&l));
+        let c = KRHorComplex::_new(Rc::clone(&data), v, q, 2, false);
+
+        c.print_seq();
+        c.check_d_all();
     }
 }

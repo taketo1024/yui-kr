@@ -3,7 +3,7 @@ use std::collections::{HashSet, HashMap};
 use itertools::Itertools;
 use num_traits::{Zero, One};
 use yui_core::{Ring, RingOps, IndexList};
-use yui_homology::{XModStr, make_matrix};
+use yui_homology::make_matrix;
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::Trans;
 use yui_polynomial::Mono;
@@ -138,17 +138,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.process.push(d);
     }
 
-    pub fn trans_for(&self, v: &XModStr<VertGen, R>) -> Trans<R> {
-        let from = v.gens();
-        let to = self.reduce_gens(&from);
-
-        let fwd = make_matrix(&from, &to, |x| self.forward(x));
-        let bwd = make_matrix(&to, &from, |x| self.backward(x));
-
-        Trans::new(fwd, bwd)
-    }
-
-    fn reduce_gens<'a>(&self, gens: &IndexList<VertGen>) -> IndexList<VertGen> {
+    pub fn reduce_gens(&self, gens: &IndexList<VertGen>) -> IndexList<VertGen> {
         gens.iter().filter_map(|v| 
             if self.should_vanish(v) || self.should_reduce(&v.2) { 
                 None
@@ -156,6 +146,33 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
                 Some(v.clone())
             }
         ).collect()
+    }
+
+    pub fn diff_red(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
+        let (h0, v0) = (e.0, e.1);
+        let x0 = &e.2;
+
+        self.edge_polys.iter().filter(|(&i, _)|
+            h0[i].is_zero()
+        ).flat_map(|(&i, f)| {
+
+            let h1 = h0.edit(|b| b.set_1(i));
+            let e = R::from_sign( sign_between(h0, h1) );
+            let p = BasePoly::from((x0.clone(), e));
+
+            // FIXME: must reduce!
+            let q = f * p;
+
+            q.into_iter().map(move |(x1, r)| 
+                (VertGen(h1, v0, x1), r)
+            )
+        }).collect()
+    }
+
+    pub fn trans_for(&self, from: &IndexList<VertGen>, to: &IndexList<VertGen>) -> Trans<R> {
+        let fwd = make_matrix(&from, &to, |x| self.forward(x));
+        let bwd = make_matrix(&to, &from, |x| self.backward(x));
+        Trans::new(fwd, bwd)
     }
 
     fn should_vanish(&self, v: &VertGen) -> bool { 
@@ -810,8 +827,10 @@ mod tests {
         let cube = make_cube(&l, v, q);
         let mut excl = KRHorExcl::from(&cube, 0);
 
-        let s2 = XModStr::from_iter(cube.gens(2));
-        let t0 = excl.trans_for(&s2);
+        let gens = IndexList::from_iter(cube.gens(2));
+
+        let r0 = excl.reduce_gens(&gens);
+        let t0 = excl.trans_for(&gens, &r0);
 
         assert_eq!(t0.forward_mat().shape(), (26, 26));
         assert!(t0.forward_mat().is_id());
@@ -819,14 +838,16 @@ mod tests {
 
         excl.perform_excl(1, 0, 1); // x1 -> x2
 
-        let t1 = excl.trans_for(&s2);
+        let r1 = excl.reduce_gens(&gens);
+        let t1 = excl.trans_for(&gens, &r1);
 
         assert_eq!(t1.forward_mat().shape(), (7, 26));
         assert!((t1.forward_mat() * t1.backward_mat()).is_id());
 
         excl.perform_excl(1, 1, 0); // x0 -> x2
 
-        let t2 = excl.trans_for(&s2);
+        let r2 = excl.reduce_gens(&gens);
+        let t2 = excl.trans_for(&gens, &r2);
 
         assert_eq!(t2.forward_mat().shape(), (1, 26));
         assert!((t2.forward_mat() * t2.backward_mat()).is_id());
