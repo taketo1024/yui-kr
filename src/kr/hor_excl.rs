@@ -7,11 +7,12 @@ use yui_homology::make_matrix;
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::Trans;
 use yui_polynomial::Mono;
+use yui_utils::bitseq::BitSeq;
 
 use crate::kr::base::sign_between;
 
 use super::base::{BaseMono, BasePoly, VertGen};
-use super::hor_cube::KRHorCube;
+use super::data::KRCubeData;
 
 struct Process<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
@@ -30,6 +31,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 pub(crate) struct KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
+    v_coords: BitSeq,
     edge_polys: HashMap<usize, BasePoly<R>>,
     exc_dirs: HashSet<usize>,
     fst_exc_vars: HashSet<usize>,
@@ -40,8 +42,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    fn new(n: usize, edge_polys: HashMap<usize, BasePoly<R>>) -> Self { 
+    fn new(v_coords: BitSeq, edge_polys: HashMap<usize, BasePoly<R>>) -> Self { 
+        let n = v_coords.len();
         Self { 
+            v_coords,
             edge_polys,
             exc_dirs: HashSet::new(), 
             fst_exc_vars: HashSet::new(), 
@@ -51,15 +55,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    pub fn from(cube: &KRHorCube<R>, level: usize) -> Self { 
+    pub fn from(data: &KRCubeData<R>, v_coords: BitSeq, level: usize) -> Self { 
         assert!(level <= 2);
 
-        let n = cube.data().dim();
+        let n = data.dim();
         let edge_polys = (0..n).map(|i| 
-            (i, cube.edge_poly(i))
+            (i, data.hor_edge_poly(v_coords, i))
         ).collect();
 
-        let mut res = Self::new(n, edge_polys);
+        let mut res = Self::new(v_coords, edge_polys);
 
         for d in 1..=level { 
             res.excl_all(d);
@@ -364,17 +368,12 @@ mod tests {
     use yui_utils::{bitseq::BitSeq, map};
 
     use crate::kr::data::KRCubeData;
+    use crate::kr::hor_cube::KRHorCube;
 
     use super::*;
 
     type R = Ratio<i64>;
     type P = BasePoly<R>;
-
-    fn make_cube(l: &Link, v: BitSeq, q: isize) -> KRHorCube<R> {
-        let data = KRCubeData::<R>::new(&l);
-        let rc = Rc::new(data);
-        KRHorCube::new(rc, v, q)
-    }
 
     fn vars(l: usize) -> Vec<P> {
         (0..l).map(|i| P::variable(i)).collect_vec()
@@ -392,10 +391,9 @@ mod tests {
     fn init() { 
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let excl = KRHorExcl::from(&data, v, 0);
 
         assert!(excl.exc_dirs.is_empty());
         assert!(excl.fst_exc_vars.is_empty());
@@ -419,10 +417,9 @@ mod tests {
     fn find_excl_var() { 
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let excl = KRHorExcl::from(&data, v, 0);
 
         assert_eq!(excl.find_excl_var(1, 0), Some(1));
         assert_eq!(excl.find_excl_var(1, 1), Some(0));
@@ -437,10 +434,9 @@ mod tests {
     fn perform_excl() { 
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
 
         // replaces x1 -> x2
         excl.perform_excl(1, 0, 1);
@@ -476,10 +472,9 @@ mod tests {
     fn perform_excl_2() { 
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
 
         // replaces x1 -> x2
         excl.perform_excl(1, 0, 1);
@@ -518,10 +513,9 @@ mod tests {
     fn perform_excl_3() { 
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
 
         // replaces x1 -> x2
         excl.perform_excl(1, 0, 1);
@@ -560,10 +554,10 @@ mod tests {
     fn should_vanish_before() {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let excl = KRHorExcl::from(&data, v, 0);
+        let cube = KRHorCube::new(Rc::new(data), v, 0);
 
         assert!((0..=3).all(|i| 
             cube.gens(i).iter().all(|v| 
@@ -576,10 +570,10 @@ mod tests {
     fn should_vanish() {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
+
         excl.perform_excl(1, 0, 1);
 
         assert!( excl.should_vanish(&vgen([0,1,0], [0,0,1], [1,2,3]))); // h[0] = 0
@@ -590,10 +584,10 @@ mod tests {
     fn should_reduce_before() {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let excl = KRHorExcl::from(&data, v, 0);
+        let cube = KRHorCube::new(Rc::new(data), v, 0);
 
         assert!((0..=3).all(|i| 
             cube.gens(i).iter().all(|v| 
@@ -606,10 +600,10 @@ mod tests {
     fn should_reduce() {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
+
         excl.perform_excl(1, 0, 1); // x_1 is reduced
 
         assert!(!excl.should_reduce(&MultiVar::from([0,0,0])));
@@ -622,10 +616,10 @@ mod tests {
     fn should_reduce_2() {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
+
         excl.perform_excl(1, 0, 1); // x_1 is reduced.
         excl.perform_excl(2, 2, 2); // (x_2)^2 is reduced.
 
@@ -640,10 +634,10 @@ mod tests {
     fn reduce_gens() {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
+        let cube = KRHorCube::new(Rc::new(data), v, 0);
 
         let g = (0..=3).map(|i| 
             IndexList::from_iter(cube.gens(i))
@@ -681,10 +675,9 @@ mod tests {
     fn forward() {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
 
         excl.perform_excl(1, 0, 1); // x1 -> x2
 
@@ -707,10 +700,9 @@ mod tests {
     fn forward_2() {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
 
         excl.perform_excl(1, 0, 1); // x1 -> x2
         excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
@@ -742,10 +734,9 @@ mod tests {
     fn backward() {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
         
         excl.perform_excl(1, 0, 1); // x1 -> x2
 
@@ -780,10 +771,9 @@ mod tests {
     fn backward_2() {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
         
         excl.perform_excl(1, 0, 1); // x1 -> x2
         excl.perform_excl(1, 1, 0); // x0 -> x2
@@ -806,10 +796,9 @@ mod tests {
     fn backward_3() {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
         
         excl.perform_excl(1, 0, 1); // x1 -> x2
         excl.perform_excl(2, 2, 2); // x2^2 -> x0 x2
@@ -826,10 +815,10 @@ mod tests {
     fn trans() { 
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
-        let q = 0;
 
-        let cube = make_cube(&l, v, q);
-        let mut excl = KRHorExcl::from(&cube, 0);
+        let data = KRCubeData::<R>::new(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
+        let cube = KRHorCube::new(Rc::new(data), v, 0);
 
         let gens = IndexList::from_iter(cube.gens(2));
 
