@@ -98,14 +98,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn perform_excl(&mut self, deg: usize, i: usize, k: usize) {
-        // take divisor and preserve edge_polys.
+        // take divisor and edge-polys.
         let p = self.edge_polys.remove(&i).unwrap();
-        let edge_polys = self.edge_polys.clone();
+        let edge_polys = std::mem::take(&mut self.edge_polys);
 
         // update edge-polys.
-        self.edge_polys = self.edge_polys.iter().map(|(&j, f)|
-            (j, rem(f, &p, k))
-        ).collect();
+        self.edge_polys = edge_polys.clone().into_iter().map(|(j, f)| {
+            let f_rem = rem(f, &p, k);
+            (j, f_rem)
+        }).collect();
 
         // update other infos.
         self.exc_dirs.insert(i);
@@ -160,10 +161,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             let e = R::from_sign( sign_between(h0, h1) );
             let p = BasePoly::from((x0.clone(), e));
 
-            // FIXME: must reduce!
-            let q = f * p;
+            let g = f * p;
+            let g = self.process.iter().fold(g, |g, d| { 
+                let (p, k) = d.divisor();
+                rem(g, p, k)
+            });
 
-            q.into_iter().map(move |(x1, r)| 
+            g.into_iter().map(move |(x1, r)| 
                 (VertGen(h1, v0, x1), r)
             )
         }).collect()
@@ -201,7 +205,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let f = BasePoly::from(v.2.clone());
         let f = self.process.iter().fold(f, |f, d| { 
             let (p, k) = d.divisor();
-            rem(&f, p, k) // f mod p by x_k
+            rem(f, p, k) // f mod p by x_k
         });
 
         f.into_iter().map(|(x, a)| {
@@ -261,7 +265,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let z0 = self.send_back(&z, i);
         let u0 = self.d(&z0, step, false);
 
-        let w = (w0 + u0).map_coeffs::<BasePoly<R>, _>(|f| 
+        let w = (w0 + u0).into_map_coeffs::<BasePoly<R>, _>(|f| 
             div(f, p, k)
         );
         
@@ -291,7 +295,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
                 let w = VertGen(v.0.edit(|b| b.set_1(i)), v.1, v.2.clone());
                 let e = R::from_sign( sign_between(v.0, w.0) );
                 let h = if mod_p { 
-                    rem(&(f * g), p, k) * e
+                    rem(f * g, p, k) * e
                 } else { 
                     f * g * e
                 };
@@ -309,7 +313,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
-fn div_rem<R>(f: &BasePoly<R>, g: &BasePoly<R>, k: usize) -> (BasePoly<R>, BasePoly<R>)
+fn div_rem<R>(f: BasePoly<R>, g: &BasePoly<R>, k: usize) -> (BasePoly<R>, BasePoly<R>)
 where R: Ring, for<'x> &'x R: RingOps<R> {
     let (e0, a0) = g.lead_term_for(k);
 
@@ -319,7 +323,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     let a0_inv = a0.inv().unwrap();
 
     let mut q = BasePoly::zero();
-    let mut r = f.clone();
+    let mut r = f;
     
     while !r.is_zero() { 
         let (e1, a1) = r.lead_term_for(k);
@@ -337,14 +341,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     (q, r)
 }
 
-fn div<R>(f: &BasePoly<R>, p: &BasePoly<R>, k: usize) -> BasePoly<R>
+fn div<R>(f: BasePoly<R>, p: &BasePoly<R>, k: usize) -> BasePoly<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     let (q, r) = div_rem(f, p, k);
     debug_assert!(r.is_zero());
     q
 }
 
-fn rem<R>(f: &BasePoly<R>, p: &BasePoly<R>, k: usize) -> BasePoly<R>
+fn rem<R>(f: BasePoly<R>, p: &BasePoly<R>, k: usize) -> BasePoly<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     div_rem(f, p, k).1
 }
