@@ -368,7 +368,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
+    use std::sync::Arc;
 
     use yui_link::Link;
     use yui_matrix::sparse::MatType;
@@ -566,7 +566,7 @@ mod tests {
 
         let data = KRCubeData::<R>::new(&l);
         let excl = KRHorExcl::from(&data, v, 0);
-        let cube = KRHorCube::new(Rc::new(data), v, 0);
+        let cube = KRHorCube::new(Arc::new(data), v, 0);
 
         assert!((0..=3).all(|i| 
             cube.gens(i).iter().all(|v| 
@@ -596,7 +596,7 @@ mod tests {
 
         let data = KRCubeData::<R>::new(&l);
         let excl = KRHorExcl::from(&data, v, 0);
-        let cube = KRHorCube::new(Rc::new(data), v, 0);
+        let cube = KRHorCube::new(Arc::new(data), v, 0);
 
         assert!((0..=3).all(|i| 
             cube.gens(i).iter().all(|v| 
@@ -646,7 +646,7 @@ mod tests {
 
         let data = KRCubeData::<R>::new(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
-        let cube = KRHorCube::new(Rc::new(data), v, 0);
+        let cube = KRHorCube::new(Arc::new(data), v, 0);
 
         let g = (0..=3).map(|i| 
             cube.gens(i)
@@ -827,7 +827,7 @@ mod tests {
 
         let data = KRCubeData::<R>::new(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
-        let cube = KRHorCube::new(Rc::new(data), v, 0);
+        let cube = KRHorCube::new(Arc::new(data), v, 0);
 
         let gens = cube.gens(2);
 

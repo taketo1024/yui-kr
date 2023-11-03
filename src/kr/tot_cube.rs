@@ -1,7 +1,8 @@
-use std::cell::OnceCell;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::{Arc, OnceLock};
 use cartesian::cartesian;
+use itertools::Itertools;
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui_core::{EucRing, EucRingOps, isize2};
 use yui_homology::ChainComplex2;
 use yui_lin_comb::LinComb;
@@ -16,17 +17,17 @@ pub type KRTotComplex<R> = ChainComplex2<R>;
 
 pub struct KRTotCube<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    data: Rc<KRCubeData<R>>,
+    data: Arc<KRCubeData<R>>,
     q_slice: isize,
-    hor_hmls: HashMap<BitSeq, OnceCell<KRHorHomol<R>>>
+    hor_hmls: HashMap<BitSeq, OnceLock<KRHorHomol<R>>>
 } 
 
 impl<R> KRTotCube<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub fn new(data: Rc<KRCubeData<R>>, q_slice: isize) -> Self {
+    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self {
         let n = data.dim();
         let hor_homols = BitSeq::generate(n).into_iter().map(|v|
-            (v, OnceCell::new())
+            (v, OnceLock::new())
         ).collect();
 
         Self {
@@ -106,21 +107,22 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     fn d_matrix(&self, i: usize, j: usize) -> SpMat<R> { 
         let gens = self.gens(i, j);
-        let shape = (self.rank(i, j+1), self.rank(i, j));
-        let mut entries = vec![];
+        let (m, n) = (self.rank(i, j+1), self.rank(i, j));
 
-        for (l, z) in gens.iter().enumerate() { 
-            let dz: LinComb<VertGen, R> = z.iter().map(|(x, a)| { 
+        let entries: Vec<_> = (0..n).into_par_iter().map(|l| { 
+            let z = &gens[l];
+            let dz = z.iter().map(|(x, a)| { 
                 self.differentiate(x) * a
             }).sum();
+            
             let w = self.vectorize(i, j + 1, &dz);
 
-            for (k, b) in w.iter() { 
-                entries.push((k, l, b.clone()));
-            }
-        }
+            w.iter().map(|(k, b)| 
+                (k, l, b.clone())
+            ).collect_vec()
+        }).flatten().collect();
 
-        SpMat::from_entries(shape, entries)
+        SpMat::from_entries((m, n), entries)
     }
 
     pub fn as_complex(self) -> KRTotComplex<R> {
@@ -148,7 +150,7 @@ mod tests {
 
     fn make_cube(l: &Link, q: isize) -> KRTotCube<R> {
         let data = KRCubeData::<R>::new(&l);
-        let rc = Rc::new(data);
+        let rc = Arc::new(data);
         let cube = KRTotCube::new(rc, q);
         cube
     }

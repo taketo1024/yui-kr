@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use itertools::Itertools;
 use yui_core::{Ring, RingOps};
@@ -11,14 +11,14 @@ use super::data::KRCubeData;
 
 pub struct KRHorCube<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
-    data: Rc<KRCubeData<R>>,
+    data: Arc<KRCubeData<R>>,
     v_coords: BitSeq,
     q_slice: isize,
 } 
 
 impl<R> KRHorCube<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    pub fn new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self {
+    pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self {
         assert_eq!(v_coords.len(), data.dim());
         Self {
             data,
@@ -140,7 +140,7 @@ mod tests {
 
     fn make_cube(l: &Link, v: BitSeq, q: isize) -> KRHorCube<R> {
         let data = KRCubeData::<R>::new(&l);
-        let rc = Rc::new(data);
+        let rc = Arc::new(data);
         let cube = KRHorCube::new(rc, v, q);
         cube
     }

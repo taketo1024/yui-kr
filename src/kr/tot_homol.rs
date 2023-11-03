@@ -1,5 +1,5 @@
 use std::ops::Index;
-use std::rc::Rc;
+use std::sync::Arc;
 use delegate::delegate;
 
 use yui_core::{EucRing, EucRingOps, isize2};
@@ -16,7 +16,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    pub fn new(data: Rc<KRCubeData<R>>, q_slice: isize) -> Self { 
+    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
         let cube = KRTotCube::new(data, q_slice);
         let complex = cube.as_complex();
         let reduced = complex.reduced(false);
@@ -72,7 +72,7 @@ mod tests {
     fn rank() { 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
-        let data = Rc::new( KRCubeData::<R>::new(&l) );
+        let data = Arc::new( KRCubeData::<R>::new(&l) );
         let h = KRTotHomol::new(data, q);
 
         assert_eq!(h[(0, 0)].rank(), 0);

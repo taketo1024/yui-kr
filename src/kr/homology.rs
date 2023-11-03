@@ -1,7 +1,7 @@
 use std::cell::UnsafeCell;
 use std::collections::HashMap;
 use std::ops::Index;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use cartesian::{cartesian, TuplePrepend};
 use itertools::Itertools;
@@ -17,7 +17,7 @@ type QPoly<R> = LPoly<'q', R>;
 
 pub struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    data: Rc<KRCubeData<R>>,
+    data: Arc<KRCubeData<R>>,
     cache: UnsafeCell<HashMap<isize, KRTotHomol<R>>>,
     zero: HomologySummand<R>
 }
@@ -25,7 +25,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRHomology<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(link: &Link) -> Self { 
-        let data = Rc::new(KRCubeData::new(&link));
+        let data = Arc::new(KRCubeData::new(&link));
         let cache = UnsafeCell::new( HashMap::new() );
         let zero = HomologySummand::zero();
         Self { data, cache, zero }

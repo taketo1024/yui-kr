@@ -1,5 +1,5 @@
 use std::ops::Index;
-use std::rc::Rc;
+use std::sync::Arc;
 use delegate::delegate;
 
 use yui_core::{EucRing, EucRingOps};
@@ -21,7 +21,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    pub fn new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
+    pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
         let complex = KRHorComplex::new(data, v_coords, q_slice);
         let homology = complex.homology();
 
@@ -104,7 +104,7 @@ mod tests {
 
     fn make_hml(l: &Link, v: BitSeq, q: isize) -> KRHorHomol<R> {
         let data = KRCubeData::<R>::new(&l);
-        let rc = Rc::new(data);
+        let rc = Arc::new(data);
         KRHorHomol::new(rc, v, q)
     }
 

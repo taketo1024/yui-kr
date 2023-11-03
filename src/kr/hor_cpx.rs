@@ -1,5 +1,5 @@
 use std::ops::Index;
-use std::rc::Rc;
+use std::sync::Arc;
 use delegate::delegate;
 
 use yui_core::{Ring, RingOps, EucRing, EucRingOps};
@@ -25,7 +25,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
-    pub fn new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
+    pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
         let excl = KRHorExcl::from(&data, v_coords, 2);
         let cube = KRHorCube::new(data, v_coords, q_slice);
         let gens = Self::excl_gens(&excl, &cube);
@@ -134,7 +134,7 @@ mod tests {
     type R = Ratio<i64>;
 
     fn make_cpx(link: &Link, v_coords: BitSeq, q_slice: isize, level: usize, red: bool) -> KRHorComplex<R> {
-        let data = Rc::new( KRCubeData::<R>::new(&link) );
+        let data = Arc::new( KRCubeData::<R>::new(&link) );
 
         let excl = KRHorExcl::from(&data, v_coords, level);
         let cube = KRHorCube::new(data, v_coords, q_slice);
