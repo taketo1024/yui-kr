@@ -985,6 +985,7 @@ dependencies = [
  "num-integer",
  "num-traits",
  "petgraph",
+ "rayon",
  "yui-core",
  "yui-homology",
  "yui-khovanov",

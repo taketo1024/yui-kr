@@ -24,3 +24,4 @@ yui-homology   = { git = "https://github.com/taketo1024/yui.git", branch = "deve
 yui-khovanov   = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
 delegate = "0.10.0"
 num-integer = "0.1.45"
+rayon = "1.8.0"
