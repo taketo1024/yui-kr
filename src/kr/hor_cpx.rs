@@ -25,24 +25,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     pub fn new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
-        Self::_new(data, v_coords, q_slice, 2, true)
-    }
-
-    fn _new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize, excl_level: usize, _ch_red: bool) -> Self { 
-        assert!(excl_level <= 2);
-
         let n = data.dim() as isize;
-        let range = 0..=n;
 
-        let excl = KRHorExcl::from(&data, v_coords, excl_level);
+        let excl = KRHorExcl::from(&data, v_coords, 2);
         let cube = KRHorCube::new(data, v_coords, q_slice);
-        let gens = Grid::new(range.clone(), |i|
-            XModStr::from_iter( cube.gens(i as usize) )
+        let gens = Grid::new(0..=n, |i|
+            XModStr::from_iter(cube.gens(i as usize) )
         );
 
         let inner = Self::excl_cpx(&excl, &gens);
-
-        // TODO also compose ch-red.
+        let inner = inner.reduced(true);
 
         Self { v_coords, q_slice, gens, inner }
     }
@@ -137,11 +129,22 @@ mod tests {
     type R = Ratio<i64>;
     type P = BasePoly<R>;
 
-    fn make_cube(l: &Link, v: BitSeq, q: isize) -> KRHorCube<R> {
-        let data = KRCubeData::<R>::new(&l);
-        let rc = Rc::new(data);
-        let cube = KRHorCube::new(rc, v, q);
-        cube
+    fn make_cpx(link: &Link, v: BitSeq, q: isize, l: usize, red: bool) -> KRHorComplex<R> {
+        let data = Rc::new( KRCubeData::<R>::new(&link) );
+        let n = data.dim() as isize;
+
+        let excl = KRHorExcl::from(&data, v, l);
+        let cube = KRHorCube::new(data, v, q);
+        let gens = Grid::new(0..=n, |i|
+            XModStr::from_iter(cube.gens(i as usize) )
+        );
+
+        let mut inner = KRHorComplex::excl_cpx(&excl, &gens);
+        if red { 
+            inner = inner.reduced(true);
+        }
+
+        KRHorComplex { v_coords: v, q_slice: q, gens, inner }
     }
 
     #[test]
@@ -150,8 +153,7 @@ mod tests {
         let v = BitSeq::from([1,0,0]);
         let q = 0;
         
-        let data = Rc::new(KRCubeData::<R>::new(&l));
-        let c = KRHorComplex::_new(data, v, q, 0, false);
+        let c = make_cpx(&l, v, q, 0, false);
 
         assert_eq!(c[0].rank(), 3);
         assert_eq!(c[1].rank(), 26);
@@ -174,8 +176,7 @@ mod tests {
         let v = BitSeq::from([1,0,0]);
         let q = 0;
         
-        let data = Rc::new(KRCubeData::<R>::new(&l));
-        let c = KRHorComplex::_new(data, v, q, 1, false);
+        let c = make_cpx(&l, v, q, 1, false);
 
         assert_eq!(c[0].rank(), 0);
         assert_eq!(c[1].rank(), 3);
@@ -198,8 +199,7 @@ mod tests {
         let v = BitSeq::from([1,0,0]);
         let q = 0;
         
-        let data = Rc::new(KRCubeData::<R>::new(&l));
-        let c = KRHorComplex::_new(data, v, q, 2, false);
+        let c = make_cpx(&l, v, q, 2, false);
 
         assert_eq!(c[0].rank(), 0);
         assert_eq!(c[1].rank(), 0);
@@ -216,16 +216,49 @@ mod tests {
         assert_eq!(h[3].rank(), 2);
     }
 
-    // #[test]
-    fn crash() { 
-        let l = Link::from_pd_code([[1,6,2,7],[3,8,4,9],[5,10,6,1],[7,2,8,3],[9,4,10,5]]).mirror();
-        let v = BitSeq::from([1,0,0,0,0]);
+    #[test]
+    fn excl_level1_red() { 
+        let l = Link::trefoil().mirror();
+        let v = BitSeq::from([1,0,0]);
         let q = 0;
+        
+        let c = make_cpx(&l, v, q, 1, true);
 
-        let data = Rc::new(KRCubeData::<R>::new(&l));
-        let c = KRHorComplex::_new(Rc::clone(&data), v, q, 2, false);
+        assert_eq!(c[0].rank(), 0);
+        assert_eq!(c[1].rank(), 0);
+        assert_eq!(c[2].rank(), 2);
+        assert_eq!(c[3].rank(), 2);
 
-        c.print_seq();
         c.check_d_all();
+
+        let h = c.inner.homology(false);
+        
+        assert_eq!(h[0].rank(), 0);
+        assert_eq!(h[1].rank(), 0);
+        assert_eq!(h[2].rank(), 2);
+        assert_eq!(h[3].rank(), 2);
+    }
+
+    #[test]
+    fn excl_level2_red() { 
+        let l = Link::trefoil().mirror();
+        let v = BitSeq::from([1,0,0]);
+        let q = 0;
+        
+        let c = make_cpx(&l, v, q, 2, true);
+
+        assert_eq!(c[0].rank(), 0);
+        assert_eq!(c[1].rank(), 0);
+        assert_eq!(c[2].rank(), 2);
+        assert_eq!(c[3].rank(), 2);
+
+        c.check_d_all();
+
+        let h = c.inner.homology(false);
+        
+        assert_eq!(h[0].rank(), 0);
+        assert_eq!(h[1].rank(), 0);
+        assert_eq!(h[2].rank(), 2);
+        assert_eq!(h[3].rank(), 2);
     }
 }
