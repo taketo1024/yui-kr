@@ -3,7 +3,7 @@ use std::rc::Rc;
 use delegate::delegate;
 
 use yui_core::{Ring, RingOps, EucRing, EucRingOps};
-use yui_homology::{ReducedComplex, Grid, ChainComplexTrait, XModStr, GridTrait, GridIter, ChainComplexSummand, Homology, make_matrix};
+use yui_homology::{ReducedComplex, Grid, ChainComplexTrait, XModStr, GridTrait, GridIter, ChainComplexSummand, Homology, make_matrix, ChainComplex};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpVec, SpMat};
 use yui_utils::bitseq::BitSeq;
@@ -18,6 +18,7 @@ pub struct KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     v_coords: BitSeq,
     q_slice: isize,
+    excl: KRHorExcl<R>,
     gens: Grid<XModStr<VertGen, R>>,
     inner: ReducedComplex<R>
 } 
@@ -25,30 +26,27 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     pub fn new(data: Rc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
-        let n = data.dim() as isize;
-
         let excl = KRHorExcl::from(&data, v_coords, 2);
         let cube = KRHorCube::new(data, v_coords, q_slice);
-        let gens = Grid::new(0..=n, |i|
-            XModStr::from_iter(cube.gens(i as usize) )
-        );
+        let gens = Self::excl_gens(&excl, &cube);
+        let inner = Self::make_cpx(&excl, &gens).reduced(true);
 
-        let inner = Self::excl_cpx(&excl, &gens);
-        let inner = inner.reduced(true);
-
-        Self { v_coords, q_slice, gens, inner }
+        Self { v_coords, q_slice, excl, gens, inner }
     }
 
-    fn excl_cpx(excl: &KRHorExcl<R>, gens: &Grid<XModStr<VertGen, R>>) -> ReducedComplex<R> {
-        let red_gens = Grid::new(
-            gens.support(), 
-            |i| excl.reduce_gens( &gens[i].gens() )
-        );
+    fn excl_gens(excl: &KRHorExcl<R>, cube: &KRHorCube<R>) -> Grid<XModStr<VertGen, R>> {
+        let n = cube.data().dim() as isize;
+        Grid::new(0..=n, |i| {
+            let xs = cube.gens(i as usize);
+            let red_xs = excl.reduce_gens(&xs);
+            XModStr::from_iter(red_xs)
+        })
+    }
 
-        ReducedComplex::new(
+    fn make_cpx(excl: &KRHorExcl<R>, gens: &Grid<XModStr<VertGen, R>>) -> ChainComplex<R> {
+        ChainComplex::new(
             gens.support(), 1, 
-            |i| make_matrix(&red_gens[i], &red_gens[i + 1], |v| excl.diff_red(v)),
-            |i| excl.trans_for(&gens[i].gens(), &red_gens[i])
+            |i| make_matrix(gens[i].gens(), gens[i+1].gens(), |x| excl.diff_red(x))
         )
     }
 
@@ -61,14 +59,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn vectorize(&self, i: isize, z: &LinComb<VertGen, R>) -> SpVec<R> {
-        let v = self.gens[i].vectorize(z);
-        let v = self.inner.trans(i).forward(&v);
+        let z_exc = self.excl.forward(z);
+        let v_exc = self.gens[i].vectorize(&z_exc);
+        let v = self.inner.trans(i).forward(&v_exc);
         v
     }
 
     pub fn as_chain(&self, i: isize, v: &SpVec<R>) -> LinComb<VertGen, R> {
-        let v = self.inner.trans(i).backward(v);
-        let z = self.gens[i].as_chain(&v);
+        let v_exc = self.inner.trans(i).backward(v);
+        let z_exc = self.gens[i].as_chain(&v_exc);
+        let z = self.excl.backward(&z_exc);
         z
     }
 
@@ -133,22 +133,20 @@ mod tests {
 
     type R = Ratio<i64>;
 
-    fn make_cpx(link: &Link, v: BitSeq, q: isize, l: usize, red: bool) -> KRHorComplex<R> {
+    fn make_cpx(link: &Link, v_coords: BitSeq, q_slice: isize, level: usize, red: bool) -> KRHorComplex<R> {
         let data = Rc::new( KRCubeData::<R>::new(&link) );
-        let n = data.dim() as isize;
 
-        let excl = KRHorExcl::from(&data, v, l);
-        let cube = KRHorCube::new(data, v, q);
-        let gens = Grid::new(0..=n, |i|
-            XModStr::from_iter(cube.gens(i as usize) )
-        );
+        let excl = KRHorExcl::from(&data, v_coords, level);
+        let cube = KRHorCube::new(data, v_coords, q_slice);
+        let gens = KRHorComplex::excl_gens(&excl, &cube);
+        let cpx = KRHorComplex::make_cpx(&excl, &gens);
+        let inner = if red { 
+            cpx.reduced(true)
+        } else { 
+            ReducedComplex::bypass(&cpx)
+        };
 
-        let mut inner = KRHorComplex::excl_cpx(&excl, &gens);
-        if red { 
-            inner = inner.reduced(true);
-        }
-
-        KRHorComplex { v_coords: v, q_slice: q, gens, inner }
+        KRHorComplex { v_coords, q_slice, excl, gens, inner }
     }
 
     #[test]

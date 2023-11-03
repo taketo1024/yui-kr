@@ -147,7 +147,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.process.push(d);
     }
 
-    pub fn reduce_gens(&self, gens: &IndexList<VertGen>) -> IndexList<VertGen> {
+    pub fn reduce_gens(&self, gens: &Vec<VertGen>) -> Vec<VertGen> {
         gens.iter().filter_map(|v| 
             if self.should_vanish(v) || self.should_reduce(&v.2) { 
                 None
@@ -155,36 +155,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
                 Some(v.clone())
             }
         ).collect()
-    }
-
-    pub fn diff_red(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
-        let (h0, v0) = (e.0, e.1);
-        let x0 = &e.2;
-
-        self.edge_polys.iter().filter(|(&i, _)|
-            h0[i].is_zero()
-        ).flat_map(|(&i, f)| {
-
-            let h1 = h0.edit(|b| b.set_1(i));
-            let e = R::from_sign( sign_between(h0, h1) );
-            let p = BasePoly::from((x0.clone(), e));
-
-            let g = f * p;
-            let g = self.process.iter().fold(g, |g, d| { 
-                let (p, k) = d.divisor();
-                rem(g, p, k)
-            });
-
-            g.into_iter().map(move |(x1, r)| 
-                (VertGen(h1, v0, x1), r)
-            )
-        }).collect()
-    }
-
-    pub fn trans_for(&self, from: &IndexList<VertGen>, to: &IndexList<VertGen>) -> Trans<R> {
-        let fwd = make_matrix(&from, &to, |x| self.forward(x));
-        let bwd = make_matrix(&to, &from, |x| self.backward(x));
-        Trans::new(fwd, bwd)
     }
 
     fn should_vanish(&self, v: &VertGen) -> bool { 
@@ -201,7 +171,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         )
     }
 
-    fn forward(&self, v: &VertGen) -> Vec<(VertGen, R)> {
+    pub fn forward(&self, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> {
+        z.apply(|v| self.forward_x(v))
+    }
+
+    fn forward_x(&self, v: &VertGen) -> Vec<(VertGen, R)> {
         if self.should_vanish(v) { 
             return vec![]
         } 
@@ -222,7 +196,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }).collect()
     }
 
-    fn backward(&self, w: &VertGen) -> Vec<(VertGen, R)> {
+    pub fn backward(&self, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> {
+        z.apply(|v| self.backward_x(v))
+    }
+
+    fn backward_x(&self, w: &VertGen) -> Vec<(VertGen, R)> {
         // convert LinComb<VertGen, R> -> LinComb<VertGen, EdgeRing<R>> 
         type F<R> = LinComb<VertGen, BasePoly<R>>;
         let w0 = VertGen(w.0.clone(), w.1.clone(), BaseMono::one());
@@ -308,6 +286,35 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
                 (w, h)
             }).collect::<F<R>>()
         }).sum()
+    }
+
+    pub fn trans_for(&self, from: &IndexList<VertGen>, to: &IndexList<VertGen>) -> Trans<R> {
+        let fwd = make_matrix(&from, &to, |x| self.forward_x(x));
+        let bwd = make_matrix(&to, &from, |x| self.backward_x(x));
+        Trans::new(fwd, bwd)
+    }
+
+    pub fn diff_red(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
+        let (h0, v0) = (e.0, e.1);
+        let x0 = &e.2;
+
+        self.edge_polys.iter().filter(|(&i, _)|
+            h0[i].is_zero()
+        ).flat_map(|(&i, f)| {
+
+            let h1 = h0.edit(|b| b.set_1(i));
+            let e = R::from_sign( sign_between(h0, h1) );
+            let p = BasePoly::from((x0.clone(), e));
+            let g = f * p;
+
+            // expand as lin-comb
+            let w = g.into_iter().map(|(x1, r)|
+                (VertGen(h1, v0, x1), r)
+            ).collect();
+
+            self.forward(&w).into_iter()
+
+        }).collect()
     }
 
     #[cfg(test)]
@@ -642,7 +649,7 @@ mod tests {
         let cube = KRHorCube::new(Rc::new(data), v, 0);
 
         let g = (0..=3).map(|i| 
-            IndexList::from_iter(cube.gens(i))
+            cube.gens(i)
         ).collect_vec();
 
         assert_eq!(g[0].len(),  1);
@@ -683,17 +690,17 @@ mod tests {
 
         excl.perform_excl(1, 0, 1); // x1 -> x2
 
-        assert_eq!(excl.forward(&vgen([0,0,0], [0,0,1], [0,0,0])), vec![]); // vanish
-        assert_eq!(excl.forward(&vgen([1,0,0], [0,0,1], [0,0,0])), vec![
+        assert_eq!(excl.forward_x(&vgen([0,0,0], [0,0,1], [0,0,0])), vec![]); // vanish
+        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [0,0,0])), vec![
             (vgen([1,0,0], [0,0,1], [0,0,0]), R::one()) // 1: id
         ]);
-        assert_eq!(excl.forward(&vgen([1,0,0], [0,0,1], [1,0,0])), vec![
+        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [1,0,0])), vec![
             (vgen([1,0,0], [0,0,1], [1,0,0]), R::one()) // x0: id
         ]);
-        assert_eq!(excl.forward(&vgen([1,0,0], [0,0,1], [0,1,0])), vec![
+        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [0,1,0])), vec![
             (vgen([1,0,0], [0,0,1], [0,0,1]), R::one()) // x1 -> x2
         ]);
-        assert_eq!(excl.forward(&vgen([1,0,0], [0,0,1], [0,0,1])), vec![
+        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [0,0,1])), vec![
             (vgen([1,0,0], [0,0,1], [0,0,1]), R::one()) // x2: id
         ]);
     }
@@ -709,25 +716,25 @@ mod tests {
         excl.perform_excl(1, 0, 1); // x1 -> x2
         excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
 
-        assert_eq!(excl.forward(&vgen([0,1,1], [0,0,1], [0,0,0])), vec![]); // vanish
-        assert_eq!(excl.forward(&vgen([1,1,0], [0,0,1], [0,0,0])), vec![]); // vanish
+        assert_eq!(excl.forward_x(&vgen([0,1,1], [0,0,1], [0,0,0])), vec![]); // vanish
+        assert_eq!(excl.forward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), vec![]); // vanish
 
-        assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [0,0,0])), vec![
+        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), vec![
             (vgen([1,0,1], [0,0,1], [0,0,0]), R::one()) // 1: id
         ]);
-        assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [1,0,0])), vec![
+        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [1,0,0])), vec![
             (vgen([1,0,1], [0,0,1], [1,0,0]), R::one()) // x1: id
         ]);
-        assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [0,1,0])), vec![
+        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,1,0])), vec![
             (vgen([1,0,1], [0,0,1], [0,0,1]), R::one()) // x1 -> x2
         ]);
-        assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [0,0,1])), vec![
+        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,1])), vec![
             (vgen([1,0,1], [0,0,1], [0,0,1]), R::one()) // x2: id
         ]);
-        assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [0,0,2])), vec![
+        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,2])), vec![
             (vgen([1,0,1], [0,0,1], [1,0,1]), R::one()) // x2^2 -> x0 x2
         ]);
-        assert_eq!(excl.forward(&vgen([1,0,1], [0,0,1], [1,1,1])), vec![
+        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [1,1,1])), vec![
             (vgen([1,0,1], [0,0,1], [2,0,1]), R::one()) // x0x1x2 -> x0^2 x2
         ]);
     }
@@ -743,27 +750,27 @@ mod tests {
         excl.perform_excl(1, 0, 1); // x1 -> x2
 
         assert_eq!(sort(
-            excl.backward(&vgen([1,0,0], [0,0,1], [0,0,0]))
+            excl.backward_x(&vgen([1,0,0], [0,0,1], [0,0,0]))
         ), vec![
             (vgen([1,0,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,0,0]
             (vgen([0,0,1], [0,0,1], [0,0,1]), -R::one())  // -x2 at [0,0,1]
         ]);
 
         assert_eq!(sort(
-            excl.backward(&vgen([1,1,0], [0,0,1], [0,0,0]))
+            excl.backward_x(&vgen([1,1,0], [0,0,1], [0,0,0]))
         ), vec![
             (vgen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,0]
             (vgen([0,1,1], [0,0,1], [0,0,1]),  R::one())  //  x2 at [0,1,1]
         ]);
 
         assert_eq!(
-            excl.backward(&vgen([1,0,1], [0,0,1], [0,0,0]))
+            excl.backward_x(&vgen([1,0,1], [0,0,1], [0,0,0]))
         , vec![
             (vgen([1,0,1], [0,0,1], [0,0,0]),  R::one()), //  id at [1,0,1]
         ]);
 
         assert_eq!(
-            excl.backward(&vgen([1,1,1], [0,0,1], [0,0,0]))
+            excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0]))
         , vec![
             (vgen([1,1,1], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,1]
         ]);
@@ -781,14 +788,14 @@ mod tests {
         excl.perform_excl(1, 1, 0); // x0 -> x2
 
         assert_eq!(sort(
-            excl.backward(&vgen([1,1,0], [0,0,1], [0,0,0]))
+            excl.backward_x(&vgen([1,1,0], [0,0,1], [0,0,0]))
         ), vec![
             (vgen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,0]
             (vgen([1,0,1], [0,0,1], [0,0,1]), -R::one()), // -x2 at [1,0,1]
             (vgen([0,1,1], [0,0,1], [0,0,1]),  R::one()), //  x2 at [0,1,1]
         ]);
         assert_eq!(
-            excl.backward(&vgen([1,1,1], [0,0,1], [0,0,0]))
+            excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0]))
         , vec![
             (vgen([1,1,1], [0,0,1], [0,0,0]), R::one())
         ]);
@@ -805,10 +812,10 @@ mod tests {
         excl.perform_excl(1, 0, 1); // x1 -> x2
         excl.perform_excl(2, 2, 2); // x2^2 -> x0 x2
 
-        assert_eq!(excl.backward(&vgen([1,0,1], [0,0,1], [0,0,0])), vec![
+        assert_eq!(excl.backward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), vec![
             (vgen([1,0,1], [0,0,1], [0,0,0]), R::one())
         ]);
-        assert_eq!(excl.backward(&vgen([1,1,1], [0,0,1], [0,0,0])), vec![
+        assert_eq!(excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), vec![
             (vgen([1,1,1], [0,0,1], [0,0,0]), R::one())
         ]);
     }
@@ -822,10 +829,15 @@ mod tests {
         let mut excl = KRHorExcl::from(&data, v, 0);
         let cube = KRHorCube::new(Rc::new(data), v, 0);
 
-        let gens = IndexList::from_iter(cube.gens(2));
+        let gens = cube.gens(2);
 
-        let r0 = excl.reduce_gens(&gens);
-        let t0 = excl.trans_for(&gens, &r0);
+        let trans = |excl: &KRHorExcl<R>| {
+            let from = IndexList::from_iter( gens.clone() );
+            let to = IndexList::from_iter( excl.reduce_gens(&gens) );
+            excl.trans_for(&from, &to)
+        };
+
+        let t0 = trans(&excl);
 
         assert_eq!(t0.forward_mat().shape(), (26, 26));
         assert!(t0.forward_mat().is_id());
@@ -833,16 +845,14 @@ mod tests {
 
         excl.perform_excl(1, 0, 1); // x1 -> x2
 
-        let r1 = excl.reduce_gens(&gens);
-        let t1 = excl.trans_for(&gens, &r1);
+        let t1 = trans(&excl);
 
         assert_eq!(t1.forward_mat().shape(), (7, 26));
         assert!((t1.forward_mat() * t1.backward_mat()).is_id());
 
         excl.perform_excl(1, 1, 0); // x0 -> x2
 
-        let r2 = excl.reduce_gens(&gens);
-        let t2 = excl.trans_for(&gens, &r2);
+        let t2 = trans(&excl);
 
         assert_eq!(t2.forward_mat().shape(), (1, 26));
         assert!((t2.forward_mat() * t2.backward_mat()).is_id());
