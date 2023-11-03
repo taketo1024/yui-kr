@@ -31,7 +31,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
             (0..r).map(|k| { 
                 let v = h.gen_vec(k).unwrap();
-                let z = complex.as_chain(i, &v);
+                let z = complex.as_chain(i, &v, true);
                 z
             }).collect()
         });

@@ -65,17 +65,17 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         v
     }
 
-    pub fn as_chain(&self, i: isize, v: &SpVec<R>) -> LinComb<VertGen, R> {
+    pub fn as_chain(&self, i: isize, v: &SpVec<R>, is_cycle: bool) -> LinComb<VertGen, R> {
         let v_exc = self.inner.trans(i).backward(v);
         let z_exc = self.gens[i].as_chain(&v_exc);
-        let z = self.excl.backward(&z_exc);
+        let z = self.excl.backward(&z_exc, is_cycle);
         z
     }
 
     pub fn d(&self, i: isize, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> { 
         let v = self.vectorize(i, z);
         let w = self.inner.d(i, &v);
-        let dz = self.as_chain(i + 1, &w);
+        let dz = self.as_chain(i + 1, &w, false);
         dz
     }
 }

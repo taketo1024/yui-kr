@@ -196,20 +196,18 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }).collect()
     }
 
-    pub fn backward(&self, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> {
-        z.apply(|v| self.backward_x(v))
-    }
-
-    fn backward_x(&self, w: &VertGen) -> Vec<(VertGen, R)> {
+    pub fn backward(&self, z: &LinComb<VertGen, R>, is_cycle: bool) -> LinComb<VertGen, R> {
         // convert LinComb<VertGen, R> -> LinComb<VertGen, EdgeRing<R>> 
-        type F<R> = LinComb<VertGen, BasePoly<R>>;
-        let w0 = VertGen(w.0.clone(), w.1.clone(), BaseMono::one());
-        let p = BasePoly::from(w.2.clone());
-        let init = F::from((w0, p));
+        
+        let init = z.iter().map(|(v, r)| {
+            let w = VertGen(v.0, v.1, BaseMono::one());
+            let p = BasePoly::from((v.2.clone(), r.clone()));
+            (w, p)
+        }).collect();
 
         let l = self.process.len();
         let res = if l > 0 { 
-            self.backward_itr(init, l - 1)
+            self.backward_itr(init, l - 1, is_cycle)
         } else { 
             init
         };
@@ -222,16 +220,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }).collect()
     }
 
-    fn backward_itr(&self, z: LinComb<VertGen, BasePoly<R>>, step: usize) -> LinComb<VertGen, BasePoly<R>> {
-        let res = self.backward_step(z, step);
+    fn backward_itr(&self, z: LinComb<VertGen, BasePoly<R>>, step: usize, is_cycle: bool) -> LinComb<VertGen, BasePoly<R>> {
+        let res = self.backward_step(z, step, is_cycle);
         if step > 0 { 
-            self.backward_itr(res, step - 1)
+            self.backward_itr(res, step - 1, is_cycle)
         } else { 
             res
         }
     }
 
-    fn backward_step(&self, z: LinComb<VertGen, BasePoly<R>>, step: usize) -> LinComb<VertGen, BasePoly<R>> {
+    fn backward_step(&self, z: LinComb<VertGen, BasePoly<R>>, step: usize, is_cycle: bool) -> LinComb<VertGen, BasePoly<R>> {
         let d = &self.process[step];
         let i = d.dir;
         let (p, k) = d.divisor();
@@ -241,19 +239,30 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         //         |             |
         // d mod p |             | d
         //         V             V
-        //        w1 . . . > w0, u0 ~> w = (w0 + u0)/p
+        //        x1 . . . > x0, y0 ~> w = (x0 + y0)/p
         //
 
-        let w1 = self.d(&z, step, true);
-        let w0 = self.send_back(&w1, i);
-        let z0 = self.send_back(&z, i);
-        let u0 = self.d(&z0, step, false);
+        let x0 = if !is_cycle {
+            let x1 = self.d(&z, step, true);
+            let x0 = self.send_back(&x1, i);
+            x0
+        } else { 
+            LinComb::<_, BasePoly<R>>::zero()
+        };
 
-        let w = (w0 + u0).into_map_coeffs::<BasePoly<R>, _>(|f| 
+        let z0 = self.send_back(&z, i);
+        let y0 = self.d(&z0, step, false);
+
+        let w = (x0 + y0).into_map_coeffs::<BasePoly<R>, _>(|f| 
             div(f, p, k)
         );
         
         z + w
+    }
+
+    fn backward_x(&self, w: &VertGen) -> Vec<(VertGen, R)> {
+        let z = LinComb::from(w.clone());
+        self.backward(&z, false).into_iter().collect()
     }
 
     fn send_back(&self, z: &LinComb<VertGen, BasePoly<R>>, dir: usize) -> LinComb<VertGen, BasePoly<R>> {
