@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::ops::RangeInclusive;
 use itertools::{Itertools, izip};
 use num_integer::Integer;
+use num_traits::One;
 use petgraph::{Graph, algo::min_spanning_tree};
 
 use yui_core::{Ring, RingOps, Sign, isize3};
@@ -172,6 +173,32 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             Some(isize3(h, v, q))
         } else { 
             None
+        }
+    }
+
+    pub fn hor_edge_poly(&self, v_coords: BitSeq, i: usize) -> BasePoly<R> {
+        use Bit::{Bit0, Bit1};
+
+        let sign = self.x_signs()[i];
+        let p = self.x_poly(i);
+        let v = v_coords[i];
+
+        match (sign.is_positive(), v) {
+            (true, Bit0) | (false, Bit1) => &p.x_ac * &p.x_bc,
+            (true, Bit1) | (false, Bit0) => p.x_ac.clone()
+        }
+    }
+
+    pub fn ver_edge_poly(&self, h_coords: BitSeq, i: usize) -> BasePoly<R> {
+        use Bit::{Bit0, Bit1};
+
+        let sign = self.x_signs()[i];
+        let p = self.x_poly(i);
+        let h = h_coords[i];
+
+        match (sign.is_positive(), h) {
+            (true, Bit0) | (false, Bit1) => p.x_bc.clone(),
+            (true, Bit1) | (false, Bit0) => BasePoly::one()
         }
     }
 

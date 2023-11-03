@@ -2,12 +2,11 @@ use std::cell::OnceCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use cartesian::cartesian;
-use num_traits::One;
 use yui_core::{EucRing, EucRingOps, isize2};
 use yui_homology::ChainComplex2;
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpMat, SpVec};
-use yui_utils::bitseq::{BitSeq, Bit};
+use yui_utils::bitseq::BitSeq;
 
 use super::base::{VertGen, BasePoly, sign_between};
 use super::data::KRCubeData;
@@ -77,25 +76,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         SpVec::from_entries(r, entries)
     }
 
-    fn edge_poly_between(&self, h_coords: BitSeq, from: BitSeq, to: BitSeq) -> BasePoly<R> {
-        assert_eq!(to.weight() - from.weight(), 1);
-
-        let n = from.len();
-        let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
-        self.edge_poly(h_coords, i)
-    }
-
     fn edge_poly(&self, h_coords: BitSeq, i: usize) -> BasePoly<R> {
-        use Bit::{Bit0, Bit1};
-
-        let sign = self.data.x_signs()[i];
-        let h = h_coords[i];
-        let p = self.data.x_poly(i);
-
-        match (sign.is_positive(), h) {
-            (true, Bit0) | (false, Bit1) => p.x_bc.clone(),
-            (true, Bit1) | (false, Bit0) => BasePoly::one()
-        }
+        self.data.ver_edge_poly(h_coords, i)
     }
 
     fn differentiate(&self, e: &VertGen) -> LinComb<VertGen, R> { 
@@ -176,16 +158,12 @@ mod tests {
 
         // p: neg, h: 0, v: 0 -> 1
         let h  = BitSeq::from([0,0,0]);
-        let v0 = BitSeq::from([0,0,0]);
-        let v1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly_between(h, v0, v1); // 1
+        let p = cube.edge_poly(h, 0); // 1
         assert_eq!(p, P::one());
 
         // p: neg, h: 1, v: 0 -> 1
         let h  = BitSeq::from([1,0,0]);
-        let v0 = BitSeq::from([0,0,0]);
-        let v1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly_between(h, v0, v1); // x_bc
+        let p = cube.edge_poly(h, 0); // x_bc
         assert_eq!(p, x[0]);
 
         let l = l.mirror(); // trefoil
@@ -193,16 +171,12 @@ mod tests {
 
         // p: pos, h: 0, v: 0 -> 1
         let h  = BitSeq::from([0,0,0]);
-        let v0 = BitSeq::from([0,0,0]);
-        let v1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly_between(h, v0, v1); // x_bc
+        let p = cube.edge_poly(h, 0); // x_bc
         assert_eq!(p, x[0]);
 
         // p: pos, h: 1, v: 0 -> 1
         let h  = BitSeq::from([1,0,0]);
-        let v0 = BitSeq::from([0,0,0]);
-        let v1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly_between(h, v0, v1); // x_bc
+        let p = cube.edge_poly(h, 0); // x_bc
         assert_eq!(p, P::one());
     }
 

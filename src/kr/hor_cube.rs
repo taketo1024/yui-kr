@@ -4,7 +4,7 @@ use std::rc::Rc;
 use itertools::Itertools;
 use yui_core::{Ring, RingOps};
 use yui_homology::XChainComplex;
-use yui_utils::bitseq::{BitSeq, Bit};
+use yui_utils::bitseq::BitSeq;
 
 use super::base::{BasePoly, BaseMono, VertGen, sign_between};
 use super::data::KRCubeData;
@@ -85,28 +85,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         ).collect()
     }
 
-    pub fn edge_poly_between(&self, from: BitSeq, to: BitSeq) -> BasePoly<R> {
-        assert_eq!(to.weight() - from.weight(), 1);
-
-        let n = from.len();
-        let i = (0..n).find(|&i| from[i] != to[i]).unwrap();
-
-        self.edge_poly(i)
-    }
-
     pub fn edge_poly(&self, i: usize) -> BasePoly<R> {
-        use Bit::{Bit0, Bit1};
-
-        let sign = self.data.x_signs()[i];
-        let v = self.v_coords[i];
-        let p = self.data.x_poly(i);
-
-        let a = match (sign.is_positive(), v) {
-            (true, Bit0) | (false, Bit1) => &p.x_ac * &p.x_bc,
-            (true, Bit1) | (false, Bit0) => p.x_ac.clone()
-        };
-
-        a
+        self.data.hor_edge_poly(self.v_coords, i)
     }
 
     pub fn differentiate(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
@@ -228,9 +208,7 @@ mod tests {
         let q = 0;
         let cube = make_cube(&l, v, q);
 
-        let h0 = BitSeq::from([0,0,0]);
-        let h1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly_between(h0, h1); // x_ac
+        let p = cube.edge_poly(0); // x_ac
         assert_eq!(p, -&x[1] + &x[2]);
 
         // p: neg, v: 1, h: 0 -> 1
@@ -238,9 +216,7 @@ mod tests {
         let q = 0;
         let cube = make_cube(&l, v, q);
 
-        let h0 = BitSeq::from([0,0,0]);
-        let h1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly_between(h0, h1); // x_ac * x_bc
+        let p = cube.edge_poly(0); // x_ac * x_bc
         assert_eq!(p, (-&x[1] + &x[2]) * &x[0]);
 
         // p: pos, v: 0, h: 0 -> 1
@@ -249,9 +225,7 @@ mod tests {
         let q = 0;
         let cube = make_cube(&l, v, q);
 
-        let h0 = BitSeq::from([0,0,0]);
-        let h1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly_between(h0, h1); // x_ac * x_bc
+        let p = cube.edge_poly(0); // x_ac * x_bc
         assert_eq!(p, (-&x[1] + &x[2]) * &x[0]);
 
         // p: pos, v: 1, h: 0 -> 1
@@ -259,9 +233,7 @@ mod tests {
         let q = 0;
         let cube = make_cube(&l, v, q);
 
-        let h0 = BitSeq::from([0,0,0]);
-        let h1 = BitSeq::from([1,0,0]);
-        let p = cube.edge_poly_between(h0, h1); // x_ac
+        let p = cube.edge_poly(0); // x_ac
         assert_eq!(p, -&x[1] + &x[2]);
     }
 
