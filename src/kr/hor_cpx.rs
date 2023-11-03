@@ -56,7 +56,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         ReducedComplex::new(
             gens.support(), 1, 
             |i| make_matrix(&red_gens[i], &red_gens[i + 1], |v| excl.diff_red(v)),
-            Some( |i| excl.trans_for(&gens[i].gens(), &red_gens[i]) )
+            |i| excl.trans_for(&gens[i].gens(), &red_gens[i])
         )
     }
 

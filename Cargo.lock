@@ -920,7 +920,7 @@ checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
 [[package]]
 name = "yui-core"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
 dependencies = [
  "ahash",
  "bimap",
@@ -934,7 +934,7 @@ dependencies = [
 [[package]]
 name = "yui-homology"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
 dependencies = [
  "bimap",
  "cartesian",
@@ -954,7 +954,7 @@ dependencies = [
 [[package]]
 name = "yui-khovanov"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
 dependencies = [
  "auto-impl-ops",
  "cartesian",
@@ -999,7 +999,7 @@ dependencies = [
 [[package]]
 name = "yui-lin-comb"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
 dependencies = [
  "ahash",
  "auto-impl-ops",
@@ -1013,7 +1013,7 @@ dependencies = [
 [[package]]
 name = "yui-link"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
 dependencies = [
  "derive_more",
  "itertools",
@@ -1028,7 +1028,7 @@ dependencies = [
 [[package]]
 name = "yui-matrix"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
 dependencies = [
  "auto-impl-ops",
  "derive_more",
@@ -1051,7 +1051,7 @@ dependencies = [
 [[package]]
 name = "yui-polynomial"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
 dependencies = [
  "ahash",
  "auto-impl-ops",
@@ -1068,7 +1068,7 @@ dependencies = [
 [[package]]
 name = "yui-quad-int"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
 dependencies = [
  "auto-impl-ops",
  "num-bigint",
@@ -1080,7 +1080,7 @@ dependencies = [
 [[package]]
 name = "yui-ratio"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
 dependencies = [
  "auto-impl-ops",
  "num-traits",
@@ -1091,7 +1091,7 @@ dependencies = [
 [[package]]
 name = "yui-utils"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
 dependencies = [
  "bit_reverse",
  "derive_more",
