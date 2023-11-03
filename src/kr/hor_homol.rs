@@ -12,10 +12,8 @@ use super::base::VertGen;
 use super::data::KRCubeData;
 use super::hor_cpx::KRHorComplex;
 
-pub(crate) struct KRHorHomol<R>
+pub struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    v_coords: BitSeq,
-    q_slice: isize,
     complex: KRHorComplex<R>,
     homology: Homology<R>,
     h_gens: Grid<Vec<LinComb<VertGen, R>>>
@@ -38,7 +36,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             }).collect()
         });
 
-        Self { v_coords, q_slice, complex, homology, h_gens }
+        Self { complex, homology, h_gens }
+    }
+
+    pub fn v_coords(&self) -> BitSeq { 
+        self.complex.v_coords()
+    }
+
+    pub fn q_slice(&self) -> isize { 
+        self.complex.q_slice()
     }
 
     pub fn rank(&self, i: usize) -> usize {
@@ -52,7 +58,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn vectorize(&self, i: usize, z: &LinComb<VertGen, R>) -> SpVec<R> {
         debug_assert!(z.iter().all(|(x, _)| 
             x.0.weight() == i && 
-            x.1 == self.v_coords
+            x.1 == self.v_coords()
         ));
 
         let i = i as isize;
@@ -92,11 +98,9 @@ mod tests {
     use num_traits::Zero;
     use yui_link::Link;
     use yui_ratio::Ratio;
-    use crate::kr::base::BasePoly;
     use super::*;
 
     type R = Ratio<i64>;
-    type P = BasePoly<R>;
 
     fn make_hml(l: &Link, v: BitSeq, q: isize) -> KRHorHomol<R> {
         let data = KRCubeData::<R>::new(&l);

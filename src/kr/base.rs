@@ -12,7 +12,7 @@ pub(crate) type BasePoly<R> = PolyN<'x', R>;
 
 #[derive(PartialEq, Eq, Hash, Default, Clone, Debug, Display, PartialOrd, Ord)]
 #[display(fmt = "({}-{}, {})", _0, _1, _2)]
-pub(crate) struct VertGen(
+pub struct VertGen(
     pub BitSeq, // h-coords
     pub BitSeq, // v-coords
     pub BaseMono

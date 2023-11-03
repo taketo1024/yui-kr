@@ -14,7 +14,7 @@ use super::base::VertGen;
 use super::data::KRCubeData;
 use super::hor_excl::KRHorExcl;
 
-pub(crate) struct KRHorComplex<R>
+pub struct KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     v_coords: BitSeq,
     q_slice: isize,
@@ -50,6 +50,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             |i| make_matrix(&red_gens[i], &red_gens[i + 1], |v| excl.diff_red(v)),
             |i| excl.trans_for(&gens[i].gens(), &red_gens[i])
         )
+    }
+
+    pub fn v_coords(&self) -> BitSeq { 
+        self.v_coords
+    }
+
+    pub fn q_slice(&self) -> isize { 
+        self.q_slice
     }
 
     pub fn vectorize(&self, i: isize, z: &LinComb<VertGen, R>) -> SpVec<R> {
@@ -115,19 +123,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 }
 
-#[allow(unused_imports)] // TODO remove later.
 #[cfg(test)]
 mod tests { 
-    use yui_homology::{RModStr, DisplaySeq};
+    use yui_homology::RModStr;
     use yui_link::Link;
     use yui_ratio::Ratio;
-
-    use crate::kr::base::BasePoly;
 
     use super::*;
 
     type R = Ratio<i64>;
-    type P = BasePoly<R>;
 
     fn make_cpx(link: &Link, v: BitSeq, q: isize, l: usize, red: bool) -> KRHorComplex<R> {
         let data = Rc::new( KRCubeData::<R>::new(&link) );

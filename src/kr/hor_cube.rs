@@ -9,7 +9,7 @@ use yui_utils::bitseq::BitSeq;
 use super::base::{BasePoly, BaseMono, VertGen, sign_between};
 use super::data::KRCubeData;
 
-pub(crate) struct KRHorCube<R>
+pub struct KRHorCube<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     data: Rc<KRCubeData<R>>,
     v_coords: BitSeq,

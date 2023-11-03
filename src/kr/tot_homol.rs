@@ -8,7 +8,7 @@ use yui_homology::{Homology2, ChainComplexTrait, RModStr, GridTrait, GridIter, H
 use super::data::KRCubeData;
 use super::tot_cube::KRTotCube;
 
-pub(crate) struct KRTotHomol<R>
+pub struct KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     q_slice: isize,
     homology: Homology2<R>
@@ -23,6 +23,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let homology = reduced.homology(false);
 
         Self { q_slice, homology }
+    }
+
+    pub fn q_slice(&self) -> isize { 
+        self.q_slice
     }
 
     pub fn rank(&self, i: usize, j: usize) -> usize { 
@@ -60,11 +64,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 mod tests { 
     use yui_link::Link;
     use yui_ratio::Ratio;
-    use crate::kr::base::BasePoly;
     use super::*;
 
     type R = Ratio<i64>;
-    type P = BasePoly<R>;
 
     #[test]
     fn rank() { 

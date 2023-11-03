@@ -29,7 +29,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
-pub(crate) struct KRHorExcl<R>
+pub struct KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     v_coords: BitSeq,
     edge_polys: HashMap<usize, BasePoly<R>>,
@@ -70,6 +70,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
 
         res
+    }
+
+    pub fn v_coords(&self) -> BitSeq { 
+        self.v_coords
     }
 
     fn excl_all(&mut self, deg: usize) {
@@ -250,8 +254,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn backward_step(&self, z: LinComb<VertGen, BasePoly<R>>, step: usize) -> LinComb<VertGen, BasePoly<R>> {
-        type F<R> = LinComb<VertGen, BasePoly<R>>;
-
         let d = &self.process[step];
         let i = d.dir;
         let (p, k) = d.divisor();

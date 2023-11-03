@@ -12,9 +12,9 @@ use super::base::{VertGen, BasePoly, sign_between};
 use super::data::KRCubeData;
 use super::hor_homol::KRHorHomol;
 
-pub(crate) type KRTotComplex<R> = ChainComplex2<R>;
+pub type KRTotComplex<R> = ChainComplex2<R>;
 
-pub(crate) struct KRTotCube<R>
+pub struct KRTotCube<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     data: Rc<KRCubeData<R>>,
     q_slice: isize,
@@ -34,6 +34,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             q_slice,
             hor_hmls: hor_homols
         }
+    }
+
+    pub fn q_slice(&self) -> isize { 
+        self.q_slice
     }
 
     fn hor_hml(&self, v_coords: BitSeq) -> &KRHorHomol<R> {

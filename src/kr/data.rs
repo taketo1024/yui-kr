@@ -21,19 +21,19 @@ use super::base::BasePoly;
  * x_ac = x_a - x_c = -(x_b - x_d),
  * x_bc = x_b - x_c = -(x_a - x_d)
  */
-pub(crate) struct KRCubeX<R> 
+pub struct KRCrossData<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
     pub x_ac: BasePoly<R>,
     pub x_bc: BasePoly<R>
 }
 
-pub(crate) struct KRCubeData<R>
+pub struct KRCubeData<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     n_cross: usize,
     writhe: isize, 
     n_seif: isize,
     x_signs: Vec<Sign>,
-    x_polys: Vec<KRCubeX<R>>
+    x_polys: Vec<KRCrossData<R>>
 }
 
 impl<R> KRCubeData<R> 
@@ -58,15 +58,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.n_cross
     }
 
-    pub fn x_signs(&self) -> &Vec<Sign> { 
-        &self.x_signs
-    }
-
     pub fn x_sign(&self, i: usize) -> Sign { 
         self.x_signs[i]
     }
 
-    pub fn x_poly(&self, i: usize) -> &KRCubeX<R> {
+    pub fn x_poly(&self, i: usize) -> &KRCrossData<R> {
         &self.x_polys[i]
     }
 
@@ -179,7 +175,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn hor_edge_poly(&self, v_coords: BitSeq, i: usize) -> BasePoly<R> {
         use Bit::{Bit0, Bit1};
 
-        let sign = self.x_signs()[i];
+        let sign = self.x_sign(i);
         let p = self.x_poly(i);
         let v = v_coords[i];
 
@@ -192,7 +188,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn ver_edge_poly(&self, h_coords: BitSeq, i: usize) -> BasePoly<R> {
         use Bit::{Bit0, Bit1};
 
-        let sign = self.x_signs()[i];
+        let sign = self.x_sign(i);
         let p = self.x_poly(i);
         let h = h_coords[i];
 
@@ -202,7 +198,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    fn collect_x_polys(link: &Link) -> Vec<KRCubeX<R>> {
+    fn collect_x_polys(link: &Link) -> Vec<KRCrossData<R>> {
         let n = link.crossing_num() as usize;
         let signs = link.crossing_signs();
 
@@ -279,10 +275,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             let x_ac = traverse(x.edge(c), x.edge(a));
             let x_bc = traverse(x.edge(c), x.edge(b));
     
-            KRCubeX { x_ac, x_bc }
+            KRCrossData { x_ac, x_bc }
         }).collect()
     }
 
+    #[allow(dead_code)]
     fn seifert_graph(link: &Link) -> Graph<LinkComp, usize> { 
         type G = Graph<LinkComp, usize>;
         let s0 = link.ori_pres_state();
@@ -313,6 +310,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         graph
     }
 
+    #[allow(dead_code)]
     fn resolve(link: &Link) -> Link {
         let g = Self::seifert_graph(&link);
         let t = min_spanning_tree(&g).filter_map(|e| 

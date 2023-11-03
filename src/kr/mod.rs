@@ -1,13 +1,11 @@
-#![allow(dead_code)] // TODO remove this.
-
-mod base;
-mod data;
-mod hor_cube;
-mod hor_cpx;
-mod hor_excl;
-mod hor_homol;
-mod tot_cube;
-mod tot_homol;
-mod homology;
+pub mod base;
+pub mod data;
+pub mod hor_cube;
+pub mod hor_cpx;
+pub mod hor_excl;
+pub mod hor_homol;
+pub mod tot_cube;
+pub mod tot_homol;
+pub mod homology;
 
 pub use homology::KRHomology;
