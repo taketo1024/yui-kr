@@ -3,6 +3,19 @@
 version = 3
 
 [[package]]
+name = "ahash"
+version = "0.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91429305e9f0a25f6205c5b8e0d2db09e0708a7a6df0f42212bb56c32c8ac97a"
+dependencies = [
+ "cfg-if",
+ "getrandom",
+ "once_cell",
+ "version_check",
+ "zerocopy",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -805,6 +818,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e51733f11c9c4f72aa0c160008246859e340b00807569a0da0e7a1079b27ba85"
 
 [[package]]
+name = "version_check"
+version = "0.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
 name = "wasi"
 version = "0.11.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -901,8 +920,9 @@ checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
 [[package]]
 name = "yui-core"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#cf9838349716622cb86b3ec4bb086c0039507d4b"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
 dependencies = [
+ "ahash",
  "bimap",
  "derive_more",
  "is-even",
@@ -914,7 +934,7 @@ dependencies = [
 [[package]]
 name = "yui-homology"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#cf9838349716622cb86b3ec4bb086c0039507d4b"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
 dependencies = [
  "bimap",
  "cartesian",
@@ -934,7 +954,7 @@ dependencies = [
 [[package]]
 name = "yui-khovanov"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#cf9838349716622cb86b3ec4bb086c0039507d4b"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
 dependencies = [
  "auto-impl-ops",
  "cartesian",
@@ -979,8 +999,9 @@ dependencies = [
 [[package]]
 name = "yui-lin-comb"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#cf9838349716622cb86b3ec4bb086c0039507d4b"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
 dependencies = [
+ "ahash",
  "auto-impl-ops",
  "derive_more",
  "itertools",
@@ -992,7 +1013,7 @@ dependencies = [
 [[package]]
 name = "yui-link"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#cf9838349716622cb86b3ec4bb086c0039507d4b"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
 dependencies = [
  "derive_more",
  "itertools",
@@ -1007,7 +1028,7 @@ dependencies = [
 [[package]]
 name = "yui-matrix"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#cf9838349716622cb86b3ec4bb086c0039507d4b"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
 dependencies = [
  "auto-impl-ops",
  "derive_more",
@@ -1030,9 +1051,11 @@ dependencies = [
 [[package]]
 name = "yui-polynomial"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#cf9838349716622cb86b3ec4bb086c0039507d4b"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
 dependencies = [
+ "ahash",
  "auto-impl-ops",
+ "delegate",
  "itertools",
  "num-traits",
  "regex",
@@ -1045,7 +1068,7 @@ dependencies = [
 [[package]]
 name = "yui-quad-int"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#cf9838349716622cb86b3ec4bb086c0039507d4b"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
 dependencies = [
  "auto-impl-ops",
  "num-bigint",
@@ -1057,7 +1080,7 @@ dependencies = [
 [[package]]
 name = "yui-ratio"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#cf9838349716622cb86b3ec4bb086c0039507d4b"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
 dependencies = [
  "auto-impl-ops",
  "num-traits",
@@ -1068,7 +1091,7 @@ dependencies = [
 [[package]]
 name = "yui-utils"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#cf9838349716622cb86b3ec4bb086c0039507d4b"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#957df8900ac4e68f56d8c79c74f50107aa50601d"
 dependencies = [
  "bit_reverse",
  "derive_more",
@@ -1076,4 +1099,24 @@ dependencies = [
  "num-traits",
  "prettytable",
  "yui-core",
+]
+
+[[package]]
+name = "zerocopy"
+version = "0.7.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e50cbb27c30666a6108abd6bc7577556265b44f243e2be89a8bc4e07a528c107"
+dependencies = [
+ "zerocopy-derive",
+]
+
+[[package]]
+name = "zerocopy-derive"
+version = "0.7.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a25f293fe55f0a48e7010d65552bb63704f6ceb55a1a385da10d41d8f78e4a3d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.38",
 ]
