@@ -3,7 +3,7 @@ use yui_link::Link;
 use yui_ratio::Ratio;
 
 fn main() {
-    measure(|| { 
+    measure("run", || { 
         run();
     })
 }
@@ -16,13 +16,15 @@ fn run() {
     h.print_table();
 }
 
-fn measure<F, Res>(proc: F) -> Res
+fn measure<F, Res>(name: &str, proc: F) -> Res
 where F: FnOnce() -> Res { 
+    println!("{name} start...\n");
+    
     let start = std::time::Instant::now();
     let res = proc();
     let time = start.elapsed();
 
-    println!("time: {:?}", time);
+    println!("{name} time: {:?}", time);
 
     res
 }
