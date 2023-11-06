@@ -85,7 +85,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.data.ver_edge_poly(h_coords, i)
     }
 
-    fn differentiate(&self, e: &VertGen) -> LinComb<VertGen, R> { 
+    fn d(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
         let n = self.data.dim();
@@ -111,10 +111,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let entries: Vec<_> = (0..n).into_par_iter().map(|l| { 
             let z = &gens[l];
-            let dz = z.iter().map(|(x, a)| { 
-                self.differentiate(x) * a
-            }).sum();
-            
+            let dz = z.apply(|x| self.d(x));
             let w = self.vectorize(i, j + 1, &dz);
 
             w.iter().map(|(k, b)| 
