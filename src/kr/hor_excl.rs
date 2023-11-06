@@ -363,7 +363,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 fn div_rem<R>(f: BasePoly<R>, g: &BasePoly<R>, k: usize) -> (BasePoly<R>, BasePoly<R>)
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    let (e0, a0) = g.lead_term_for(k);
+    let (e0, a0) = g.lead_term_for(k).unwrap();
 
     assert!(e0.deg_for(k) > 0);
     assert!(a0.is_unit());
@@ -373,8 +373,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     let mut q = BasePoly::zero();
     let mut r = f;
     
-    while !r.is_zero() { 
-        let (e1, a1) = r.lead_term_for(k);
+    while let Some((e1, a1)) = r.lead_term_for(k) { 
         if !e0.divides(e1) {
             break
         }

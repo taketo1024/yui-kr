@@ -343,15 +343,26 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.149"
+version = "0.2.150"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a08173bc88b7955d1b3145aa561539096c421ac8debde8cbc3612ec635fee29b"
+checksum = "89d92a4743f9a61002fae18374ed11e7973f530cb3a3255fb354818118b2203c"
 
 [[package]]
 name = "libm"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
+
+[[package]]
+name = "libredox"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85c833ca1e66078851dba29046874e38f08b2c883700aa29a03ddd3b23814ee8"
+dependencies = [
+ "bitflags 2.4.1",
+ "libc",
+ "redox_syscall",
+]
 
 [[package]]
 name = "linux-raw-sys"
@@ -575,21 +586,21 @@ dependencies = [
 
 [[package]]
 name = "redox_syscall"
-version = "0.2.16"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb5a58c1855b4b6819d59012155603f0b22ad30cad752600aadfcb695265519a"
+checksum = "4722d768eff46b75989dd134e5c353f0d6296e5aaa3132e776cbdb56be7731aa"
 dependencies = [
  "bitflags 1.3.2",
 ]
 
 [[package]]
 name = "redox_users"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b033d837a7cf162d7993aded9304e30a83213c648b6e389db233191f891e5c2b"
+checksum = "a18479200779601e498ada4e8c1e1f50e3ee19deb0259c25825a98b5603b2cb4"
 dependencies = [
  "getrandom",
- "redox_syscall",
+ "libredox",
  "thiserror",
 ]
 
@@ -685,7 +696,7 @@ checksum = "67c5609f394e5c2bd7fc51efda478004ea80ef42fee983d5c67a65e34f32c0e3"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.38",
+ "syn 2.0.39",
 ]
 
 [[package]]
@@ -755,9 +766,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.38"
+version = "2.0.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e96b79aaa137db8f61e26363a0c9b47d8b4ec75da28b7d1d614c2303e232408b"
+checksum = "23e78b90f2fcf45d3e842032ce32e3f2d1545ba6636271dcbf24fa306d87be7a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -792,7 +803,7 @@ checksum = "266b2e40bc00e5a6c09c3584011e08b06f123c00362c92b975ba9843aaaa14b8"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.38",
+ "syn 2.0.39",
 ]
 
 [[package]]
@@ -920,7 +931,7 @@ checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
 [[package]]
 name = "yui-core"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#18a7f5039ffc1c4343650bcf319fa8574b42ff65"
 dependencies = [
  "ahash",
  "bimap",
@@ -934,7 +945,7 @@ dependencies = [
 [[package]]
 name = "yui-homology"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#18a7f5039ffc1c4343650bcf319fa8574b42ff65"
 dependencies = [
  "bimap",
  "cartesian",
@@ -954,7 +965,7 @@ dependencies = [
 [[package]]
 name = "yui-khovanov"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#18a7f5039ffc1c4343650bcf319fa8574b42ff65"
 dependencies = [
  "auto-impl-ops",
  "cartesian",
@@ -1000,7 +1011,7 @@ dependencies = [
 [[package]]
 name = "yui-lin-comb"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#18a7f5039ffc1c4343650bcf319fa8574b42ff65"
 dependencies = [
  "ahash",
  "auto-impl-ops",
@@ -1014,7 +1025,7 @@ dependencies = [
 [[package]]
 name = "yui-link"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#18a7f5039ffc1c4343650bcf319fa8574b42ff65"
 dependencies = [
  "derive_more",
  "itertools",
@@ -1029,7 +1040,7 @@ dependencies = [
 [[package]]
 name = "yui-matrix"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#18a7f5039ffc1c4343650bcf319fa8574b42ff65"
 dependencies = [
  "auto-impl-ops",
  "derive_more",
@@ -1052,11 +1063,12 @@ dependencies = [
 [[package]]
 name = "yui-polynomial"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#18a7f5039ffc1c4343650bcf319fa8574b42ff65"
 dependencies = [
  "ahash",
  "auto-impl-ops",
  "delegate",
+ "derive_more",
  "itertools",
  "num-traits",
  "regex",
@@ -1069,7 +1081,7 @@ dependencies = [
 [[package]]
 name = "yui-quad-int"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#18a7f5039ffc1c4343650bcf319fa8574b42ff65"
 dependencies = [
  "auto-impl-ops",
  "num-bigint",
@@ -1081,7 +1093,7 @@ dependencies = [
 [[package]]
 name = "yui-ratio"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#18a7f5039ffc1c4343650bcf319fa8574b42ff65"
 dependencies = [
  "auto-impl-ops",
  "num-traits",
@@ -1092,7 +1104,7 @@ dependencies = [
 [[package]]
 name = "yui-utils"
 version = "0.1.0"
-source = "git+https://github.com/taketo1024/yui.git?branch=develop#0d907dffc44c70b95a6aa79c672d1519cd13de5d"
+source = "git+https://github.com/taketo1024/yui.git?branch=develop#18a7f5039ffc1c4343650bcf319fa8574b42ff65"
 dependencies = [
  "bit_reverse",
  "derive_more",
@@ -1104,20 +1116,20 @@ dependencies = [
 
 [[package]]
 name = "zerocopy"
-version = "0.7.23"
+version = "0.7.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e50cbb27c30666a6108abd6bc7577556265b44f243e2be89a8bc4e07a528c107"
+checksum = "8cd369a67c0edfef15010f980c3cbe45d7f651deac2cd67ce097cd801de16557"
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.7.23"
+version = "0.7.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a25f293fe55f0a48e7010d65552bb63704f6ceb55a1a385da10d41d8f78e4a3d"
+checksum = "c2f140bda219a26ccc0cdb03dba58af72590c53b22642577d88a927bc5c87d6b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.38",
+ "syn 2.0.39",
 ]
