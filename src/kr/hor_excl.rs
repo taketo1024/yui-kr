@@ -14,6 +14,7 @@ use crate::kr::base::sign_between;
 use super::base::{BaseMono, BasePoly, VertGen};
 use super::data::KRCubeData;
 
+#[derive(Debug)]
 struct Process<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     dir: usize,
@@ -29,6 +30,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
+#[derive(Debug)]
 pub struct KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     v_coords: BitSeq,
@@ -172,52 +174,53 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn forward(&self, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> {
-        z.apply(|v| self.forward_x(v))
+        // keep only non-vanishing gens. 
+        let z = z.filter_gens(|v| 
+            !self.should_vanish(v)
+        );
+
+        // reduce monomials. 
+        if z.iter().any(|(v, _)| self.should_reduce(&v.2)) { 
+            let z = combine(z);
+            let res = self.forward_reduce(z);
+            decombine(res)
+        } else { 
+            z
+        }
+
+    }
+
+    fn forward_reduce(&self, z: LinComb<VertGen, BasePoly<R>>) -> LinComb<VertGen, BasePoly<R>> { 
+        let res = self.process.iter().fold(z, |z, proc| { 
+            let (p, k) = proc.divisor();
+            z.into_map_coeffs::<BasePoly<R>, _>(|f| 
+                rem(f, p, k)
+            )
+        });
+
+        // repeat if should-reduce monomials remain.
+        if res.iter().any(|(_, f)| f.iter().any(|(x, _)| self.should_reduce(x))) { 
+            self.forward_reduce(res)
+        } else { 
+            res
+        }
     }
 
     fn forward_x(&self, v: &VertGen) -> Vec<(VertGen, R)> {
-        if self.should_vanish(v) { 
-            return vec![]
-        } 
-        
-        if !self.should_reduce(&v.2) {
-            return vec![(v.clone(), R::one())]
-        }
-        
-        let f = BasePoly::from(v.2.clone());
-        let f = self.process.iter().fold(f, |f, d| { 
-            let (p, k) = d.divisor();
-            rem(f, p, k) // f mod p by x_k
-        });
-
-        f.into_iter().map(|(x, a)| {
-            let v = VertGen(v.0, v.1, x);
-            (v, a)
-        }).collect()
+        self.forward(&LinComb::from(v.clone())).into_iter().collect()
     }
 
     pub fn backward(&self, z: &LinComb<VertGen, R>, is_cycle: bool) -> LinComb<VertGen, R> {
-        // convert LinComb<VertGen, R> -> LinComb<VertGen, EdgeRing<R>> 
-        
-        let init = z.iter().map(|(v, r)| {
-            let w = VertGen(v.0, v.1, BaseMono::one());
-            let p = BasePoly::from((v.2.clone(), r.clone()));
-            (w, p)
-        }).collect();
-
+        let init = combine(z.clone());
         let l = self.process.len();
+        
         let res = if l > 0 { 
             self.backward_itr(init, l - 1, is_cycle)
         } else { 
             init
         };
 
-        res.into_iter().flat_map(|(v, p)| { 
-            p.into_iter().map(move |(x, a)| {
-                let v = VertGen(v.0.clone(), v.1.clone(), x);
-                (v, a)
-            })
-        }).collect()
+        decombine(res)
     }
 
     fn backward_itr(&self, z: LinComb<VertGen, BasePoly<R>>, step: usize, is_cycle: bool) -> LinComb<VertGen, BasePoly<R>> {
@@ -335,12 +338,35 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
+// convert LinComb<VertGen, R> -> LinComb<VertGen, EdgeRing<R>> 
+fn combine<R>(z: LinComb<VertGen, R>) -> LinComb<VertGen, BasePoly<R>>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    z.into_iter().map(|(v, r)| {
+        let w = VertGen(v.0, v.1, BaseMono::one());
+        let p = BasePoly::from((v.2, r));
+        (w, p)
+    }).collect()
+}
+
+// convert LinComb<VertGen, EdgeRing<R>> -> LinComb<VertGen, R> 
+fn decombine<R>(z: LinComb<VertGen, BasePoly<R>>) -> LinComb<VertGen, R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    debug_assert!(z.iter().all(|(v, _)| v.2.is_one()));
+
+    z.into_iter().flat_map(|(v, p)| { 
+        p.into_iter().map(move |(x, a)| {
+            let v = VertGen(v.0, v.1, x);
+            (v, a)
+        })
+    }).collect()
+}
+
 fn div_rem<R>(f: BasePoly<R>, g: &BasePoly<R>, k: usize) -> (BasePoly<R>, BasePoly<R>)
 where R: Ring, for<'x> &'x R: RingOps<R> {
     let (e0, a0) = g.lead_term_for(k);
 
     assert!(e0.deg_for(k) > 0);
-    assert!(a0.is_unit()); // ±1
+    assert!(a0.is_unit());
 
     let a0_inv = a0.inv().unwrap();
 
@@ -746,6 +772,35 @@ mod tests {
         assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [1,1,1])), vec![
             (vgen([1,0,1], [0,0,1], [2,0,1]), R::one()) // x0x1x2 -> x0^2 x2
         ]);
+    }
+
+    #[test]
+    fn forward_3() { 
+        type R = Ratio<i64>;
+        type P = BasePoly<R>;
+
+        let h = BitSeq::from([1,1,1,1]);
+        let v = BitSeq::from([1,1,1,1]);
+
+        let x = |i| P::from(MultiVar::from((i, 1)));
+        let edge_polys = map! { 
+            0 => x(0) * x(0) - x(1) * x(1),
+            1 => x(2) * x(2) - x(0) * x(3)
+        };
+        let mut excl = KRHorExcl::new(v, edge_polys);
+
+        excl.perform_excl(2, 0, 0); // x0^2 -> x1^2
+        excl.perform_excl(2, 1, 2); // x2^2 -> x0x3
+
+        let x = VertGen(h, v, MultiVar::from([0,0,4,0])); // x2^4
+
+        assert!(!excl.should_vanish(&x));
+        assert!( excl.should_reduce(&x.2));
+
+        let x = LinComb::from(x);
+        let y = excl.forward(&x); // x2^4 -> (x0x3)^2 -> x1^2 x3^2
+
+        assert_eq!(y, LinComb::from(VertGen(h, v, MultiVar::from([0,2,0,2]))))
     }
 
     #[test]
