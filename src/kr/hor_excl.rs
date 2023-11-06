@@ -1,6 +1,5 @@
 use std::collections::{HashSet, HashMap};
 
-use itertools::Itertools;
 use num_traits::{Zero, One};
 use yui_core::{Ring, RingOps, IndexList};
 use yui_homology::make_matrix;
@@ -348,14 +347,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         }).collect()
     }
-
-    #[cfg(test)]
-    #[allow(dead_code)]
-    fn print_current(&self) { 
-        for (i, p) in self.edge_polys.iter().sorted_by_key(|(&i, _)| i) { 
-            println!("{i}: {p}")
-        }
-    }
 }
 
 // convert LinComb<VertGen, R> -> LinComb<VertGen, EdgeRing<R>> 
@@ -424,6 +415,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 mod tests {
     use std::sync::Arc;
 
+    use itertools::Itertools;
     use yui_link::Link;
     use yui_matrix::sparse::MatType;
     use yui_polynomial::MultiVar;
