@@ -89,22 +89,28 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn find_excl_var(&self, deg: usize, i: usize) -> Option<usize> { 
-        if self.remain_vars.is_empty() { 
-            return None;
-        }
-
         let p = &self.edge_polys[&i];
-
-        // search for the term (x_k)^d in p.
-        for &k in self.remain_vars.iter().sorted() {
-            for (x, _) in p.iter() {
+        
+        let cands = p.iter().filter_map(|(x, a)| {
+            // term must be univar: a * (x_k)^d
+            if let Some(k) = x.deg().min_index() { 
                 if x.total_deg() == deg && x.deg_for(k) == deg { 
-                    return Some(k)
+                    return Some((k, a))
                 }
             }
-        }
+            None
+        });
+        
+        // choose best candidate
+        let k_opt = cands.max_by(|(k1, a1), (k2, a2)| { 
+            // prefer coeff ±1
+            Ord::cmp(&a1.is_pm_one(), &a2.is_pm_one()).then( 
+                // prefer smaller index
+                Ord::cmp(&k1, &k2).reverse() 
+            )
+        }).map(|(k, _)| k);
 
-        None
+        k_opt
     }
 
     fn perform_excl(&mut self, deg: usize, i: usize, k: usize) {
