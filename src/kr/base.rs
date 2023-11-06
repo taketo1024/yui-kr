@@ -1,6 +1,6 @@
 use std::iter::zip;
 
-use derive_more::Display;
+use derive_more::{Display, DebugCustom};
 use itertools::{Itertools, FoldWhile};
 use yui_core::{Elem, Sign, PowMod2, GetSign};
 use yui_lin_comb::Gen;
@@ -10,8 +10,9 @@ use yui_utils::bitseq::{BitSeq, Bit};
 pub(crate) type BaseMono = MultiVar<'x', usize>;
 pub(crate) type BasePoly<R> = PolyN<'x', R>;
 
-#[derive(PartialEq, Eq, Hash, Default, Clone, Debug, Display, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, Hash, Default, Clone, Display, DebugCustom, PartialOrd, Ord)]
 #[display(fmt = "({}-{}, {})", _0, _1, _2)]
+#[debug(fmt = "{}", self)]
 pub struct VertGen(
     pub BitSeq, // h-coords
     pub BitSeq, // v-coords
