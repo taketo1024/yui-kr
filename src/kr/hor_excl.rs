@@ -79,18 +79,32 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn excl_all(&mut self, deg: usize) {
-        let inds = self.edge_polys.keys().sorted().cloned().collect_vec();
-
-        for i in inds { 
-            if let Some(k) = self.find_excl_var(deg, i) { 
-                self.perform_excl(deg, i, k);
-            }
+        while let Some((i, k)) = self.find_excl_var(deg) { 
+            self.perform_excl(deg, i, k);
         }
     }
 
-    fn find_excl_var(&self, deg: usize, i: usize) -> Option<usize> { 
+    fn find_excl_var(&self, deg: usize) -> Option<(usize, usize)> { 
+        let cands = self.edge_polys.keys().filter_map(|&i| { 
+            self.find_excl_var_for(deg, i).map(|k| (i, k))
+        });
+
+        let best = cands.max_by(|(i1, _), (i2, _)| { 
+            let p1 = self.edge_polys[&i1].len();
+            let p2 = self.edge_polys[&i2].len();
+            // prefer smaller poly.
+            Ord::cmp(&p1, &p2).reverse().then(
+                // prefer smaller index.
+                Ord::cmp(&i1, &i2).reverse()
+            )
+        });
+
+        best
+    }
+
+    fn find_excl_var_for(&self, deg: usize, i: usize) -> Option<usize> { 
         let p = &self.edge_polys[&i];
-        
+
         let cands = p.iter().filter_map(|(x, a)| {
             // term must be univar: a * (x_k)^d
             if let Some(k) = x.deg().min_index() { 
@@ -102,7 +116,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         });
         
         // choose best candidate
-        let k_opt = cands.max_by(|(k1, a1), (k2, a2)| { 
+        let k_best = cands.max_by(|(k1, a1), (k2, a2)| { 
             // prefer coeff ±1
             Ord::cmp(&a1.is_pm_one(), &a2.is_pm_one()).then( 
                 // prefer smaller index
@@ -110,7 +124,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             )
         }).map(|(k, _)| k);
 
-        k_opt
+        k_best
     }
 
     fn perform_excl(&mut self, deg: usize, i: usize, k: usize) {
@@ -470,13 +484,13 @@ mod tests {
         let data = KRCubeData::<R>::new(&l);
         let excl = KRHorExcl::from(&data, v, 0);
 
-        assert_eq!(excl.find_excl_var(1, 0), Some(1));
-        assert_eq!(excl.find_excl_var(1, 1), Some(0));
-        assert_eq!(excl.find_excl_var(1, 2), None);
+        assert_eq!(excl.find_excl_var_for(1, 0), Some(1));
+        assert_eq!(excl.find_excl_var_for(1, 1), Some(0));
+        assert_eq!(excl.find_excl_var_for(1, 2), None);
         
-        assert_eq!(excl.find_excl_var(2, 0), None);
-        assert_eq!(excl.find_excl_var(2, 1), None);
-        assert_eq!(excl.find_excl_var(1, 2), None);
+        assert_eq!(excl.find_excl_var_for(2, 0), None);
+        assert_eq!(excl.find_excl_var_for(2, 1), None);
+        assert_eq!(excl.find_excl_var_for(1, 2), None);
     }
 
     #[test]
@@ -528,8 +542,8 @@ mod tests {
         // replaces x1 -> x2
         excl.perform_excl(1, 0, 1);
 
-        assert_eq!(excl.find_excl_var(1, 1), Some(0));
-        assert_eq!(excl.find_excl_var(1, 2), None);
+        assert_eq!(excl.find_excl_var_for(1, 1), Some(0));
+        assert_eq!(excl.find_excl_var_for(1, 2), None);
 
         // replaces x0 -> x2
         excl.perform_excl(1, 1, 0);
@@ -569,8 +583,8 @@ mod tests {
         // replaces x1 -> x2
         excl.perform_excl(1, 0, 1);
 
-        assert_eq!(excl.find_excl_var(2, 1), None);
-        assert_eq!(excl.find_excl_var(2, 2), Some(2));
+        assert_eq!(excl.find_excl_var_for(2, 1), None);
+        assert_eq!(excl.find_excl_var_for(2, 2), Some(2));
 
         // replaces x2 * x2 -> x0 * x2
         excl.perform_excl(2, 2, 2);
