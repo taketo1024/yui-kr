@@ -3,7 +3,7 @@ use std::sync::Arc;
 use delegate::delegate;
 
 use yui_core::{Ring, RingOps, EucRing, EucRingOps};
-use yui_homology::{ReducedComplex, Grid, ChainComplexTrait, XModStr, GridTrait, GridIter, ChainComplexSummand, Homology, make_matrix, ChainComplex};
+use yui_homology::{Grid, ChainComplexTrait, XModStr, GridTrait, GridIter, ChainComplexSummand, Homology, make_matrix, ChainComplex};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpVec, SpMat};
 use yui_utils::bitseq::BitSeq;
@@ -20,7 +20,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     q_slice: isize,
     excl: KRHorExcl<R>,
     gens: Grid<XModStr<VertGen, R>>,
-    inner: ReducedComplex<R>
+    inner: ChainComplex<R>
 } 
 
 impl<R> KRHorComplex<R>
@@ -61,12 +61,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn vectorize(&self, i: isize, z: &LinComb<VertGen, R>) -> SpVec<R> {
         let z_exc = self.excl.forward(z);
         let v_exc = self.gens[i].vectorize(&z_exc);
-        let v = self.inner.trans(i).forward(&v_exc);
+        let v = self.inner[i].trans().unwrap().forward(&v_exc);
         v
     }
 
     pub fn as_chain(&self, i: isize, v: &SpVec<R>, is_cycle: bool) -> LinComb<VertGen, R> {
-        let v_exc = self.inner.trans(i).backward(v);
+        let v_exc = self.inner[i].trans().unwrap().backward(v);
         let z_exc = self.gens[i].as_chain(&v_exc);
         let z = self.excl.backward(&z_exc, is_cycle);
         z
@@ -140,10 +140,11 @@ mod tests {
         let cube = KRHorCube::new(data, v_coords, q_slice);
         let gens = KRHorComplex::excl_gens(&excl, &cube);
         let cpx = KRHorComplex::make_cpx(&excl, &gens);
+
         let inner = if red { 
             cpx.reduced(true)
         } else { 
-            ReducedComplex::bypass(&cpx)
+            cpx
         };
 
         KRHorComplex { v_coords, q_slice, excl, gens, inner }

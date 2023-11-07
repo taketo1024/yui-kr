@@ -64,7 +64,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let i = i as isize;
 
         let v = self.complex.vectorize(i, z);
-        let v = self.homology[i].vec_from_cpx(&v).unwrap();
+        let v = self.homology[i].trans().unwrap().forward(&v);
         v
     }
 }
