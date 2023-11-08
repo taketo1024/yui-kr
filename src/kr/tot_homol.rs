@@ -3,7 +3,7 @@ use std::sync::Arc;
 use delegate::delegate;
 
 use yui_core::{EucRing, EucRingOps, isize2};
-use yui_homology::{Homology2, ChainComplexTrait, RModStr, GridTrait, GridIter, HomologySummand};
+use yui_homology::{Homology2, RModStr, GridTrait, GridIter, HomologySummand};
 
 use super::data::KRCubeData;
 use super::tot_cube::KRTotCube;

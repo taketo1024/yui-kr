@@ -39,7 +39,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         Grid::new(0..=n, |i| {
             let xs = cube.gens(i as usize);
             let red_xs = excl.reduce_gens(&xs);
-            XModStr::from_iter(red_xs)
+            XModStr::free(red_xs)
         })
     }
 
@@ -68,6 +68,20 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn as_chain(&self, i: isize, v: &SpVec<R>, is_cycle: bool) -> LinComb<VertGen, R> {
         let v_exc = self.inner[i].trans().unwrap().backward(v);
         let z_exc = self.gens[i].as_chain(&v_exc);
+        let z = self.excl.backward(&z_exc, is_cycle);
+        z
+    }
+
+    // MEMO: this is temporal
+    pub fn vectorize_h(&self, i: isize, z: &LinComb<VertGen, R>) -> SpVec<R> {
+        let z_exc = self.excl.forward(z);
+        let v_exc = self.gens[i].vectorize(&z_exc);
+        v_exc
+    }
+    
+    // MEMO: this is temporal
+    pub fn as_chain_h(&self, i: isize, v: &SpVec<R>, is_cycle: bool) -> LinComb<VertGen, R> {
+        let z_exc = self.gens[i].as_chain(&v);
         let z = self.excl.backward(&z_exc, is_cycle);
         z
     }
@@ -111,7 +125,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     delegate! { 
         to self.inner { 
             fn d_deg(&self) -> isize;
-            fn d_matrix(&self, i: isize) -> &SpMat<Self::R>;
+            fn d_matrix(&self, i: isize) -> SpMat<Self::R>;
         }
     }
 }

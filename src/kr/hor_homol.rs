@@ -30,8 +30,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             let r = h.rank();
 
             (0..r).map(|k| { 
-                let v = h.gen_vec(k).unwrap();
-                let z = complex.as_chain(i, &v, true);
+                let v = h.gen_vec(k);
+                let z = complex.as_chain_h(i, &v, true);
                 z
             }).collect()
         });
@@ -63,7 +63,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let i = i as isize;
 
-        let v = self.complex.vectorize(i, z);
+        let v = self.complex.vectorize_h(i, z);
         let v = self.homology[i].trans().unwrap().forward(&v);
         v
     }

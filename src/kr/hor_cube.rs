@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use itertools::Itertools;
@@ -112,13 +113,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn as_complex(self) -> XChainComplex<VertGen, R> {
         let n = self.data.dim() as isize;
         let range = 0..=n;
+
+        let self0 = Rc::new(self);
+        let self1 = Rc::clone(&self0);
         
         XChainComplex::new(range, 1, 
-            |i| {
-                self.gens(i as usize)
+            move |i| {
+                self0.gens(i as usize)
             },
-            |_i, e| {
-                self.differentiate(e)
+            move |_i, e| {
+                self1.differentiate(e)
             }
         )
     }
