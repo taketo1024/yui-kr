@@ -13,7 +13,7 @@ use crate::kr::base::sign_between;
 use super::base::{BaseMono, BasePoly, VertGen};
 use super::data::KRCubeData;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Process<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     dir: usize,
@@ -29,7 +29,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     v_coords: BitSeq,

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use delegate::delegate;
 
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{Homology, HomologySummand, GridTrait, RModStr, GridIter, Grid, XModStr};
+use yui_homology::{GridTrait, RModStr, GridIter, XHomology, XHomologySummand};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::SpVec;
 use yui_utils::bitseq::BitSeq;
@@ -18,8 +18,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     v_coords: BitSeq,
     q_slice: isize,
     excl: KRHorExcl<R>,
-    gens: Grid<XModStr<VertGen, R>>,
-    homology: Homology<R>
+    homology: XHomology<VertGen, R>
 } 
 
 impl<R> KRHorHomol<R>
@@ -27,8 +26,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
         let complex = KRHorComplex::new(data, v_coords, q_slice);
         let homology = complex.homology();
-        let (excl, gens) = complex.take_data();
-        Self { v_coords, q_slice, excl, gens, homology }
+        let excl = complex.take_data();
+        Self { v_coords, q_slice, excl, homology }
     }
 
     pub fn v_coords(&self) -> BitSeq { 
@@ -62,32 +61,25 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let i = i as isize;
         let h = &self.homology[i];
-        let t = h.trans().unwrap();
 
         let z_exc = self.excl.forward(z);
-        let v_exc = self.gens[i].vectorize(&z_exc);
-        let v_hml = t.forward(&v_exc);
-        
+        let v_hml = h.vectorize(&z_exc);
         v_hml
     }
 
     pub fn as_chain(&self, i: usize, v_hml: &SpVec<R>) -> LinComb<VertGen, R> {
         let i = i as isize;
         let h = &self.homology[i];
-        let t = h.trans().unwrap();
 
-        let v_exc = t.backward(&v_hml);
-        let z_exc = self.gens[i].as_chain(&v_exc);
-        let z = self.excl.backward(&z_exc, true);
-
-        z
+        let z_exc = h.as_chain(v_hml);
+        self.excl.backward(&z_exc, true)
     }
 }
 
 impl<R> GridTrait<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Itr = GridIter<isize>;
-    type E = HomologySummand<R>;
+    type E = XHomologySummand<VertGen, R>;
 
     delegate! { 
         to self.homology {
@@ -100,7 +92,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> Index<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Output = HomologySummand<R>;
+    type Output = XHomologySummand<VertGen, R>;
     delegate! { 
         to self.homology { 
             fn index(&self, index: isize) -> &Self::Output;
