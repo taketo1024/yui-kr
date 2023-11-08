@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::sync::Arc;
 
 use itertools::Itertools;
@@ -114,8 +113,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let n = self.data.dim() as isize;
         let range = 0..=n;
 
-        let self0 = Rc::new(self);
-        let self1 = Rc::clone(&self0);
+        let self0 = Arc::new(self);
+        let self1 = Arc::clone(&self0);
         
         XChainComplex::new(range, 1, 
             move |i| {
