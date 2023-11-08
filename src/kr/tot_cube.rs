@@ -5,8 +5,9 @@ use itertools::Itertools;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui_core::{EucRing, EucRingOps, isize2};
 use yui_homology::ChainComplex2;
+use yui_homology::utils::ChainReducer;
 use yui_lin_comb::LinComb;
-use yui_matrix::sparse::{SpMat, SpVec};
+use yui_matrix::sparse::{SpMat, SpVec, MatType};
 use yui_utils::bitseq::BitSeq;
 
 use super::base::{VertGen, BasePoly, sign_between};
@@ -108,11 +109,21 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn d_matrix(&self, i: usize, j: usize) -> SpMat<R> { 
+        let n = self.rank(i, j);
+        let q = SpMat::id(n);
+        Self::d_matrix_for(&self, i, j, &q)
+    }
+
+    fn d_matrix_for(&self, i: usize, j: usize, q: &SpMat<R>) -> SpMat<R> { 
         let gens = self.hor_homol_gens(i, j);
-        let (m, n) = (self.rank(i, j+1), self.rank(i, j));
+        let (m, n) = (self.rank(i, j+1), q.cols());
 
         let entries: Vec<_> = (0..n).into_par_iter().map(|l| { 
-            let z = &gens[l];
+            let v = q.col_vec(l);
+            let z = v.iter().map(|(k, a)| 
+                &gens[k] * a
+            ).sum::<LinComb<_, _>>();
+            
             let dz = z.apply(|x| self.d(x));
             let w = self.vectorize(i, j + 1, &dz);
 
@@ -124,14 +135,28 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         SpMat::from_entries((m, n), entries)
     }
 
-    pub fn as_complex(self) -> KRTotComplex<R> {
+    pub fn as_complex(self, reducing: bool) -> KRTotComplex<R> {
         let n = self.data.dim() as isize;
-
         let range = cartesian!(0..=n, 0..=n).map(|(i, j)| isize2(i, j));
-        ChainComplex2::new(range, isize2(0, 1), |idx| {
-            let isize2(i, j) = idx;
-            self.d_matrix(i as usize, j as usize)
-        })
+        let d_deg = isize2(0, 1);
+
+        let mut reducer = ChainReducer::new(d_deg, true);
+
+        for idx in range.clone() {
+            let (i, j) = (idx.0 as usize, idx.1 as usize);
+            let d = if let Some(t) = reducer.trans(idx) {
+                self.d_matrix_for(i, j, t.backward_mat())
+            } else { 
+                self.d_matrix(i, j)
+            };
+            reducer.set_matrix(idx, d);
+
+            if reducing {
+                reducer.reduce_at(idx);
+            }
+        }
+
+        reducer.make_complex(range)
     }
 }
 
@@ -231,7 +256,7 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
         let cube = make_cube(&l, q);
-        let c = cube.as_complex();
+        let c = cube.as_complex(false);
 
         assert_eq!(c[(0, 0)].rank(), 0);
         assert_eq!(c[(0, 1)].rank(), 0);
@@ -254,11 +279,38 @@ mod tests {
     }
 
     #[test]
+    fn complex_red() { 
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let q = -4;
+        let cube = make_cube(&l, q);
+        let c = cube.as_complex(true);
+
+        assert_eq!(c[(0, 0)].rank(), 0);
+        assert_eq!(c[(0, 1)].rank(), 0);
+        assert_eq!(c[(0, 2)].rank(), 0);
+        assert_eq!(c[(0, 3)].rank(), 0);
+        assert_eq!(c[(1, 0)].rank(), 0);
+        assert_eq!(c[(1, 1)].rank(), 0);
+        assert_eq!(c[(1, 2)].rank(), 0);
+        assert_eq!(c[(1, 3)].rank(), 0);
+        assert_eq!(c[(2, 0)].rank(), 0);
+        assert_eq!(c[(2, 1)].rank(), 0);
+        assert_eq!(c[(2, 2)].rank(), 0);
+        assert_eq!(c[(2, 3)].rank(), 1);
+        assert_eq!(c[(3, 0)].rank(), 0);
+        assert_eq!(c[(3, 1)].rank(), 1);
+        assert_eq!(c[(3, 2)].rank(), 0);
+        assert_eq!(c[(3, 3)].rank(), 0);
+
+        c.check_d_all();
+    }
+
+    #[test]
     fn homology() { 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
         let cube = make_cube(&l, q);
-        let c = cube.as_complex();
+        let c = cube.as_complex(false);
         let h = c.homology(false);
 
         assert_eq!(h[(0, 0)].rank(), 0);
