@@ -3,7 +3,8 @@ use std::sync::Arc;
 use delegate::delegate;
 
 use yui_core::{Ring, RingOps, EucRing, EucRingOps};
-use yui_homology::{Grid, ChainComplexTrait, XModStr, GridTrait, GridIter, ChainComplexSummand, Homology, make_matrix, ChainComplex};
+use yui_homology::{Grid, ChainComplexTrait, XModStr, GridTrait, GridIter, ChainComplexSummand, Homology, ChainComplex};
+use yui_homology::utils::make_matrix_async;
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpVec, SpMat};
 use yui_utils::bitseq::BitSeq;
@@ -46,7 +47,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     fn make_cpx(excl: &KRHorExcl<R>, gens: &Grid<XModStr<VertGen, R>>) -> ChainComplex<R> {
         ChainComplex::new(
             gens.support(), 1, 
-            |i| make_matrix(gens[i].gens(), gens[i+1].gens(), |x| excl.diff_red(x))
+            |i| make_matrix_async(
+                gens[i].gens(), 
+                gens[i+1].gens(), 
+                |x| excl.diff_red(x)
+            )
         )
     }
 
