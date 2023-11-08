@@ -65,32 +65,22 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         v
     }
 
-    pub fn as_chain(&self, i: isize, v: &SpVec<R>, is_cycle: bool) -> LinComb<VertGen, R> {
+    pub fn as_chain(&self, i: isize, v: &SpVec<R>) -> LinComb<VertGen, R> {
         let v_exc = self.inner[i].trans().unwrap().backward(v);
         let z_exc = self.gens[i].as_chain(&v_exc);
-        let z = self.excl.backward(&z_exc, is_cycle);
-        z
-    }
-
-    // MEMO: this is temporal
-    pub fn vectorize_h(&self, i: isize, z: &LinComb<VertGen, R>) -> SpVec<R> {
-        let z_exc = self.excl.forward(z);
-        let v_exc = self.gens[i].vectorize(&z_exc);
-        v_exc
-    }
-    
-    // MEMO: this is temporal
-    pub fn as_chain_h(&self, i: isize, v: &SpVec<R>, is_cycle: bool) -> LinComb<VertGen, R> {
-        let z_exc = self.gens[i].as_chain(&v);
-        let z = self.excl.backward(&z_exc, is_cycle);
+        let z = self.excl.backward(&z_exc, false);
         z
     }
 
     pub fn d(&self, i: isize, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> { 
         let v = self.vectorize(i, z);
         let w = self.inner.d(i, &v);
-        let dz = self.as_chain(i + 1, &w, false);
+        let dz = self.as_chain(i + 1, &w);
         dz
+    }
+
+    pub(crate) fn take_data(self) -> (KRHorExcl<R>, Grid<XModStr<VertGen, R>>) { 
+        (self.excl, self.gens)
     }
 }
 

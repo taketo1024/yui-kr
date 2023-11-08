@@ -3,7 +3,7 @@ use std::sync::Arc;
 use delegate::delegate;
 
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{Homology, HomologySummand, GridTrait, RModStr, GridIter, Grid};
+use yui_homology::{Homology, HomologySummand, GridTrait, RModStr, GridIter, Grid, XModStr};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::SpVec;
 use yui_utils::bitseq::BitSeq;
@@ -11,12 +11,15 @@ use yui_utils::bitseq::BitSeq;
 use super::base::VertGen;
 use super::data::KRCubeData;
 use super::hor_cpx::KRHorComplex;
+use super::hor_excl::KRHorExcl;
 
 pub struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    complex: KRHorComplex<R>,
-    homology: Homology<R>,
-    h_gens: Grid<Vec<LinComb<VertGen, R>>>
+    v_coords: BitSeq,
+    q_slice: isize,
+    excl: KRHorExcl<R>,
+    gens: Grid<XModStr<VertGen, R>>,
+    homology: Homology<R>
 } 
 
 impl<R> KRHorHomol<R>
@@ -24,35 +27,31 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
         let complex = KRHorComplex::new(data, v_coords, q_slice);
         let homology = complex.homology();
-
-        let h_gens = Grid::new(homology.support(), |i| { 
-            let h = &homology[i];
-            let r = h.rank();
-
-            (0..r).map(|k| { 
-                let v = h.gen_vec(k);
-                let z = complex.as_chain_h(i, &v, true);
-                z
-            }).collect()
-        });
-
-        Self { complex, homology, h_gens }
+        let (excl, gens) = complex.take_data();
+        Self { v_coords, q_slice, excl, gens, homology }
     }
 
     pub fn v_coords(&self) -> BitSeq { 
-        self.complex.v_coords()
+        self.v_coords
     }
 
     pub fn q_slice(&self) -> isize { 
-        self.complex.q_slice()
+        self.q_slice
     }
 
     pub fn rank(&self, i: usize) -> usize {
         self.homology[i as isize].rank()
     }
 
-    pub fn gens(&self, i: usize) -> &Vec<LinComb<VertGen, R>> { 
-        &self.h_gens[i as isize]
+    pub fn homol_gens(&self, i: usize) -> Vec<LinComb<VertGen, R>> { 
+        let h = &self.homology[i as isize];
+        let r = h.rank();
+
+        (0..r).map(|k| { 
+            let v = SpVec::unit(r, k);
+            let z = self.as_chain(i, &v);
+            z
+        }).collect()
     }
 
     pub fn vectorize(&self, i: usize, z: &LinComb<VertGen, R>) -> SpVec<R> {
@@ -62,10 +61,26 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         ));
 
         let i = i as isize;
+        let h = &self.homology[i];
+        let t = h.trans().unwrap();
 
-        let v = self.complex.vectorize_h(i, z);
-        let v = self.homology[i].trans().unwrap().forward(&v);
-        v
+        let z_exc = self.excl.forward(z);
+        let v_exc = self.gens[i].vectorize(&z_exc);
+        let v_hml = t.forward(&v_exc);
+        
+        v_hml
+    }
+
+    pub fn as_chain(&self, i: usize, v_hml: &SpVec<R>) -> LinComb<VertGen, R> {
+        let i = i as isize;
+        let h = &self.homology[i];
+        let t = h.trans().unwrap();
+
+        let v_exc = t.backward(&v_hml);
+        let z_exc = self.gens[i].as_chain(&v_exc);
+        let z = self.excl.backward(&z_exc, true);
+
+        z
     }
 }
 
@@ -95,7 +110,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 #[cfg(test)]
 mod tests { 
-    use num_traits::Zero;
     use yui_link::Link;
     use yui_ratio::Ratio;
     use super::*;
@@ -136,28 +150,13 @@ mod tests {
     }
 
     #[test]
-    fn gens() { 
-        let l = Link::trefoil();
-        let v = BitSeq::from([1,0,0]);
-        let q = 0;
-        let hml = make_hml(&l, v, q);
-
-        let zs = hml.gens(2);
-        assert_eq!(zs.len(), 1);
-
-        let z = &zs[0];
-        let dz = hml.complex.d(2, z); 
-        assert!(dz.is_zero());
-    }
-
-    #[test]
     fn vectorize() { 
         let l = Link::trefoil().mirror();
         let v = BitSeq::from([1,0,0]);
         let q = 1;
         let hml = make_hml(&l, v, q);
 
-        let zs = hml.gens(2);
+        let zs = hml.homol_gens(2);
         assert_eq!(zs.len(), 2);
 
         let z0 = &zs[0];

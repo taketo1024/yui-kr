@@ -53,9 +53,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }).sum()
     }
 
-    fn gens(&self, i: usize, j: usize) -> Vec<&LinComb<VertGen, R>> {
+    fn hor_homol_gens(&self, i: usize, j: usize) -> Vec<LinComb<VertGen, R>> {
         self.data.verts(j).into_iter().flat_map(|v| {
-            self.hor_hml(v).gens(i)
+            self.hor_hml(v).homol_gens(i)
         }).collect()
     }
 
@@ -70,9 +70,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
             let z_v = z.filter_gens(|x| x.1 == v);
             let vec = self.hor_hml(v).vectorize(i, &z_v);
+
             for (i, a) in vec.iter() { 
                 entries.push((i + r, a.clone()))
             }
+            
             r += vec.dim();
 
             (r, entries)
@@ -106,7 +108,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn d_matrix(&self, i: usize, j: usize) -> SpMat<R> { 
-        let gens = self.gens(i, j);
+        let gens = self.hor_homol_gens(i, j);
         let (m, n) = (self.rank(i, j+1), self.rank(i, j));
 
         let entries: Vec<_> = (0..n).into_par_iter().map(|l| { 
@@ -212,7 +214,7 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = 0;
         let cube = make_cube(&l, q);
-        let zs = cube.gens(3, 3);
+        let zs = cube.hor_homol_gens(3, 3);
 
         assert_eq!(zs.len(), 4);
 
@@ -221,7 +223,7 @@ mod tests {
 
         assert_eq!(cube.vectorize(3, 3, &zs[0]), SpVec::from(vec![_1,_0,_0,_0]));
         assert_eq!(cube.vectorize(3, 3, &zs[1]), SpVec::from(vec![_0,_1,_0,_0]));
-        assert_eq!(cube.vectorize(3, 3, &(zs[0] - zs[3])), SpVec::from(vec![_1,_0,_0,-_1]));
+        assert_eq!(cube.vectorize(3, 3, &(&zs[0] - &zs[3])), SpVec::from(vec![_1,_0,_0,-_1]));
     }
 
     #[test]
