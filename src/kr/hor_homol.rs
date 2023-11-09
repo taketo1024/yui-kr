@@ -15,19 +15,18 @@ use super::hor_excl::KRHorExcl;
 
 pub struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
+    data: Arc<KRCubeData<R>>,
     v_coords: BitSeq,
     q_slice: isize,
-    excl: KRHorExcl<R>,
     homology: XHomology<VertGen, R>
 } 
 
 impl<R> KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
-        let complex = KRHorComplex::new(data, v_coords, q_slice);
+        let complex = KRHorComplex::new(data.clone(), v_coords, q_slice);
         let homology = complex.homology();
-        let excl = complex.take_data();
-        Self { v_coords, q_slice, excl, homology }
+        Self { data, v_coords, q_slice, homology }
     }
 
     pub fn v_coords(&self) -> BitSeq { 
@@ -38,6 +37,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.q_slice
     }
 
+    pub fn excl(&self) -> Arc<KRHorExcl<R>> { 
+        self.data.excl(self.v_coords)
+    }
+    
     pub fn rank(&self, i: usize) -> usize {
         self.homology[i as isize].rank()
     }
@@ -62,7 +65,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let i = i as isize;
         let h = &self.homology[i];
 
-        let z_exc = self.excl.forward(z);
+        let z_exc = self.excl().forward(z);
         let v_hml = h.vectorize(&z_exc);
         v_hml
     }
@@ -72,7 +75,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let h = &self.homology[i];
 
         let z_exc = h.as_chain(v_hml);
-        self.excl.backward(&z_exc, true)
+        self.excl().backward(&z_exc, true)
     }
 }
 

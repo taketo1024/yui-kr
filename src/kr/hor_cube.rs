@@ -121,6 +121,21 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             self.d(e)
         })
     }
+
+    pub fn into_excl_complex(self) -> XChainComplex<VertGen, R> {
+        let n = self.data.dim() as isize;
+        let excl = self.data.excl(self.v_coords);
+        
+        let summands = Grid1::generate(0..=n, |i| { 
+            let gens = self.gens(i as usize);
+            let red_xs = excl.reduce_gens(&gens);
+            XModStr::free(red_xs)
+        });
+        
+        XChainComplex::new(summands, 1, move |_, e| {
+            excl.diff_red(e)
+        })
+    }
 }
 
 #[cfg(test)]
