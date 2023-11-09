@@ -79,7 +79,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
                     entries.push((i + r, a.clone()))
                 }
             }
-            
+
             r += h_v.rank(i);
 
             (r, entries)
@@ -139,7 +139,18 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         SpMat::from_entries((m, n), entries)
     }
 
-    pub fn into_complex(self, reducing: bool) -> KRTotComplex<R> {
+    pub fn into_complex(self) -> KRTotComplex<R> {
+        let n = self.data.dim() as isize;
+        let range = cartesian!(0..=n, 0..=n).map(|(i, j)| isize2(i, j));
+        let d_deg = isize2(0, 1);
+
+        ChainComplex2::generate(range, d_deg, |idx| {
+            let isize2(i, j) = idx;
+            self.d_matrix(i as usize, j as usize)
+        })
+    }
+
+    pub fn into_red_complex(self) -> KRTotComplex<R> {
         let n = self.data.dim() as isize;
         let range = cartesian!(0..=n, 0..=n).map(|(i, j)| isize2(i, j));
         let d_deg = isize2(0, 1);
@@ -154,10 +165,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
                 self.d_matrix(i, j)
             };
             reducer.set_matrix(idx, d);
-
-            if reducing {
-                reducer.reduce_at(idx);
-            }
+            reducer.reduce_at(idx);
         }
 
         reducer.into_complex()
@@ -260,7 +268,7 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
         let cube = make_cube(&l, q);
-        let c = cube.into_complex(false);
+        let c = cube.into_complex();
 
         assert_eq!(c[(0, 0)].rank(), 0);
         assert_eq!(c[(0, 1)].rank(), 0);
@@ -287,7 +295,7 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
         let cube = make_cube(&l, q);
-        let c = cube.into_complex(true);
+        let c = cube.into_red_complex();
 
         assert_eq!(c[(0, 0)].rank(), 0);
         assert_eq!(c[(0, 1)].rank(), 0);
@@ -314,7 +322,7 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
         let cube = make_cube(&l, q);
-        let c = cube.into_complex(false);
+        let c = cube.into_complex();
         let h = c.homology(false);
 
         assert_eq!(h[(0, 0)].rank(), 0);
