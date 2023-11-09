@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use itertools::Itertools;
 use yui_core::{Ring, RingOps};
 use yui_homology::XChainComplex;
+use yui_lin_comb::LinComb;
 use yui_utils::bitseq::BitSeq;
 
 use super::base::{BasePoly, BaseMono, VertGen, sign_between};
@@ -89,7 +89,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.data.hor_edge_poly(self.v_coords, i)
     }
 
-    pub fn differentiate(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
+    pub fn differentiate(&self, e: &VertGen) -> LinComb<VertGen, R> { 
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
         let n = self.data.dim();
@@ -106,7 +106,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             q.into_iter().map(move |(x1, r)| 
                 (VertGen(h1, v0, x1), r)
             )
-         }).collect_vec()
+         }).collect()
     }
 
     pub fn into_complex(self) -> XChainComplex<VertGen, R> {
@@ -131,7 +131,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 mod tests {
     use std::collections::HashMap;
 
-    use num_traits::One;
+    use itertools::Itertools;
+    use num_traits::{One, Zero};
     use yui_homology::{ChainComplexTrait, RModStr};
     use yui_ratio::Ratio;
     use yui_link::Link;
@@ -280,7 +281,7 @@ mod tests {
         let z = VertGen(h, v, one.clone());
         let ys = cube.differentiate(&z);
 
-        assert_eq!(ys, vec![]);
+        assert!(ys.is_zero());
     }
 
     #[test]

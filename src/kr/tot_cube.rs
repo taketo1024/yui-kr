@@ -88,7 +88,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.data.ver_edge_poly(h_coords, i)
     }
 
-    fn d(&self, e: &VertGen) -> Vec<(VertGen, R)> { 
+    fn d(&self, e: &VertGen) -> LinComb<VertGen, R> { 
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
         let n = self.data.dim();
