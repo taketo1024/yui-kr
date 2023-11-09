@@ -3,7 +3,7 @@ use std::sync::Arc;
 use delegate::delegate;
 
 use yui_core::{Ring, RingOps, EucRing, EucRingOps};
-use yui_homology::{Grid1, ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, XHomology};
+use yui_homology::{Grid1, ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, XHomology, XModStr};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpVec, SpMat};
 use yui_utils::bitseq::BitSeq;
@@ -32,25 +32,20 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         Self { v_coords, q_slice, excl, inner }
     }
 
-    fn excl_gens(cube: &KRHorCube<R>, excl: &KRHorExcl<R>) -> Grid1<Vec<VertGen>> {
+    fn excl_gens(cube: &KRHorCube<R>, excl: &KRHorExcl<R>) -> Grid1<XModStr<VertGen, R>> {
         let n = cube.data().dim() as isize;
         Grid1::generate(0..=n, |i| {
             let xs = cube.gens(i as usize);
             let red_xs = excl.reduce_gens(&xs);
-            red_xs
+            XModStr::free(red_xs)
         })
     }
 
     fn make_cpx(cube: KRHorCube<R>, excl: &KRHorExcl<R>, ch_red: bool) -> XChainComplex<VertGen, R> {
         let excl = excl.clone();
-        let gens = Self::excl_gens(&cube, &excl);
+        let summands = Self::excl_gens(&cube, &excl);
 
-        let cpx = XChainComplex::generate(
-            gens.support(), 1, 
-            move |i| gens[i].clone(),
-            move |_, x| excl.diff_red(x)
-        );
-
+        let cpx = XChainComplex::new(summands, 1, move |_, x| excl.diff_red(x));
         if ch_red { 
             cpx.reduced()
         } else { 

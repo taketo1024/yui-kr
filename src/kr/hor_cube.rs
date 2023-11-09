@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use yui_core::{Ring, RingOps};
-use yui_homology::XChainComplex;
+use yui_homology::{XChainComplex, Grid1, XModStr};
 use yui_lin_comb::LinComb;
 use yui_utils::bitseq::BitSeq;
 
@@ -89,7 +89,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.data.hor_edge_poly(self.v_coords, i)
     }
 
-    pub fn differentiate(&self, e: &VertGen) -> LinComb<VertGen, R> { 
+    pub fn d(&self, e: &VertGen) -> LinComb<VertGen, R> { 
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
         let n = self.data.dim();
@@ -111,19 +111,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     pub fn into_complex(self) -> XChainComplex<VertGen, R> {
         let n = self.data.dim() as isize;
-        let range = 0..=n;
-
-        let self0 = Arc::new(self);
-        let self1 = Arc::clone(&self0);
         
-        XChainComplex::generate(range, 1, 
-            move |i| {
-                self0.gens(i as usize)
-            },
-            move |_i, e| {
-                self1.differentiate(e)
-            }
-        )
+        let summands = Grid1::generate(0..=n, |i| { 
+            let gens = self.gens(i as usize);
+            XModStr::free(gens)
+        });
+        
+        XChainComplex::new(summands, 1, move |_, e| {
+            self.d(e)
+        })
     }
 }
 
@@ -255,7 +251,7 @@ mod tests {
 
         let h = BitSeq::from([0,0,0]);
         let z = VertGen(h, v, one.clone());
-        let ys = cube.differentiate(&z);
+        let ys = cube.d(&z);
 
         assert_eq!(ys.into_iter().collect::<HashMap<_, _>>(), map!{
             VertGen(BitSeq::from([1,0,0]), v, x[1].clone()) => -R::one(),
@@ -268,7 +264,7 @@ mod tests {
 
         let h = BitSeq::from([0,1,0]);
         let z = VertGen(h, v, one.clone());
-        let ys = cube.differentiate(&z);
+        let ys = cube.d(&z);
 
         assert_eq!(ys.into_iter().collect::<HashMap<_, _>>(), map! {
             VertGen(BitSeq::from([1,1,0]), v, x[1].clone()) => -R::one(),
@@ -279,7 +275,7 @@ mod tests {
 
         let h = BitSeq::from([1,1,1]);
         let z = VertGen(h, v, one.clone());
-        let ys = cube.differentiate(&z);
+        let ys = cube.d(&z);
 
         assert!(ys.is_zero());
     }
