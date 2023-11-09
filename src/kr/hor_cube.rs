@@ -109,14 +109,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
          }).collect_vec()
     }
 
-    pub fn as_complex(self) -> XChainComplex<VertGen, R> {
+    pub fn into_complex(self) -> XChainComplex<VertGen, R> {
         let n = self.data.dim() as isize;
         let range = 0..=n;
 
         let self0 = Arc::new(self);
         let self1 = Arc::clone(&self0);
         
-        XChainComplex::new(range, 1, 
+        XChainComplex::generate(range, 1, 
             move |i| {
                 self0.gens(i as usize)
             },
@@ -323,7 +323,7 @@ mod tests {
         let v = BitSeq::from([1,0,0]);
         let q = 0;
         let cube = make_cube(&l, v, q);
-        let c = cube.as_complex();
+        let c = cube.into_complex();
 
         assert_eq!(c[0].rank(), 1);
         assert_eq!(c[1].rank(), 12);
@@ -335,7 +335,7 @@ mod tests {
         let v = BitSeq::from([1,0,0]);
         let q = 1;
         let cube = make_cube(&l.mirror(), v, q);
-        let c = cube.as_complex();
+        let c = cube.into_complex();
         
         assert_eq!(c[0].rank(), 6);
         assert_eq!(c[1].rank(), 40);
@@ -352,7 +352,7 @@ mod tests {
         let q = 0;
         let cube = make_cube(&l, v, q);
 
-        let c = cube.as_complex();
+        let c = cube.into_complex();
         let h = c.homology(false);
 
         assert_eq!(h[0].rank(), 0);
@@ -364,7 +364,7 @@ mod tests {
         let v = BitSeq::from([1,0,0]);
         let q = 1;
         let cube = make_cube(&l, v, q);
-        let c = cube.as_complex();
+        let c = cube.into_complex();
         let h = c.homology(false);
         
         assert_eq!(h[0].rank(), 0);

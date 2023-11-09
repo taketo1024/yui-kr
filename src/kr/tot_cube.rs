@@ -135,14 +135,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         SpMat::from_entries((m, n), entries)
     }
 
-    pub fn as_complex(self, reducing: bool) -> KRTotComplex<R> {
+    pub fn into_complex(self, reducing: bool) -> KRTotComplex<R> {
         let n = self.data.dim() as isize;
         let range = cartesian!(0..=n, 0..=n).map(|(i, j)| isize2(i, j));
         let d_deg = isize2(0, 1);
 
-        let mut reducer = ChainReducer::new(d_deg, true);
+        let mut reducer = ChainReducer::new(range, d_deg, true);
 
-        for idx in range.clone() {
+        for idx in reducer.support() {
             let (i, j) = (idx.0 as usize, idx.1 as usize);
             let d = if let Some(t) = reducer.trans(idx) {
                 self.d_matrix_for(i, j, t.backward_mat())
@@ -156,7 +156,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             }
         }
 
-        reducer.make_complex(range)
+        reducer.into_complex()
     }
 }
 
@@ -256,7 +256,7 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
         let cube = make_cube(&l, q);
-        let c = cube.as_complex(false);
+        let c = cube.into_complex(false);
 
         assert_eq!(c[(0, 0)].rank(), 0);
         assert_eq!(c[(0, 1)].rank(), 0);
@@ -283,7 +283,7 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
         let cube = make_cube(&l, q);
-        let c = cube.as_complex(true);
+        let c = cube.into_complex(true);
 
         assert_eq!(c[(0, 0)].rank(), 0);
         assert_eq!(c[(0, 1)].rank(), 0);
@@ -310,7 +310,7 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
         let cube = make_cube(&l, q);
-        let c = cube.as_complex(false);
+        let c = cube.into_complex(false);
         let h = c.homology(false);
 
         assert_eq!(h[(0, 0)].rank(), 0);
