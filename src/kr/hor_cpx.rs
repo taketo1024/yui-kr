@@ -139,7 +139,7 @@ mod tests {
     type R = Ratio<i64>;
 
     fn make_cpx(link: &Link, v_coords: BitSeq, q_slice: isize, level: usize, red: bool) -> KRHorComplex<R> {
-        let data = Arc::new( KRCubeData::<R>::new(&link) );
+        let data = Arc::new( KRCubeData::<R>::new(&link, level) );
 
         let excl = KRHorExcl::from(&data, v_coords, level);
         let cube = KRHorCube::new(data, v_coords, q_slice);

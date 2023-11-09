@@ -25,7 +25,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRHomology<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(link: &Link) -> Self { 
-        let data = Arc::new(KRCubeData::new(&link));
+        let data = Arc::new(KRCubeData::new(&link, 2));
         let cache = UnsafeCell::new( HashMap::new() );
         let zero = HomologySummand::zero();
         Self { data, cache, zero }

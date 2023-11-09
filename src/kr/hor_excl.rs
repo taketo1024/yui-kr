@@ -443,7 +443,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let excl = KRHorExcl::from(&data, v, 0);
 
         assert!(excl.exc_dirs.is_empty());
@@ -469,7 +469,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let excl = KRHorExcl::from(&data, v, 0);
 
         assert_eq!(excl.find_excl_var_for(1, 0), Some(1));
@@ -486,7 +486,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
         // replaces x1 -> x2
@@ -524,7 +524,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
         // replaces x1 -> x2
@@ -565,7 +565,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
         // replaces x1 -> x2
@@ -606,7 +606,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let excl = KRHorExcl::from(&data, v, 0);
         let cube = KRHorCube::new(Arc::new(data), v, 0);
 
@@ -622,7 +622,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
         excl.perform_excl(1, 0, 1);
@@ -636,7 +636,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let excl = KRHorExcl::from(&data, v, 0);
         let cube = KRHorCube::new(Arc::new(data), v, 0);
 
@@ -652,7 +652,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
         excl.perform_excl(1, 0, 1); // x_1 is reduced
@@ -668,7 +668,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
         excl.perform_excl(1, 0, 1); // x_1 is reduced.
@@ -686,7 +686,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
         let cube = KRHorCube::new(Arc::new(data), v, 0);
 
@@ -727,7 +727,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
         excl.perform_excl(1, 0, 1); // x1 -> x2
@@ -752,7 +752,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
         excl.perform_excl(1, 0, 1); // x1 -> x2
@@ -815,7 +815,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
         
         excl.perform_excl(1, 0, 1); // x1 -> x2
@@ -844,7 +844,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
         
         excl.perform_excl(1, 0, 1); // x1 -> x2
@@ -865,7 +865,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
         
         excl.perform_excl(1, 0, 1); // x1 -> x2
@@ -884,7 +884,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from_iter([0,0,1]);
 
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let mut excl = KRHorExcl::from(&data, v, 0);
         let cube = KRHorCube::new(Arc::new(data), v, 0);
 

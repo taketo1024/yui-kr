@@ -139,7 +139,7 @@ mod tests {
     type P = BasePoly<R>;
 
     fn make_cube(l: &Link, v: BitSeq, q: isize) -> KRHorCube<R> {
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let rc = Arc::new(data);
         let cube = KRHorCube::new(rc, v, q);
         cube

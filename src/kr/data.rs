@@ -1,5 +1,6 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use std::ops::RangeInclusive;
+use std::sync::Arc;
 use itertools::{Itertools, izip};
 use num_integer::Integer;
 use num_traits::One;
@@ -10,6 +11,7 @@ use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
 use yui_utils::bitseq::{BitSeq, Bit};
 
 use super::base::BasePoly;
+use super::hor_excl::KRHorExcl;
 
 /*
  *    a   b
@@ -33,25 +35,35 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     writhe: isize, 
     n_seif: isize,
     x_signs: Vec<Sign>,
-    x_polys: Vec<KRCrossData<R>>
+    x_polys: Vec<KRCrossData<R>>,
+    excl: HashMap<BitSeq, Arc<KRHorExcl<R>>>
 }
 
 impl<R> KRCubeData<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    pub fn new(link: &Link) -> Self {
+    pub fn new(link: &Link, excl_level: usize) -> Self {
         let n = link.crossing_num() as usize;
         let w = link.writhe() as isize;
         let s = link.seifert_circles().len() as isize;
         let x_signs = link.crossing_signs();
         let x_polys = Self::collect_x_polys(link);
+        let excl = HashMap::new();
 
-        Self {
+        let mut res = Self {
             n_cross: n,
             writhe: w,
             n_seif: s,
             x_signs,
-            x_polys
-        }
+            x_polys,
+            excl // empty
+        };
+
+        res.excl = res.all_verts().into_iter().map(|v| {
+            let excl = Arc::new( KRHorExcl::from(&res, v, excl_level) );
+            (v, excl)
+        }).collect();
+
+        res
     }
 
     pub fn dim(&self) -> usize { 
@@ -66,10 +78,18 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         &self.x_polys[i]
     }
 
+    pub fn excl(&self, v_coods: BitSeq) -> Arc<KRHorExcl<R>> { 
+        Arc::clone( &self.excl[&v_coods] )
+    }
+
+    pub fn all_verts(&self) -> Vec<BitSeq> { 
+        let n = self.dim();
+        BitSeq::generate(n)
+    }
+
     // TODO cache
     pub fn verts(&self, k: usize) -> Vec<BitSeq> {
-        let n = self.dim();
-        BitSeq::generate(n).into_iter().filter(|v| v.weight() == k).collect()
+        self.all_verts().into_iter().filter(|v| v.weight() == k).collect()
     }
 
     fn l_grad_shift(&self) -> isize3 { 
@@ -382,14 +402,14 @@ mod tests {
     #[test]
     fn grad_shift() { 
         let l = Link::trefoil(); // (w, s) = (-3, 2)
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         assert_eq!(data.l_grad_shift(), isize3(4,-2,-4));
     }
 
     #[test]
     fn grad_at() { 
         let l = Link::trefoil();
-        let data = KRCubeData::<R>::new(&l);
+        let data = KRCubeData::<R>::new(&l, 0);
         let grad0 = data.root_grad();
         assert_eq!(grad0, isize3(4,-8,-4));
 
