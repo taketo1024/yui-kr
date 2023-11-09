@@ -89,7 +89,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.data.hor_edge_poly(self.v_coords, i)
     }
 
-    pub fn d(&self, e: &VertGen) -> LinComb<VertGen, R> { 
+    pub fn d(&self, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> { 
+        z.apply(|x| self.d_x(x))
+    }
+
+    fn d_x(&self, e: &VertGen) -> LinComb<VertGen, R> { 
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
         let n = self.data.dim();
@@ -266,7 +270,7 @@ mod tests {
 
         let h = BitSeq::from([0,0,0]);
         let z = VertGen(h, v, one.clone());
-        let ys = cube.d(&z);
+        let ys = cube.d_x(&z);
 
         assert_eq!(ys.into_iter().collect::<HashMap<_, _>>(), map!{
             VertGen(BitSeq::from([1,0,0]), v, x[1].clone()) => -R::one(),
@@ -279,7 +283,7 @@ mod tests {
 
         let h = BitSeq::from([0,1,0]);
         let z = VertGen(h, v, one.clone());
-        let ys = cube.d(&z);
+        let ys = cube.d_x(&z);
 
         assert_eq!(ys.into_iter().collect::<HashMap<_, _>>(), map! {
             VertGen(BitSeq::from([1,1,0]), v, x[1].clone()) => -R::one(),
@@ -290,7 +294,7 @@ mod tests {
 
         let h = BitSeq::from([1,1,1]);
         let z = VertGen(h, v, one.clone());
-        let ys = cube.d(&z);
+        let ys = cube.d_x(&z);
 
         assert!(ys.is_zero());
     }

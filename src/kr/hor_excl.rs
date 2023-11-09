@@ -325,7 +325,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         Trans::new(fwd, bwd)
     }
 
-    pub fn diff_red(&self, e: &VertGen) -> LinComb<VertGen, R> { 
+    pub fn diff_red(&self, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> { 
+        z.apply(|x| self.diff_red_x(x))
+    }
+
+    fn diff_red_x(&self, e: &VertGen) -> LinComb<VertGen, R> { 
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
 
