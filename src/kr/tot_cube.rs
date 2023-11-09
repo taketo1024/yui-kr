@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 use cartesian::cartesian;
 use itertools::Itertools;
+use num_traits::Zero;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui_core::{EucRing, EucRingOps, isize2};
 use yui_homology::ChainComplex2;
@@ -69,14 +70,17 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let (r, entries) = self.data.verts(j).iter().fold((0, vec![]), |acc, &v| { 
             let (mut r, mut entries) = acc;
 
+            let h_v = self.hor_hml(v);
             let z_v = z.filter_gens(|x| x.1 == v);
-            let vec = self.hor_hml(v).vectorize(i, &z_v);
 
-            for (i, a) in vec.iter() { 
-                entries.push((i + r, a.clone()))
+            if !z_v.is_zero() {
+                let vec = h_v.vectorize(i, &z_v);
+                for (i, a) in vec.iter() { 
+                    entries.push((i + r, a.clone()))
+                }
             }
             
-            r += vec.dim();
+            r += h_v.rank(i);
 
             (r, entries)
         });

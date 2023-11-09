@@ -19,8 +19,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
         let cube = KRTotCube::new(data, q_slice);
         let complex = cube.into_complex(true);
-        let reduced = complex.reduced(false);
-        let homology = reduced.homology(false);
+        let homology = complex.homology(false);
 
         Self { q_slice, homology }
     }
