@@ -26,7 +26,7 @@ impl<R> KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
         let cube = KRHorCube::new(data.clone(), v_coords, q_slice);
-        let inner = cube.into_excl_complex().reduced();
+        let inner = cube.into_complex().reduced();
         Self { data, v_coords, q_slice, inner }
     }
 
@@ -118,7 +118,7 @@ mod tests {
     fn make_cpx(link: &Link, v_coords: BitSeq, q_slice: isize, level: usize, red: bool) -> KRHorComplex<R> {
         let data = Arc::new( KRCubeData::<R>::new(&link, level) );
         let cube = KRHorCube::new(data.clone(), v_coords, q_slice);
-        let inner = cube.into_excl_complex();
+        let inner = cube.into_complex();
         let inner = if red { 
             inner.reduced()
         } else { 
