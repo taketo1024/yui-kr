@@ -135,7 +135,7 @@ mod tests {
 
     use itertools::Itertools;
     use num_traits::{One, Zero};
-    use yui_homology::{ChainComplexTrait, RModStr};
+    use yui_homology::{RModStr, ChainComplexCommon};
     use yui_ratio::Ratio;
     use yui_link::Link;
     use yui_utils::map;

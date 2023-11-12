@@ -53,13 +53,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let z = self.excl().backward(&z_exc, false);
         z
     }
-
-    pub fn d(&self, i: isize, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> { 
-        let z_exc = self.excl().forward(z);
-        let dz_exc = self.inner.d(i, &z_exc);
-        let dz = self.excl().backward(&dz_exc, true);
-        dz
-    }
 }
 
 impl<R> GridTrait<isize> for KRHorComplex<R>
@@ -89,12 +82,21 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> ChainComplexTrait<isize> for KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     type R = R;
+    type Element = LinComb<VertGen, R>;
 
     delegate! { 
         to self.inner { 
+            fn rank(&self, i: isize) -> usize;
             fn d_deg(&self) -> isize;
             fn d_matrix(&self, i: isize) -> SpMat<Self::R>;
         }
+    }
+
+    fn d(&self, i: isize, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> { 
+        let z_exc = self.excl().forward(z);
+        let dz_exc = self.inner.d(i, &z_exc);
+        let dz = self.excl().backward(&dz_exc, true);
+        dz
     }
 }
 
@@ -107,7 +109,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 #[cfg(test)]
 mod tests { 
-    use yui_homology::RModStr;
+    use yui_homology::{RModStr, ChainComplexCommon};
     use yui_link::Link;
     use yui_ratio::Ratio;
 

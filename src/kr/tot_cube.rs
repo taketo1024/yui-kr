@@ -176,7 +176,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 mod tests {
     use itertools::Itertools;
     use num_traits::One;
-    use yui_homology::{ChainComplexTrait, RModStr};
+    use yui_homology::{RModStr, ChainComplexCommon};
     use yui_ratio::Ratio;
     use yui_link::Link;
     use super::*;
