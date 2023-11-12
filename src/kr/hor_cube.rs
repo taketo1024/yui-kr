@@ -27,6 +27,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
+    pub fn dim(&self) -> usize { 
+        self.data.dim()
+    }
+
     pub fn data(&self) -> &KRCubeData<R> { 
         self.data.as_ref()
     }
@@ -71,7 +75,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
 
         let deg = deg as usize;
-        let n = self.data.dim();
+        let n = self.dim();
         let gens = Self::make_mons(deg, n);
 
         gens.into_iter().map(|x| 
@@ -96,7 +100,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     fn d_x(&self, e: &VertGen) -> LinComb<VertGen, R> { 
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
-        let n = self.data.dim();
+        let n = self.dim();
 
         (0..n).filter(|&i| 
             h0[i].is_zero()
@@ -114,17 +118,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn into_complex(self) -> XChainComplex<VertGen, R> {
-        let n = self.data.dim() as isize;
-        let excl = self.data.excl(self.v_coords);
-        
+        let n = self.dim() as isize;
         let summands = Grid1::generate(0..=n, |i| { 
             let gens = self.gens(i as usize);
-            let red_xs = excl.reduce_gens(&gens);
-            XModStr::free(red_xs)
+            XModStr::free(gens)
         });
-        
-        XChainComplex::new(summands, 1, move |_, e| {
-            excl.diff_red(e)
+        XChainComplex::new(summands, 1, move |_, z| {
+            self.d(z)
         })
     }
 }

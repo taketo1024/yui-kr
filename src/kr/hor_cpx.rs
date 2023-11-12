@@ -3,7 +3,7 @@ use std::sync::Arc;
 use delegate::delegate;
 
 use yui_core::{Ring, RingOps, EucRing, EucRingOps};
-use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, XHomology};
+use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, XHomology, Grid1, XModStr};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpVec, SpMat};
 use yui_utils::bitseq::BitSeq;
@@ -16,18 +16,32 @@ use super::hor_excl::KRHorExcl;
 
 pub struct KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
-    data: Arc<KRCubeData<R>>,
     v_coords: BitSeq,
     q_slice: isize,
+    excl: Arc<KRHorExcl<R>>,
     inner: XChainComplex<VertGen, R>
 } 
 
 impl<R> KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
+        let excl = data.excl(v_coords);
         let cube = KRHorCube::new(data.clone(), v_coords, q_slice);
-        let inner = cube.into_complex().reduced();
-        Self { data, v_coords, q_slice, inner }
+        let inner = Self::make_cpx(excl.clone(), cube).reduced();
+        Self { v_coords, q_slice, excl, inner }
+    }
+
+    fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>) -> XChainComplex<VertGen, R> { 
+        let n = cube.dim() as isize;
+        let summands = Grid1::generate(0..=n, |i| { 
+            let gens = cube.gens(i as usize);
+            let red_xs = excl.reduce_gens(&gens);
+            XModStr::free(red_xs)
+        });
+        
+        XChainComplex::new(summands, 1, move |_, e| {
+            excl.diff_red(e)
+        })
     }
 
     pub fn v_coords(&self) -> BitSeq { 
@@ -38,19 +52,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.q_slice
     }
 
-    pub fn excl(&self) -> Arc<KRHorExcl<R>> { 
-        self.data.excl(self.v_coords)
-    }
-
     pub fn vectorize(&self, i: isize, z: &LinComb<VertGen, R>) -> SpVec<R> {
-        let z_exc = self.excl().forward(z);
+        let z_exc = self.excl.forward(z);
         let v_exc = self.inner[i].vectorize(&z_exc);
         v_exc
     }
 
     pub fn as_chain(&self, i: isize, v_exc: &SpVec<R>) -> LinComb<VertGen, R> {
         let z_exc = self.inner[i].as_chain(&v_exc);
-        let z = self.excl().backward(&z_exc, false);
+        let z = self.excl.backward(&z_exc, false);
         z
     }
 }
@@ -93,9 +103,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn d(&self, i: isize, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> { 
-        let z_exc = self.excl().forward(z);
+        let z_exc = self.excl.forward(z);
         let dz_exc = self.inner.d(i, &z_exc);
-        let dz = self.excl().backward(&dz_exc, true);
+        let dz = self.excl.backward(&dz_exc, true);
         dz
     }
 }
@@ -119,15 +129,16 @@ mod tests {
 
     fn make_cpx(link: &Link, v_coords: BitSeq, q_slice: isize, level: usize, red: bool) -> KRHorComplex<R> {
         let data = Arc::new( KRCubeData::<R>::new(&link, level) );
+        let excl = data.excl(v_coords);
         let cube = KRHorCube::new(data.clone(), v_coords, q_slice);
-        let inner = cube.into_complex();
+        let inner = KRHorComplex::make_cpx(excl.clone(), cube);
         let inner = if red { 
             inner.reduced()
         } else { 
             inner
         };
 
-        KRHorComplex { data, v_coords, q_slice, inner }
+        KRHorComplex { v_coords, q_slice, excl, inner }
     }
 
     #[test]
