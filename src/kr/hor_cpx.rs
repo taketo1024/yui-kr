@@ -5,7 +5,7 @@ use delegate::delegate;
 use yui_core::{Ring, RingOps, EucRing, EucRingOps};
 use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, XHomology, Grid1, XModStr};
 use yui_lin_comb::LinComb;
-use yui_matrix::sparse::{SpVec, SpMat};
+use yui_matrix::sparse::SpMat;
 use yui_utils::bitseq::BitSeq;
 
 use crate::kr::hor_cube::KRHorCube;
@@ -52,16 +52,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.q_slice
     }
 
-    pub fn vectorize(&self, i: isize, z: &LinComb<VertGen, R>) -> SpVec<R> {
-        let z_exc = self.excl.forward(z);
-        let v_exc = self.inner[i].vectorize(&z_exc);
-        v_exc
-    }
-
-    pub fn as_chain(&self, i: isize, v_exc: &SpVec<R>) -> LinComb<VertGen, R> {
-        let z_exc = self.inner[i].as_chain(&v_exc);
-        let z = self.excl.backward(&z_exc, false);
-        z
+    pub fn excl(&self) -> Arc<KRHorExcl<R>> { 
+        self.excl.clone()
     }
 }
 

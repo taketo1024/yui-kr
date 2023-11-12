@@ -15,18 +15,19 @@ use super::hor_excl::KRHorExcl;
 
 pub struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    data: Arc<KRCubeData<R>>,
     v_coords: BitSeq,
     q_slice: isize,
-    homology: XHomology<VertGen, R>
+    excl: Arc<KRHorExcl<R>>,
+    inner: XHomology<VertGen, R>
 } 
 
 impl<R> KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
         let complex = KRHorComplex::new(data.clone(), v_coords, q_slice);
-        let homology = complex.homology();
-        Self { data, v_coords, q_slice, homology }
+        let excl = complex.excl();
+        let inner = complex.homology();
+        Self { v_coords, q_slice, excl, inner }
     }
 
     pub fn v_coords(&self) -> BitSeq { 
@@ -37,16 +38,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.q_slice
     }
 
-    pub fn excl(&self) -> Arc<KRHorExcl<R>> { 
-        self.data.excl(self.v_coords)
-    }
-    
     pub fn rank(&self, i: usize) -> usize {
-        self.homology[i as isize].rank()
+        self.inner[i as isize].rank()
     }
 
     pub fn homol_gens(&self, i: usize) -> Vec<LinComb<VertGen, R>> { 
-        let h = &self.homology[i as isize];
+        let h = &self.inner[i as isize];
         let r = h.rank();
 
         (0..r).map(|k| { 
@@ -63,19 +60,19 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         ));
 
         let i = i as isize;
-        let h = &self.homology[i];
+        let h = &self.inner[i];
 
-        let z_exc = self.excl().forward(z);
+        let z_exc = self.excl.forward(z);
         let v_hml = h.vectorize(&z_exc);
         v_hml
     }
 
     pub fn as_chain(&self, i: usize, v_hml: &SpVec<R>) -> LinComb<VertGen, R> {
         let i = i as isize;
-        let h = &self.homology[i];
+        let h = &self.inner[i];
 
         let z_exc = h.as_chain(v_hml);
-        self.excl().backward(&z_exc, true)
+        self.excl.backward(&z_exc, true)
     }
 }
 
@@ -85,7 +82,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type E = XHomologySummand<VertGen, R>;
 
     delegate! { 
-        to self.homology {
+        to self.inner {
             fn support(&self) -> Self::Itr;
             fn is_supported(&self, i: isize) -> bool;
             fn get(&self, i: isize) -> &Self::E;
@@ -97,7 +94,7 @@ impl<R> Index<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = XHomologySummand<VertGen, R>;
     delegate! { 
-        to self.homology { 
+        to self.inner { 
             fn index(&self, index: isize) -> &Self::Output;
         }
     }
