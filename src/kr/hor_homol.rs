@@ -42,7 +42,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.inner[i as isize].rank()
     }
 
-    pub fn homol_gens(&self, i: usize) -> Vec<LinComb<VertGen, R>> { 
+    pub fn gens(&self, i: usize) -> Vec<LinComb<VertGen, R>> { 
         let h = &self.inner[i as isize];
         let r = h.rank();
 
@@ -148,7 +148,7 @@ mod tests {
         let q = 1;
         let hml = make_hml(&l, v, q);
 
-        let zs = hml.homol_gens(2);
+        let zs = hml.gens(2);
         assert_eq!(zs.len(), 2);
 
         let z0 = &zs[0];

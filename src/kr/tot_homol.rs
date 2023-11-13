@@ -3,10 +3,10 @@ use std::sync::Arc;
 use delegate::delegate;
 
 use yui_core::{EucRing, EucRingOps, isize2};
-use yui_homology::{Homology2, RModStr, GridTrait, GridIter, HomologySummand};
+use yui_homology::{Homology2, GridTrait, GridIter, HomologySummand};
 
+use crate::kr::tot_cpx::KRTotComplex;
 use super::data::KRCubeData;
-use super::tot_cube::KRTotCube;
 
 pub struct KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
@@ -17,20 +17,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
-        let cube = KRTotCube::new(data, q_slice);
-        let complex = cube.into_red_complex();
-        let homology = complex.homology(false);
+        let complex = KRTotComplex::new(data, q_slice);
+        let inner = complex.reduced().homology(false);
 
-        Self { q_slice, homology }
+        Self { q_slice, homology: inner }
     }
 
     pub fn q_slice(&self) -> isize { 
         self.q_slice
-    }
-
-    pub fn rank(&self, i: usize, j: usize) -> usize { 
-        let idx = isize2(i as isize, j as isize);
-        self.get(idx).rank()
     }
 }
 
@@ -61,6 +55,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 #[cfg(test)]
 mod tests { 
+    use yui_homology::RModStr;
     use yui_link::Link;
     use yui_ratio::Ratio;
     use super::*;
