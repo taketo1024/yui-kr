@@ -299,9 +299,9 @@ dependencies = [
 
 [[package]]
 name = "is-odd"
-version = "1.0.1"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd790003fe5251fa32abb223a36270ad5796b5d1390c04eae187528174a67f71"
+checksum = "774d9618121c276cc7a8d08e30bef03dda2c39708773fd937aa2452ba8ed9243"
 
 [[package]]
 name = "is-terminal"
@@ -706,9 +706,9 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
-version = "1.11.1"
+version = "1.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "942b4a808e05215192e39f4ab80813e599068285906cc91aa64f923db842bd5a"
+checksum = "4dccd0940a2dcdf68d092b8cbab7dc0ad8fa938bf95787e1b916b0e3d0e8e970"
 
 [[package]]
 name = "sprs"
@@ -925,7 +925,7 @@ checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
 [[package]]
 name = "yui"
 version = "0.2.0"
-source = "git+https://github.com/taketo1024/yui#446402f7de499fb4fc36811a269a21b7b98a695e"
+source = "git+https://github.com/taketo1024/yui#1d9a11f02712f2961fa1be9ae6c286b84420d53f"
 dependencies = [
  "ahash",
  "auto-impl-ops",
@@ -943,7 +943,7 @@ dependencies = [
 [[package]]
 name = "yui-homology"
 version = "0.2.0"
-source = "git+https://github.com/taketo1024/yui#446402f7de499fb4fc36811a269a21b7b98a695e"
+source = "git+https://github.com/taketo1024/yui#1d9a11f02712f2961fa1be9ae6c286b84420d53f"
 dependencies = [
  "bimap",
  "cartesian",
@@ -981,7 +981,7 @@ dependencies = [
 [[package]]
 name = "yui-link"
 version = "0.2.0"
-source = "git+https://github.com/taketo1024/yui#446402f7de499fb4fc36811a269a21b7b98a695e"
+source = "git+https://github.com/taketo1024/yui#1d9a11f02712f2961fa1be9ae6c286b84420d53f"
 dependencies = [
  "derive_more",
  "itertools",
@@ -994,7 +994,7 @@ dependencies = [
 [[package]]
 name = "yui-matrix"
 version = "0.2.0"
-source = "git+https://github.com/taketo1024/yui#446402f7de499fb4fc36811a269a21b7b98a695e"
+source = "git+https://github.com/taketo1024/yui#1d9a11f02712f2961fa1be9ae6c286b84420d53f"
 dependencies = [
  "auto-impl-ops",
  "cartesian",
