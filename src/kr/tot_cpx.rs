@@ -1,4 +1,5 @@
-#![allow(unused)] // TODO remove
+#![allow(unused)] use std::ops::Index;
+// TODO remove
 use std::sync::Arc;
 
 use cartesian::cartesian;
@@ -6,9 +7,9 @@ use delegate::delegate;
 use itertools::Itertools;
 use num_traits::Zero;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use yui_core::{EucRing, EucRingOps, isize2};
+use yui_core::{EucRing, EucRingOps, isize2, Ring, RingOps};
 use yui_homology::utils::ChainReducer;
-use yui_homology::{ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait};
+use yui_homology::{ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol};
 use yui_lin_comb::LinComb;
 use yui_matrix::sparse::{SpVec, SpMat, MatType};
 
@@ -17,11 +18,49 @@ use super::data::KRCubeData;
 use super::tot_cube::KRTotCube;
 use super::tot_homol::KRTotHomol;
 
+#[derive(Default)]
+pub struct KRTotComplexSummand<R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    gens: Vec<LinComb<VertGen, R>>,
+    empty: Vec<R>
+}
+
+impl<R> KRTotComplexSummand<R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    fn new(gens: Vec<LinComb<VertGen, R>>) -> Self { 
+        Self { gens, empty: vec![] }
+    }
+
+    pub fn gens(&self) -> &Vec<LinComb<VertGen, R>> { 
+        &self.gens
+    }
+}
+
+impl<R> RModStr for KRTotComplexSummand<R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    type R = R;
+
+    fn rank(&self) -> usize {
+        self.gens.len()
+    }
+
+    fn tors(&self) -> &Vec<Self::R> {
+        &self.empty
+    }
+}
+
+impl<R> DisplayForGrid for KRTotComplexSummand<R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    fn display_for_grid(&self) -> String {
+        rmod_str_symbol(self.rank(), self.tors(), ".")
+    }
+}
+
 pub struct KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
-    gens: Grid2<Vec<LinComb<VertGen, R>>>,
-    cube: KRTotCube<R>
+    cube: KRTotCube<R>,
+    summands: Grid2<KRTotComplexSummand<R>>
 }
 
 impl<R> KRTotComplex<R>
@@ -32,14 +71,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let n = cube.dim() as isize;
         let range = cartesian!(0..=n, 0..=n).map(|(i, j)| isize2(i, j));
 
-        let gens = Grid2::generate(range, |idx| { 
+        let summands = Grid2::generate(range, |idx| { 
             let (i, j) = (idx.0 as usize, idx.1 as usize);
-            data.verts(j).into_iter().flat_map(|v| {
+            let gens = data.verts(j).into_iter().flat_map(|v| {
                 cube.vert(v).gens(i)
-            }).collect()    
+            }).collect();
+            KRTotComplexSummand::new(gens)
         });
 
-        Self { data, gens, cube }
+        Self { data, cube, summands }
     }
 
     fn vectorize(&self, idx: isize2, z: &LinComb<VertGen, R>) -> SpVec<R> {
@@ -75,7 +115,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let idx1 = idx + self.d_deg();
 
         let (m, n) = (self.rank(idx1), q.cols());
-        let gens = self.get(idx);
+        let gens = self.get(idx).gens();
 
         let entries: Vec<_> = (0..n).into_par_iter().map(|l| { 
             let v = q.col_vec(l);
@@ -114,14 +154,23 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> GridTrait<isize2> for KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Itr = GridIter<isize2>;
-    type E = Vec<LinComb<VertGen, R>>;
+    type E = KRTotComplexSummand<R>;
 
     delegate! { 
-        to self.gens { 
+        to self.summands { 
             fn support(&self) -> Self::Itr;
             fn is_supported(&self, i: isize2) -> bool;
             fn get(&self, i: isize2) -> &Self::E;
         }
+    }
+}
+
+impl<R> Index<(isize, isize)> for KRTotComplex<R>
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    type Output = KRTotComplexSummand<R>;
+
+    fn index(&self, index: (isize, isize)) -> &Self::Output {
+        self.get(index.into())
     }
 }
 
@@ -131,7 +180,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Element = LinComb<VertGen, R>;
 
     fn rank(&self, i: isize2) -> usize {
-        self.gens[i].len()
+        self.summands[i].rank()
     }
 
     fn d_deg(&self) -> isize2 {
@@ -155,7 +204,7 @@ mod tests {
     use yui_link::Link;
     use yui_ratio::Ratio;
     
-    use yui_homology::{ChainComplexCommon, RModStr};
+    use yui_homology::{ChainComplexCommon, RModStr, DisplayTable};
     use super::*;
 
     type R = Ratio<i64>;
@@ -171,22 +220,22 @@ mod tests {
         let q = 0;
         let c = make_cpx(&l, q);
         
-        assert_eq!(c.rank(isize2(0, 0)), 0);
-        assert_eq!(c.rank(isize2(0, 1)), 0);
-        assert_eq!(c.rank(isize2(0, 2)), 0);
-        assert_eq!(c.rank(isize2(0, 3)), 0);
-        assert_eq!(c.rank(isize2(1, 0)), 0);
-        assert_eq!(c.rank(isize2(1, 1)), 0);
-        assert_eq!(c.rank(isize2(1, 2)), 0);
-        assert_eq!(c.rank(isize2(1, 3)), 0);
-        assert_eq!(c.rank(isize2(2, 0)), 1);
-        assert_eq!(c.rank(isize2(2, 1)), 3);
-        assert_eq!(c.rank(isize2(2, 2)), 6);
-        assert_eq!(c.rank(isize2(2, 3)), 4);
-        assert_eq!(c.rank(isize2(3, 0)), 1);
-        assert_eq!(c.rank(isize2(3, 1)), 3);
-        assert_eq!(c.rank(isize2(3, 2)), 6);
-        assert_eq!(c.rank(isize2(3, 3)), 4);
+        assert_eq!(c[(0, 0)].rank(), 0);
+        assert_eq!(c[(0, 1)].rank(), 0);
+        assert_eq!(c[(0, 2)].rank(), 0);
+        assert_eq!(c[(0, 3)].rank(), 0);
+        assert_eq!(c[(1, 0)].rank(), 0);
+        assert_eq!(c[(1, 1)].rank(), 0);
+        assert_eq!(c[(1, 2)].rank(), 0);
+        assert_eq!(c[(1, 3)].rank(), 0);
+        assert_eq!(c[(2, 0)].rank(), 1);
+        assert_eq!(c[(2, 1)].rank(), 3);
+        assert_eq!(c[(2, 2)].rank(), 6);
+        assert_eq!(c[(2, 3)].rank(), 4);
+        assert_eq!(c[(3, 0)].rank(), 1);
+        assert_eq!(c[(3, 1)].rank(), 3);
+        assert_eq!(c[(3, 2)].rank(), 6);
+        assert_eq!(c[(3, 3)].rank(), 4);
     }
 
     #[test]
@@ -194,16 +243,17 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = 0;
         let c = make_cpx(&l, q);
-        let zs = c.get(isize2(3, 3));
 
-        assert_eq!(zs.len(), 4);
+        let gens = c[(3, 3)].gens();
+
+        assert_eq!(gens.len(), 4);
 
         let _0 = R::from(0);
         let _1 = R::from(1);
 
-        assert_eq!(c.vectorize(isize2(3, 3), &zs[0]), SpVec::from(vec![_1,_0,_0,_0]));
-        assert_eq!(c.vectorize(isize2(3, 3), &zs[1]), SpVec::from(vec![_0,_1,_0,_0]));
-        assert_eq!(c.vectorize(isize2(3, 3), &(&zs[0] - &zs[3])), SpVec::from(vec![_1,_0,_0,-_1]));
+        assert_eq!(c.vectorize(isize2(3, 3), &gens[0]), SpVec::from(vec![_1,_0,_0,_0]));
+        assert_eq!(c.vectorize(isize2(3, 3), &gens[1]), SpVec::from(vec![_0,_1,_0,_0]));
+        assert_eq!(c.vectorize(isize2(3, 3), &(&gens[0] - &gens[3])), SpVec::from(vec![_1,_0,_0,-_1]));
     }
 
     #[test]
@@ -213,7 +263,7 @@ mod tests {
 
         c.check_d_all();
 
-        let c = make_cpx(&l, 4);
+        let c = make_cpx(&l, -4);
 
         c.check_d_all();
     }
@@ -241,5 +291,30 @@ mod tests {
         assert_eq!(h[(3, 1)].rank(), 1);
         assert_eq!(h[(3, 2)].rank(), 0);
         assert_eq!(h[(3, 3)].rank(), 0);
+    }
+
+
+    #[test]
+    fn complex_red() { 
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let q = -4;
+        let c = make_cpx(&l, q).reduced();
+
+        assert_eq!(c[(0, 0)].rank(), 0);
+        assert_eq!(c[(0, 1)].rank(), 0);
+        assert_eq!(c[(0, 2)].rank(), 0);
+        assert_eq!(c[(0, 3)].rank(), 0);
+        assert_eq!(c[(1, 0)].rank(), 0);
+        assert_eq!(c[(1, 1)].rank(), 0);
+        assert_eq!(c[(1, 2)].rank(), 0);
+        assert_eq!(c[(1, 3)].rank(), 0);
+        assert_eq!(c[(2, 0)].rank(), 0);
+        assert_eq!(c[(2, 1)].rank(), 0);
+        assert_eq!(c[(2, 2)].rank(), 0);
+        assert_eq!(c[(2, 3)].rank(), 1);
+        assert_eq!(c[(3, 0)].rank(), 0);
+        assert_eq!(c[(3, 1)].rank(), 1);
+        assert_eq!(c[(3, 2)].rank(), 0);
+        assert_eq!(c[(3, 3)].rank(), 0);
     }
 }
