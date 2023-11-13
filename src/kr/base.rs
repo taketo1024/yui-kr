@@ -2,10 +2,10 @@ use std::iter::zip;
 
 use derive_more::{Display, DebugCustom};
 use itertools::{Itertools, FoldWhile};
-use yui_core::{Elem, Sign, PowMod2, GetSign};
-use yui_lin_comb::Gen;
-use yui_polynomial::{PolyN, MultiVar};
-use yui_utils::bitseq::{BitSeq, Bit};
+use yui::{Elem, Sign, PowMod2, GetSign};
+use yui::lc::Gen;
+use yui::poly::{PolyN, MultiVar};
+use yui::bitseq::{BitSeq, Bit};
 
 pub(crate) type BaseMono = MultiVar<'x', usize>;
 pub(crate) type BasePoly<R> = PolyN<'x', R>;

@@ -6,9 +6,9 @@ use num_integer::Integer;
 use num_traits::One;
 use petgraph::{Graph, algo::min_spanning_tree};
 
-use yui_core::{Ring, RingOps, Sign, isize3};
+use yui::{Ring, RingOps, Sign, isize3};
 use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
-use yui_utils::bitseq::{BitSeq, Bit};
+use yui::bitseq::{BitSeq, Bit};
 
 use super::base::BasePoly;
 use super::hor_excl::KRHorExcl;
@@ -361,7 +361,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 #[cfg(test)]
 mod tests {
-    use yui_ratio::Ratio;
+    use yui::Ratio;
     use yui_link::Link;
 
     use super::*;

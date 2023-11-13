@@ -2,11 +2,11 @@ use std::ops::Index;
 use std::sync::Arc;
 use delegate::delegate;
 
-use yui_core::{Ring, RingOps, EucRing, EucRingOps};
+use yui::{Ring, RingOps, EucRing, EucRingOps};
 use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, XHomology, Grid1, XModStr};
-use yui_lin_comb::LinComb;
+use yui::lc::LinComb;
 use yui_matrix::sparse::SpMat;
-use yui_utils::bitseq::BitSeq;
+use yui::bitseq::BitSeq;
 
 use crate::kr::hor_cube::KRHorCube;
 
@@ -113,7 +113,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 mod tests { 
     use yui_homology::{RModStr, ChainComplexCommon};
     use yui_link::Link;
-    use yui_ratio::Ratio;
+    use yui::Ratio;
 
     use super::*;
 

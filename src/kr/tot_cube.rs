@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
-use yui_core::{EucRing, EucRingOps};
-use yui_lin_comb::LinComb;
-use yui_utils::bitseq::BitSeq;
+use yui::{EucRing, EucRingOps};
+use yui::lc::LinComb;
+use yui::bitseq::BitSeq;
 
 use super::base::{VertGen, BasePoly, sign_between};
 use super::data::KRCubeData;
@@ -73,7 +73,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 mod tests {
     use itertools::Itertools;
     use num_traits::One;
-    use yui_ratio::Ratio;
+    use yui::Ratio;
     use yui_link::Link;
     use super::*;
 

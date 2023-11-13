@@ -2,11 +2,11 @@ use std::ops::Index;
 use std::sync::Arc;
 use delegate::delegate;
 
-use yui_core::{EucRing, EucRingOps};
+use yui::{EucRing, EucRingOps};
 use yui_homology::{GridTrait, RModStr, GridIter, XHomology, XHomologySummand};
-use yui_lin_comb::LinComb;
+use yui::lc::LinComb;
 use yui_matrix::sparse::SpVec;
-use yui_utils::bitseq::BitSeq;
+use yui::bitseq::BitSeq;
 
 use super::base::VertGen;
 use super::data::KRCubeData;
@@ -103,7 +103,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 #[cfg(test)]
 mod tests { 
     use yui_link::Link;
-    use yui_ratio::Ratio;
+    use yui::Ratio;
     use super::*;
 
     type R = Ratio<i64>;

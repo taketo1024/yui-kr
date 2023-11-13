@@ -2,7 +2,7 @@ use std::ops::Index;
 use std::sync::Arc;
 use delegate::delegate;
 
-use yui_core::{EucRing, EucRingOps, isize2};
+use yui::{EucRing, EucRingOps, isize2};
 use yui_homology::{Homology2, GridTrait, GridIter, HomologySummand};
 
 use crate::kr::tot_cpx::KRTotComplex;
@@ -57,7 +57,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 mod tests { 
     use yui_homology::RModStr;
     use yui_link::Link;
-    use yui_ratio::Ratio;
+    use yui::Ratio;
     use super::*;
 
     type R = Ratio<i64>;

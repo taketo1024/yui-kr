@@ -70,12 +70,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "230c5f1ca6a325a32553f8640d31ac9b49f2411e901e427570154868b46da4f7"
 
 [[package]]
-name = "bit_reverse"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99528ca30abb9495c7e106bf7c3177b257c62040fc0f2909fe470b0f43097296"
-
-[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -929,21 +923,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
 
 [[package]]
-name = "yui-core"
-version = "0.1.0"
+name = "yui"
+version = "0.2.0"
+source = "git+https://github.com/taketo1024/yui#446402f7de499fb4fc36811a269a21b7b98a695e"
 dependencies = [
  "ahash",
+ "auto-impl-ops",
  "bimap",
+ "delegate",
  "derive_more",
  "is-even",
  "itertools",
  "num-bigint",
  "num-traits",
+ "prettytable",
+ "regex",
 ]
 
 [[package]]
 name = "yui-homology"
-version = "0.1.0"
+version = "0.2.0"
+source = "git+https://github.com/taketo1024/yui#446402f7de499fb4fc36811a269a21b7b98a695e"
 dependencies = [
  "bimap",
  "cartesian",
@@ -955,10 +955,8 @@ dependencies = [
  "num-traits",
  "rayon",
  "sprs",
- "yui-core",
- "yui-lin-comb",
+ "yui",
  "yui-matrix",
- "yui-utils",
 ]
 
 [[package]]
@@ -974,46 +972,29 @@ dependencies = [
  "num-traits",
  "petgraph",
  "rayon",
- "yui-core",
+ "yui",
  "yui-homology",
- "yui-lin-comb",
  "yui-link",
  "yui-matrix",
- "yui-polynomial",
- "yui-ratio",
- "yui-utils",
-]
-
-[[package]]
-name = "yui-lin-comb"
-version = "0.1.0"
-dependencies = [
- "ahash",
- "auto-impl-ops",
- "derive_more",
- "itertools",
- "num-traits",
- "yui-core",
- "yui-utils",
 ]
 
 [[package]]
 name = "yui-link"
-version = "0.1.0"
+version = "0.2.0"
+source = "git+https://github.com/taketo1024/yui#446402f7de499fb4fc36811a269a21b7b98a695e"
 dependencies = [
  "derive_more",
  "itertools",
  "num-traits",
  "serde",
  "serde_json",
- "yui-core",
- "yui-polynomial",
- "yui-utils",
+ "yui",
 ]
 
 [[package]]
 name = "yui-matrix"
-version = "0.1.0"
+version = "0.2.0"
+source = "git+https://github.com/taketo1024/yui#446402f7de499fb4fc36811a269a21b7b98a695e"
 dependencies = [
  "auto-impl-ops",
  "cartesian",
@@ -1028,60 +1009,7 @@ dependencies = [
  "rayon",
  "sprs",
  "thread_local",
- "yui-core",
- "yui-quad-int",
- "yui-ratio",
- "yui-utils",
-]
-
-[[package]]
-name = "yui-polynomial"
-version = "0.1.0"
-dependencies = [
- "ahash",
- "auto-impl-ops",
- "delegate",
- "derive_more",
- "itertools",
- "num-traits",
- "regex",
- "yui-core",
- "yui-lin-comb",
- "yui-ratio",
- "yui-utils",
-]
-
-[[package]]
-name = "yui-quad-int"
-version = "0.1.0"
-dependencies = [
- "auto-impl-ops",
- "num-bigint",
- "num-traits",
- "regex",
- "yui-core",
-]
-
-[[package]]
-name = "yui-ratio"
-version = "0.1.0"
-dependencies = [
- "auto-impl-ops",
- "num-traits",
- "regex",
- "yui-core",
-]
-
-[[package]]
-name = "yui-utils"
-version = "0.1.0"
-dependencies = [
- "bit_reverse",
- "derive_more",
- "itertools",
- "num-traits",
- "prettytable",
- "yui-core",
+ "yui",
 ]
 
 [[package]]

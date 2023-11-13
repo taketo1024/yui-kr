@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use yui_core::{Ring, RingOps};
+use yui::{Ring, RingOps};
 use yui_homology::{XChainComplex, Grid1, XModStr};
-use yui_lin_comb::LinComb;
-use yui_utils::bitseq::BitSeq;
+use yui::lc::LinComb;
+use yui::bitseq::BitSeq;
 
 use super::base::{BasePoly, BaseMono, VertGen, sign_between};
 use super::data::KRCubeData;
@@ -136,9 +136,9 @@ mod tests {
     use itertools::Itertools;
     use num_traits::{One, Zero};
     use yui_homology::{RModStr, ChainComplexCommon};
-    use yui_ratio::Ratio;
+    use yui::Ratio;
     use yui_link::Link;
-    use yui_utils::map;
+    use yui::macros::map;
     use super::*;
 
     type R = Ratio<i64>;

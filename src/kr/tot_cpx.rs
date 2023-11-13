@@ -7,10 +7,10 @@ use delegate::delegate;
 use itertools::Itertools;
 use num_traits::Zero;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use yui_core::{EucRing, EucRingOps, isize2, Ring, RingOps};
+use yui::{EucRing, EucRingOps, isize2, Ring, RingOps};
 use yui_homology::utils::ChainReducer;
 use yui_homology::{ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol};
-use yui_lin_comb::LinComb;
+use yui::lc::LinComb;
 use yui_matrix::sparse::{SpVec, SpMat, MatType};
 
 use super::base::VertGen;
@@ -129,9 +129,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             w.iter().map(|(k, b)| 
                 (k, l, b.clone())
             ).collect_vec()
-        }).flatten().collect();
+        }).collect();
 
-        SpMat::from_entries((m, n), entries)
+        SpMat::from_entries((m, n), entries.into_iter().flatten())
     }
 
     pub fn reduced(self) -> ChainComplex2<R> {
@@ -202,7 +202,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 #[cfg(test)]
 mod tests { 
     use yui_link::Link;
-    use yui_ratio::Ratio;
+    use yui::Ratio;
     
     use yui_homology::{ChainComplexCommon, RModStr, DisplayTable};
     use super::*;

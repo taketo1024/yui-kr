@@ -1,6 +1,6 @@
 use yui_kr::kr::*;
 use yui_link::Link;
-use yui_ratio::Ratio;
+use yui::Ratio;
 
 fn main() {
     measure("run", || { 

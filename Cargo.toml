@@ -6,25 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# yui-core       = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
-# yui-ratio      = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
-# yui-polynomial = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
-# yui-lin-comb   = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
-# yui-utils      = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
-# yui-matrix     = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
-# yui-link       = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
-# yui-homology   = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
-# yui-khovanov   = { git = "https://github.com/taketo1024/yui.git", branch = "develop" }
-
-yui-core       = { path = "../yui/workspace/core/" }
-yui-ratio      = { path = "../yui/workspace/types/ratio/" }
-yui-polynomial = { path = "../yui/workspace/types/polynomial/" }
-yui-lin-comb   = { path = "../yui/workspace/types/lin_comb/" }
-yui-utils      = { path = "../yui/workspace/utils/" }
-yui-matrix     = { path = "../yui/workspace/matrix/" }
-yui-link       = { path = "../yui/workspace/link/" }
-yui-homology   = { path = "../yui/workspace/homology" }
-
 num-bigint = "0.4.4"
 num-traits = "0.2.16"
 itertools = "0.11.0"
@@ -34,6 +15,16 @@ cartesian = "0.2.1"
 delegate = "0.10.0"
 num-integer = "0.1.45"
 rayon = "1.8.0"
+
+yui  =         { version = "0.2.0", git = "https://github.com/taketo1024/yui" }
+yui-link =     { version = "0.2.0", git = "https://github.com/taketo1024/yui" }
+yui-matrix =   { version = "0.2.0", git = "https://github.com/taketo1024/yui" }
+yui-homology = { version = "0.2.0", git = "https://github.com/taketo1024/yui" }
+
+# yui  =         { path = "../yui/yui" }
+# yui-link =     { path = "../yui/yui-link" }
+# yui-matrix =   { path = "../yui/yui-matrix" }
+# yui-homology = { path = "../yui/yui-homology" }
 
 [profile.release]
 debug = true

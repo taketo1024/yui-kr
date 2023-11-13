@@ -5,10 +5,10 @@ use std::sync::Arc;
 
 use cartesian::{cartesian, TuplePrepend};
 use itertools::Itertools;
-use yui_core::{EucRing, EucRingOps, isize2, isize3};
+use yui::{EucRing, EucRingOps, isize2, isize3};
 use yui_homology::{GridTrait, RModStr, GridIter, HomologySummand};
 use yui_link::Link;
-use yui_polynomial::LPoly;
+use yui::poly::LPoly;
 
 use super::data::KRCubeData;
 use super::tot_homol::KRTotHomol;
@@ -78,7 +78,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let k_range = self.data.k_range().rev().step_by(2);
         let polys = self.qpoly_table();   
 
-        let table = yui_utils::table("k\\j", k_range, j_range, |&k, &j| { 
+        let table = yui::format::table("k\\j", k_range, j_range, |&k, &j| { 
             if let Some(p) = polys.get(&isize2(j, k)) { 
                 p.to_string()
             } else { 
@@ -139,7 +139,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 #[cfg(test)]
 mod tests { 
     use yui_link::Link;
-    use yui_ratio::Ratio;
+    use yui::Ratio;
     use super::*;
 
     type R = Ratio<i64>;
