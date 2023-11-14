@@ -70,7 +70,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 #[cfg(test)]
 mod tests {
-    use itertools::Itertools;
     use num_traits::One;
     use yui::Ratio;
     use yui_link::Link;
@@ -86,8 +85,7 @@ mod tests {
 
     #[test]
     fn edge_poly() { 
-        let x = (0..3).map(P::variable).collect_vec();
-
+        let x = P::variable;
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let cube = make_cube(&l, 0);
 
@@ -99,7 +97,7 @@ mod tests {
         // p: neg, h: 1, v: 0 -> 1
         let h  = BitSeq::from([1,0,0]);
         let p = cube.edge_poly(h, 0); // x_bc
-        assert_eq!(p, x[0]);
+        assert_eq!(p, x(0));
 
         let l = l.mirror(); // trefoil
         let cube = make_cube(&l, 0);
@@ -107,7 +105,7 @@ mod tests {
         // p: pos, h: 0, v: 0 -> 1
         let h  = BitSeq::from([0,0,0]);
         let p = cube.edge_poly(h, 0); // x_bc
-        assert_eq!(p, x[0]);
+        assert_eq!(p, x(0));
 
         // p: pos, h: 1, v: 0 -> 1
         let h  = BitSeq::from([1,0,0]);

@@ -805,7 +805,7 @@ mod tests {
         let h = BitSeq::from([1,1,1,1]);
         let v = BitSeq::from([1,1,1,1]);
 
-        let x = |i| P::from(MultiVar::from((i, 1)));
+        let x = P::variable;
         let edge_polys = map! { 
             0 => x(0) * x(0) - x(1) * x(1),
             1 => x(2) * x(2) - x(0) * x(3)

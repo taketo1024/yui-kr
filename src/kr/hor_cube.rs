@@ -132,7 +132,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 #[cfg(test)]
 mod tests {
-    use itertools::Itertools;
     use num_traits::{One, Zero};
     use yui_homology::{RModStr, ChainComplexCommon};
     use yui::Ratio;
@@ -205,7 +204,7 @@ mod tests {
 
     #[test]
     fn edge_poly() { 
-        let x = (0..3).map(P::variable).collect_vec();
+        let x = P::variable;
 
         // p: neg, v: 0, h: 0 -> 1
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
@@ -214,7 +213,7 @@ mod tests {
         let cube = make_cube(&l, v, q);
 
         let p = cube.edge_poly(0); // x_ac
-        assert_eq!(p, -&x[1] + &x[2]);
+        assert_eq!(p, -&x(1) + &x(2));
 
         // p: neg, v: 1, h: 0 -> 1
         let v = BitSeq::from([1,0,0]);
@@ -222,7 +221,7 @@ mod tests {
         let cube = make_cube(&l, v, q);
 
         let p = cube.edge_poly(0); // x_ac * x_bc
-        assert_eq!(p, (-&x[1] + &x[2]) * &x[0]);
+        assert_eq!(p, (-&x(1) + &x(2)) * &x(0));
 
         // p: pos, v: 0, h: 0 -> 1
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]).mirror(); // trefoil
@@ -231,7 +230,7 @@ mod tests {
         let cube = make_cube(&l, v, q);
 
         let p = cube.edge_poly(0); // x_ac * x_bc
-        assert_eq!(p, (-&x[1] + &x[2]) * &x[0]);
+        assert_eq!(p, (-&x(1) + &x(2)) * &x(0));
 
         // p: pos, v: 1, h: 0 -> 1
         let v = BitSeq::from([1,0,0]);
@@ -239,15 +238,13 @@ mod tests {
         let cube = make_cube(&l, v, q);
 
         let p = cube.edge_poly(0); // x_ac
-        assert_eq!(p, -&x[1] + &x[2]);
+        assert_eq!(p, -&x(1) + &x(2));
     }
 
     #[test]
     fn differentiate() { 
         let one = KRMono::one();
-        let x = (0..3).map(|i| 
-            KRMono::from((i, 1)) // x_i
-        ).collect_vec();
+        let x = |i| KRMono::from((i, 1));
 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let v = BitSeq::from([0,0,0]);
@@ -259,12 +256,12 @@ mod tests {
         let ys = cube.d_x(&z);
 
         assert_eq!(ys, map!{
-            KRGen(BitSeq::from([1,0,0]), v, x[1].clone()) => -R::one(),
-            KRGen(BitSeq::from([1,0,0]), v, x[2].clone()) =>  R::one(),
-            KRGen(BitSeq::from([0,1,0]), v, x[2].clone()) => -R::one(),
-            KRGen(BitSeq::from([0,1,0]), v, x[0].clone()) =>  R::one(),
-            KRGen(BitSeq::from([0,0,1]), v, x[0].clone()) => -R::one(),
-            KRGen(BitSeq::from([0,0,1]), v, x[1].clone()) =>  R::one()
+            KRGen(BitSeq::from([1,0,0]), v, x(1)) => -R::one(),
+            KRGen(BitSeq::from([1,0,0]), v, x(2)) =>  R::one(),
+            KRGen(BitSeq::from([0,1,0]), v, x(2)) => -R::one(),
+            KRGen(BitSeq::from([0,1,0]), v, x(0)) =>  R::one(),
+            KRGen(BitSeq::from([0,0,1]), v, x(0)) => -R::one(),
+            KRGen(BitSeq::from([0,0,1]), v, x(1)) =>  R::one()
         });
 
         let h = BitSeq::from([0,1,0]);
@@ -272,10 +269,10 @@ mod tests {
         let ys = cube.d_x(&z);
 
         assert_eq!(ys, map! {
-            KRGen(BitSeq::from([1,1,0]), v, x[1].clone()) => -R::one(),
-            KRGen(BitSeq::from([1,1,0]), v, x[2].clone()) =>  R::one(),
-            KRGen(BitSeq::from([0,1,1]), v, x[0].clone()) =>  R::one(),
-            KRGen(BitSeq::from([0,1,1]), v, x[1].clone()) => -R::one()
+            KRGen(BitSeq::from([1,1,0]), v, x(1)) => -R::one(),
+            KRGen(BitSeq::from([1,1,0]), v, x(2)) =>  R::one(),
+            KRGen(BitSeq::from([0,1,1]), v, x(0)) =>  R::one(),
+            KRGen(BitSeq::from([0,1,1]), v, x(1)) => -R::one()
         });
 
         let h = BitSeq::from([1,1,1]);
