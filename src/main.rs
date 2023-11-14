@@ -3,9 +3,7 @@ use yui_link::Link;
 use yui::Ratio;
 
 fn main() {
-    measure("run", || { 
-        run();
-    })
+    measure("run", run)
 }
 
 fn run() { 
