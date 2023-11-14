@@ -154,13 +154,13 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> GridTrait<isize2> for KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Itr = GridIter<isize2>;
-    type E = KRTotComplexSummand<R>;
+    type Output = KRTotComplexSummand<R>;
 
     delegate! { 
         to self.summands { 
             fn support(&self) -> Self::Itr;
             fn is_supported(&self, i: isize2) -> bool;
-            fn get(&self, i: isize2) -> &Self::E;
+            fn get(&self, i: isize2) -> &Self::Output;
         }
     }
 }

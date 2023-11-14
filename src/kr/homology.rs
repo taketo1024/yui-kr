@@ -93,7 +93,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> GridTrait<isize3> for KRHomology<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Itr = GridIter<isize3>;
-    type E = HomologySummand<R>;
+    type Output = HomologySummand<R>;
 
     fn support(&self) -> Self::Itr {
         let i_range = self.data.i_range().step_by(2);
@@ -112,7 +112,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         !self.data.is_triv(idx)
     }
 
-    fn get(&self, idx: isize3) -> &Self::E {
+    fn get(&self, idx: isize3) -> &Self::Output {
         let isize3(i, j, k) = idx;
         if i > 0 { 
             return self.get(isize3(-i, j, k + 2 * i))

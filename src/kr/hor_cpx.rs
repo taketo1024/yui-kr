@@ -60,13 +60,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> GridTrait<isize> for KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     type Itr = GridIter<isize>;
-    type E = XChainComplexSummand<VertGen, R>;
+    type Output = XChainComplexSummand<VertGen, R>;
 
     delegate! { 
         to self.inner { 
             fn support(&self) -> Self::Itr;
             fn is_supported(&self, i: isize) -> bool;
-            fn get(&self, i: isize) -> &Self::E;
+            fn get(&self, i: isize) -> &Self::Output;
         }
     }
 }

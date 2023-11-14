@@ -79,13 +79,13 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> GridTrait<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Itr = GridIter<isize>;
-    type E = XHomologySummand<VertGen, R>;
+    type Output = XHomologySummand<VertGen, R>;
 
     delegate! { 
         to self.inner {
             fn support(&self) -> Self::Itr;
             fn is_supported(&self, i: isize) -> bool;
-            fn get(&self, i: isize) -> &Self::E;
+            fn get(&self, i: isize) -> &Self::Output;
         }
     }
 }
