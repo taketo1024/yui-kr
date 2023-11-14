@@ -3,14 +3,13 @@ use std::collections::{HashSet, HashMap};
 use num_traits::{Zero, One};
 use yui::{Ring, RingOps, IndexList};
 use yui_homology::utils::make_matrix_async;
-use yui::lc::Lc;
 use yui_matrix::sparse::Trans;
 use yui::poly::Mono;
 use yui::bitseq::BitSeq;
 
 use crate::kr::base::sign_between;
 
-use super::base::{BaseMono, BasePoly, VertGen};
+use super::base::{KRMono, KRPoly, KRGen, KRChain, KRPolyChain};
 use super::data::KRCubeData;
 
 #[derive(Debug, Clone)]
@@ -18,13 +17,13 @@ struct Process<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     dir: usize,
     var: usize,
-    divisor: BasePoly<R>,
-    edge_polys: HashMap<usize, BasePoly<R>>
+    divisor: KRPoly<R>,
+    edge_polys: HashMap<usize, KRPoly<R>>
 }
 
 impl<R> Process<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    fn divisor(&self) -> (&BasePoly<R>, usize) { 
+    fn divisor(&self) -> (&KRPoly<R>, usize) { 
         (&self.divisor, self.var)
     }
 }
@@ -33,7 +32,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 pub struct KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     v_coords: BitSeq,
-    edge_polys: HashMap<usize, BasePoly<R>>,
+    edge_polys: HashMap<usize, KRPoly<R>>,
     exc_dirs: HashSet<usize>,
     fst_exc_vars: HashSet<usize>,
     snd_exc_vars: HashSet<usize>,
@@ -43,7 +42,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    fn new(v_coords: BitSeq, edge_polys: HashMap<usize, BasePoly<R>>) -> Self { 
+    fn new(v_coords: BitSeq, edge_polys: HashMap<usize, KRPoly<R>>) -> Self { 
         let n = v_coords.len();
         Self { 
             v_coords,
@@ -164,7 +163,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.process.push(d);
     }
 
-    pub fn reduce_gens(&self, gens: &Vec<VertGen>) -> Vec<VertGen> {
+    pub fn reduce_gens(&self, gens: &Vec<KRGen>) -> Vec<KRGen> {
         gens.iter().filter_map(|v| 
             if self.should_vanish(v) || self.should_reduce(&v.2) { 
                 None
@@ -174,21 +173,21 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         ).collect()
     }
 
-    fn should_vanish(&self, v: &VertGen) -> bool { 
+    fn should_vanish(&self, v: &KRGen) -> bool { 
         let h = &v.0;
         self.exc_dirs.iter().any(|&i| 
             h[i].is_zero()
         )
     }
 
-    fn should_reduce(&self, x: &BaseMono) -> bool { 
+    fn should_reduce(&self, x: &KRMono) -> bool { 
         x.deg().iter().any(|(k, &d)| 
             self.fst_exc_vars.contains(k) || 
             (self.snd_exc_vars.contains(k) && d >= 2)
         )
     }
 
-    pub fn forward(&self, z: &Lc<VertGen, R>) -> Lc<VertGen, R> {
+    pub fn forward(&self, z: &KRChain<R>) -> KRChain<R> {
         // keep only non-vanishing gens. 
         let z = z.filter_gens(|v| 
             !self.should_vanish(v)
@@ -205,10 +204,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     }
 
-    fn forward_reduce(&self, z: Lc<VertGen, BasePoly<R>>) -> Lc<VertGen, BasePoly<R>> { 
+    fn forward_reduce(&self, z: KRPolyChain<R>) -> KRPolyChain<R> { 
         let res = self.process.iter().fold(z, |z, proc| { 
             let (p, k) = proc.divisor();
-            z.into_map_coeffs::<BasePoly<R>, _>(|f| 
+            z.into_map_coeffs::<KRPoly<R>, _>(|f| 
                 rem(f, p, k)
             )
         });
@@ -221,11 +220,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    fn forward_x(&self, v: &VertGen) -> Lc<VertGen, R> {
-        self.forward(&Lc::from(v.clone()))
+    fn forward_x(&self, v: &KRGen) -> KRChain<R> {
+        self.forward(&KRChain::from(v.clone()))
     }
 
-    pub fn backward(&self, z: &Lc<VertGen, R>, is_cycle: bool) -> Lc<VertGen, R> {
+    pub fn backward(&self, z: &KRChain<R>, is_cycle: bool) -> KRChain<R> {
         let init = combine(z.clone());
         let l = self.process.len();
         
@@ -238,7 +237,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         decombine(res)
     }
 
-    fn backward_itr(&self, z: Lc<VertGen, BasePoly<R>>, step: usize, is_cycle: bool) -> Lc<VertGen, BasePoly<R>> {
+    fn backward_itr(&self, z: KRPolyChain<R>, step: usize, is_cycle: bool) -> KRPolyChain<R> {
         let res = self.backward_step(z, step, is_cycle);
         if step > 0 { 
             self.backward_itr(res, step - 1, is_cycle)
@@ -247,7 +246,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    fn backward_step(&self, z: Lc<VertGen, BasePoly<R>>, step: usize, is_cycle: bool) -> Lc<VertGen, BasePoly<R>> {
+    fn backward_step(&self, z: KRPolyChain<R>, step: usize, is_cycle: bool) -> KRPolyChain<R> {
         let d = &self.process[step];
         let i = d.dir;
         let (p, k) = d.divisor();
@@ -264,36 +263,36 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             let x1 = self.d(&z, step, true);
             self.send_back(&x1, i)
         } else { 
-            Lc::<_, BasePoly<R>>::zero()
+            KRPolyChain::zero()
         };
 
         let z0 = self.send_back(&z, i);
         let y0 = self.d(&z0, step, false);
 
-        let w = (x0 + y0).into_map_coeffs::<BasePoly<R>, _>(|f| 
+        let w = (x0 + y0).into_map_coeffs::<KRPoly<R>, _>(|f| 
             div(f, p, k)
         );
         
         z + w
     }
 
-    fn backward_x(&self, w: &VertGen) -> Lc<VertGen, R> {
-        let z = Lc::from(w.clone());
+    fn backward_x(&self, w: &KRGen) -> KRChain<R> {
+        let z = KRChain::from(w.clone());
         self.backward(&z, false)
     }
 
-    fn send_back(&self, z: &Lc<VertGen, BasePoly<R>>, dir: usize) -> Lc<VertGen, BasePoly<R>> {
+    fn send_back(&self, z: &KRPolyChain<R>, dir: usize) -> KRPolyChain<R> {
         let i = dir;
-        z.map::<_, BasePoly<R>, _>(|v, f| { 
+        z.map::<_, KRPoly<R>, _>(|v, f| { 
             debug_assert!(v.0[i].is_one());
-            let u = VertGen(v.0.edit(|b| b.set_0(i)), v.1, v.2.clone());
+            let u = KRGen(v.0.edit(|b| b.set_0(i)), v.1, v.2.clone());
             let e = R::from_sign( sign_between(u.0, v.0) );
             (u, f * e)
         })
     }
 
-    fn d(&self, z: &Lc<VertGen, BasePoly<R>>, step: usize, mod_p: bool) -> Lc<VertGen, BasePoly<R>> { 
-        type F<R> = Lc<VertGen, BasePoly<R>>;
+    fn d(&self, z: &KRPolyChain<R>, step: usize, mod_p: bool) -> KRPolyChain<R> { 
+        type F<R> = KRPolyChain<R>;
         
         let d = &self.process[step];
         let (p, k) = d.divisor();
@@ -302,7 +301,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             d.edge_polys.iter().filter(|(&i, _)|
                 v.0[i].is_zero()
             ).map(|(&i, g)| {
-                let w = VertGen(v.0.edit(|b| b.set_1(i)), v.1, v.2.clone());
+                let w = KRGen(v.0.edit(|b| b.set_1(i)), v.1, v.2.clone());
                 let e = R::from_sign( sign_between(v.0, w.0) );
                 let h = if mod_p { 
                     rem(f * g, p, k) * e
@@ -314,17 +313,17 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }).sum()
     }
 
-    pub fn trans_for(&self, from: &IndexList<VertGen>, to: &IndexList<VertGen>) -> Trans<R> {
+    pub fn trans_for(&self, from: &IndexList<KRGen>, to: &IndexList<KRGen>) -> Trans<R> {
         let fwd = make_matrix_async(from, to, |x| self.forward_x(x));
         let bwd = make_matrix_async(to, from, |x| self.backward_x(x));
         Trans::new(fwd, bwd)
     }
 
-    pub fn diff_red(&self, z: &Lc<VertGen, R>) -> Lc<VertGen, R> { 
+    pub fn diff_red(&self, z: &KRChain<R>) -> KRChain<R> { 
         z.apply(|x| self.diff_red_x(x))
     }
 
-    fn diff_red_x(&self, e: &VertGen) -> Lc<VertGen, R> { 
+    fn diff_red_x(&self, e: &KRGen) -> KRChain<R> { 
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
 
@@ -334,12 +333,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
             let h1 = h0.edit(|b| b.set_1(i));
             let e = R::from_sign( sign_between(h0, h1) );
-            let p = BasePoly::from((x0.clone(), e));
+            let p = KRPoly::from((x0.clone(), e));
             let g = f * p;
 
             // expand as lin-comb
             let w = g.into_iter().map(|(x1, r)|
-                (VertGen(h1, v0, x1), r)
+                (KRGen(h1, v0, x1), r)
             ).collect();
 
             self.forward(&w).into_iter()
@@ -348,30 +347,28 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
-// convert Lc<VertGen, R> -> Lc<VertGen, EdgeRing<R>> 
-fn combine<R>(z: Lc<VertGen, R>) -> Lc<VertGen, BasePoly<R>>
+fn combine<R>(z: KRChain<R>) -> KRPolyChain<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     z.into_iter().map(|(v, r)| {
-        let w = VertGen(v.0, v.1, BaseMono::one());
-        let p = BasePoly::from((v.2, r));
+        let w = KRGen(v.0, v.1, KRMono::one());
+        let p = KRPoly::from((v.2, r));
         (w, p)
     }).collect()
 }
 
-// convert Lc<VertGen, EdgeRing<R>> -> Lc<VertGen, R> 
-fn decombine<R>(z: Lc<VertGen, BasePoly<R>>) -> Lc<VertGen, R>
+fn decombine<R>(z: KRPolyChain<R>) -> KRChain<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     debug_assert!(z.iter().all(|(v, _)| v.2.is_one()));
 
     z.into_iter().flat_map(|(v, p)| { 
         p.into_iter().map(move |(x, a)| {
-            let v = VertGen(v.0, v.1, x);
+            let v = KRGen(v.0, v.1, x);
             (v, a)
         })
     }).collect()
 }
 
-fn div_rem<R>(f: BasePoly<R>, g: &BasePoly<R>, k: usize) -> (BasePoly<R>, BasePoly<R>)
+fn div_rem<R>(f: KRPoly<R>, g: &KRPoly<R>, k: usize) -> (KRPoly<R>, KRPoly<R>)
 where R: Ring, for<'x> &'x R: RingOps<R> {
     let (e0, a0) = g.lead_term_for(k).unwrap();
 
@@ -380,7 +377,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     let a0_inv = a0.inv().unwrap();
 
-    let mut q = BasePoly::zero();
+    let mut q = KRPoly::zero();
     let mut r = f;
     
     while let Some((e1, a1)) = r.lead_term_for(k) { 
@@ -389,7 +386,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
 
         let b = a1 * &a0_inv;
-        let x = BasePoly::from((e1 / e0, b));
+        let x = KRPoly::from((e1 / e0, b));
 
         r -= &x * g;
         q += x;
@@ -398,14 +395,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     (q, r)
 }
 
-fn div<R>(f: BasePoly<R>, p: &BasePoly<R>, k: usize) -> BasePoly<R>
+fn div<R>(f: KRPoly<R>, p: &KRPoly<R>, k: usize) -> KRPoly<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     let (q, r) = div_rem(f, p, k);
     debug_assert!(r.is_zero());
     q
 }
 
-fn rem<R>(f: BasePoly<R>, p: &BasePoly<R>, k: usize) -> BasePoly<R>
+fn rem<R>(f: KRPoly<R>, p: &KRPoly<R>, k: usize) -> KRPoly<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     div_rem(f, p, k).1
 }
@@ -428,14 +425,14 @@ mod tests {
     use super::*;
 
     type R = Ratio<i64>;
-    type P = BasePoly<R>;
+    type P = KRPoly<R>;
 
     fn vars(l: usize) -> Vec<P> {
         (0..l).map(P::variable).collect_vec()
     }
 
-    fn vgen<const N: usize, const M: usize>(h: [usize; N], v: [usize; N], m: [usize; M]) -> VertGen {
-        VertGen(BitSeq::from(h), BitSeq::from(v), MultiVar::from(m))
+    fn vgen<const N: usize, const M: usize>(h: [usize; N], v: [usize; N], m: [usize; M]) -> KRGen {
+        KRGen(BitSeq::from(h), BitSeq::from(v), MultiVar::from(m))
     }
 
     #[test]
@@ -732,19 +729,26 @@ mod tests {
 
         excl.perform_excl(1, 0, 1); // x1 -> x2
 
-        assert_eq!(excl.forward_x(&vgen([0,0,0], [0,0,1], [0,0,0])), Lc::zero()); // vanish
-        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [0,0,0])), Lc::from_iter([
-            (vgen([1,0,0], [0,0,1], [0,0,0]), R::one()) // 1: id
-        ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [1,0,0])), Lc::from_iter([
-            (vgen([1,0,0], [0,0,1], [1,0,0]), R::one()) // x0: id
-        ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [0,1,0])), Lc::from_iter([
-            (vgen([1,0,0], [0,0,1], [0,0,1]), R::one()) // x1 -> x2
-        ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [0,0,1])), Lc::from_iter([
-            (vgen([1,0,0], [0,0,1], [0,0,1]), R::one()) // x2: id
-        ]));
+        assert_eq!(
+            excl.forward_x(&vgen([0,0,0], [0,0,1], [0,0,0])), 
+            KRChain::zero()
+        ); // vanish
+        assert_eq!(
+            excl.forward_x(&vgen([1,0,0], [0,0,1], [0,0,0])), 
+              KRChain::from(vgen([1,0,0], [0,0,1], [0,0,0])) // 1: id
+        );
+        assert_eq!(
+            excl.forward_x(&vgen([1,0,0], [0,0,1], [1,0,0])), 
+              KRChain::from(vgen([1,0,0], [0,0,1], [1,0,0])) // x0: id
+        );
+        assert_eq!(
+            excl.forward_x(&vgen([1,0,0], [0,0,1], [0,1,0])), 
+              KRChain::from(vgen([1,0,0], [0,0,1], [0,0,1])) // x1 -> x2
+        );
+        assert_eq!(
+            excl.forward_x(&vgen([1,0,0], [0,0,1], [0,0,1])), 
+              KRChain::from(vgen([1,0,0], [0,0,1], [0,0,1])) // x2: id
+        );
     }
 
     #[test]
@@ -758,33 +762,45 @@ mod tests {
         excl.perform_excl(1, 0, 1); // x1 -> x2
         excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
 
-        assert_eq!(excl.forward_x(&vgen([0,1,1], [0,0,1], [0,0,0])), Lc::zero()); // vanish
-        assert_eq!(excl.forward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), Lc::zero()); // vanish
+        assert_eq!(
+            excl.forward_x(&vgen([0,1,1], [0,0,1], [0,0,0])), 
+            KRChain::zero()
+        ); // vanish
+        assert_eq!(
+            excl.forward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), 
+            KRChain::zero()
+        ); // vanish
 
-        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), Lc::from_iter([
-            (vgen([1,0,1], [0,0,1], [0,0,0]), R::one()) // 1: id
-        ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [1,0,0])), Lc::from_iter([
-            (vgen([1,0,1], [0,0,1], [1,0,0]), R::one()) // x1: id
-        ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,1,0])), Lc::from_iter([
-            (vgen([1,0,1], [0,0,1], [0,0,1]), R::one()) // x1 -> x2
-        ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,1])), Lc::from_iter([
-            (vgen([1,0,1], [0,0,1], [0,0,1]), R::one()) // x2: id
-        ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,2])), Lc::from_iter([
-            (vgen([1,0,1], [0,0,1], [1,0,1]), R::one()) // x2^2 -> x0 x2
-        ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [1,1,1])), Lc::from_iter([
-            (vgen([1,0,1], [0,0,1], [2,0,1]), R::one()) // x0x1x2 -> x0^2 x2
-        ]));
+        assert_eq!(
+            excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), 
+              KRChain::from(vgen([1,0,1], [0,0,1], [0,0,0])) // 1: id
+        );
+        assert_eq!(
+            excl.forward_x(&vgen([1,0,1], [0,0,1], [1,0,0])), 
+              KRChain::from(vgen([1,0,1], [0,0,1], [1,0,0])) // x1: id
+        );
+        assert_eq!(
+            excl.forward_x(&vgen([1,0,1], [0,0,1], [0,1,0])), 
+              KRChain::from(vgen([1,0,1], [0,0,1], [0,0,1])) // x1 -> x2
+        );
+        assert_eq!(
+            excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,1])), 
+              KRChain::from(vgen([1,0,1], [0,0,1], [0,0,1])) // x2: id
+        );
+        assert_eq!(
+            excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,2])), 
+              KRChain::from(vgen([1,0,1], [0,0,1], [1,0,1])) // x2^2 -> x0 x2
+        );
+        assert_eq!(
+            excl.forward_x(&vgen([1,0,1], [0,0,1], [1,1,1])), 
+              KRChain::from(vgen([1,0,1], [0,0,1], [2,0,1])) // x0x1x2 -> x0^2 x2
+        );
     }
 
     #[test]
     fn forward_3() { 
         type R = Ratio<i64>;
-        type P = BasePoly<R>;
+        type P = KRPoly<R>;
 
         let h = BitSeq::from([1,1,1,1]);
         let v = BitSeq::from([1,1,1,1]);
@@ -799,15 +815,15 @@ mod tests {
         excl.perform_excl(2, 0, 0); // x0^2 -> x1^2
         excl.perform_excl(2, 1, 2); // x2^2 -> x0x3
 
-        let x = VertGen(h, v, MultiVar::from([0,0,4,0])); // x2^4
+        let x = KRGen(h, v, MultiVar::from([0,0,4,0])); // x2^4
 
         assert!(!excl.should_vanish(&x));
         assert!( excl.should_reduce(&x.2));
 
-        let x = Lc::from(x);
+        let x = KRChain::from(x);
         let y = excl.forward(&x); // x2^4 -> (x0x3)^2 -> x1^2 x3^2
 
-        assert_eq!(y, Lc::from(VertGen(h, v, MultiVar::from([0,2,0,2]))))
+        assert_eq!(y, KRChain::from(KRGen(h, v, MultiVar::from([0,2,0,2]))))
     }
 
     #[test]
@@ -820,23 +836,31 @@ mod tests {
         
         excl.perform_excl(1, 0, 1); // x1 -> x2
 
-        assert_eq!(excl.backward_x(&vgen([1,0,0], [0,0,1], [0,0,0])), Lc::from_iter([
-            (vgen([1,0,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,0,0]
-            (vgen([0,0,1], [0,0,1], [0,0,1]), -R::one())  // -x2 at [0,0,1]
-        ]));
+        assert_eq!(
+            excl.backward_x(&vgen([1,0,0], [0,0,1], [0,0,0])), 
+            KRChain::from_iter([
+                (vgen([1,0,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,0,0]
+                (vgen([0,0,1], [0,0,1], [0,0,1]), -R::one())  // -x2 at [0,0,1]
+            ])
+        );
 
-        assert_eq!(excl.backward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), Lc::from_iter([
-            (vgen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,0]
-            (vgen([0,1,1], [0,0,1], [0,0,1]),  R::one())  //  x2 at [0,1,1]
-        ]));
+        assert_eq!(
+            excl.backward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), 
+            KRChain::from_iter([
+                (vgen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,0]
+                (vgen([0,1,1], [0,0,1], [0,0,1]),  R::one())  //  x2 at [0,1,1]
+            ])
+        );
 
-        assert_eq!(excl.backward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), Lc::from_iter([
-            (vgen([1,0,1], [0,0,1], [0,0,0]),  R::one()), //  id at [1,0,1]
-        ]));
+        assert_eq!(
+            excl.backward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), 
+               KRChain::from(vgen([1,0,1], [0,0,1], [0,0,0])), //  id at [1,0,1]
+        );
 
-        assert_eq!(excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), Lc::from_iter([
-            (vgen([1,1,1], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,1]
-        ]));
+        assert_eq!(
+            excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), 
+               KRChain::from(vgen([1,1,1], [0,0,1], [0,0,0])), //  id at [1,1,1]
+        );
     }
 
     #[test]
@@ -850,14 +874,18 @@ mod tests {
         excl.perform_excl(1, 0, 1); // x1 -> x2
         excl.perform_excl(1, 1, 0); // x0 -> x2
 
-        assert_eq!(excl.backward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), Lc::from_iter([
-            (vgen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,0]
-            (vgen([1,0,1], [0,0,1], [0,0,1]), -R::one()), // -x2 at [1,0,1]
-            (vgen([0,1,1], [0,0,1], [0,0,1]),  R::one()), //  x2 at [0,1,1]
-        ]));
-        assert_eq!(excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), Lc::from_iter([
-            (vgen([1,1,1], [0,0,1], [0,0,0]), R::one())
-        ]));
+        assert_eq!(
+            excl.backward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), 
+            KRChain::from_iter([
+                (vgen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,0]
+                (vgen([1,0,1], [0,0,1], [0,0,1]), -R::one()), // -x2 at [1,0,1]
+                (vgen([0,1,1], [0,0,1], [0,0,1]),  R::one()), //  x2 at [0,1,1]
+            ])
+        );
+        assert_eq!(
+            excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), 
+               KRChain::from(vgen([1,1,1], [0,0,1], [0,0,0]))
+        );
     }
 
     #[test]
@@ -871,12 +899,14 @@ mod tests {
         excl.perform_excl(1, 0, 1); // x1 -> x2
         excl.perform_excl(2, 2, 2); // x2^2 -> x0 x2
 
-        assert_eq!(excl.backward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), Lc::from_iter([
-            (vgen([1,0,1], [0,0,1], [0,0,0]), R::one())
-        ]));
-        assert_eq!(excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), Lc::from_iter([
-            (vgen([1,1,1], [0,0,1], [0,0,0]), R::one())
-        ]));
+        assert_eq!(
+            excl.backward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), 
+               KRChain::from(vgen([1,0,1], [0,0,1], [0,0,0]))
+        );
+        assert_eq!(
+            excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), 
+               KRChain::from(vgen([1,1,1], [0,0,1], [0,0,0]))
+        );
     }
 
     #[test]

@@ -4,11 +4,10 @@ use delegate::delegate;
 
 use yui::{EucRing, EucRingOps};
 use yui_homology::{GridTrait, RModStr, GridIter, XHomology, XHomologySummand};
-use yui::lc::Lc;
 use yui_matrix::sparse::SpVec;
 use yui::bitseq::BitSeq;
 
-use super::base::VertGen;
+use super::base::{KRGen, KRChain};
 use super::data::KRCubeData;
 use super::hor_cpx::KRHorComplex;
 use super::hor_excl::KRHorExcl;
@@ -18,7 +17,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     v_coords: BitSeq,
     q_slice: isize,
     excl: Arc<KRHorExcl<R>>,
-    inner: XHomology<VertGen, R>
+    inner: XHomology<KRGen, R>
 } 
 
 impl<R> KRHorHomol<R>
@@ -42,7 +41,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.inner[i as isize].rank()
     }
 
-    pub fn gens(&self, i: usize) -> Vec<Lc<VertGen, R>> { 
+    pub fn gens(&self, i: usize) -> Vec<KRChain<R>> { 
         let h = &self.inner[i as isize];
         let r = h.rank();
 
@@ -52,7 +51,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }).collect()
     }
 
-    pub fn vectorize(&self, i: usize, z: &Lc<VertGen, R>) -> SpVec<R> {
+    pub fn vectorize(&self, i: usize, z: &KRChain<R>) -> SpVec<R> {
         debug_assert!(z.iter().all(|(x, _)| 
             x.0.weight() == i && 
             x.1 == self.v_coords()
@@ -64,7 +63,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         h.vectorize(&z_exc)
     }
 
-    pub fn as_chain(&self, i: usize, v_hml: &SpVec<R>) -> Lc<VertGen, R> {
+    pub fn as_chain(&self, i: usize, v_hml: &SpVec<R>) -> KRChain<R> {
         let h = &self.inner[i as isize];
         let z_exc = h.as_chain(v_hml);
         
@@ -75,7 +74,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> GridTrait<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Itr = GridIter<isize>;
-    type Output = XHomologySummand<VertGen, R>;
+    type Output = XHomologySummand<KRGen, R>;
 
     delegate! { 
         to self.inner {
@@ -88,7 +87,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> Index<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Output = XHomologySummand<VertGen, R>;
+    type Output = XHomologySummand<KRGen, R>;
     delegate! { 
         to self.inner { 
             fn index(&self, index: isize) -> &Self::Output;

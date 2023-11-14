@@ -10,7 +10,7 @@ use yui::{Ring, RingOps, Sign, isize3};
 use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
 use yui::bitseq::{BitSeq, Bit};
 
-use super::base::BasePoly;
+use super::base::KRPoly;
 use super::hor_excl::KRHorExcl;
 
 /*
@@ -25,8 +25,8 @@ use super::hor_excl::KRHorExcl;
  */
 pub struct KRCrossData<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    pub x_ac: BasePoly<R>,
-    pub x_bc: BasePoly<R>
+    pub x_ac: KRPoly<R>,
+    pub x_bc: KRPoly<R>
 }
 
 pub struct KRCubeData<R>
@@ -192,7 +192,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    pub fn hor_edge_poly(&self, v_coords: BitSeq, i: usize) -> BasePoly<R> {
+    pub fn hor_edge_poly(&self, v_coords: BitSeq, i: usize) -> KRPoly<R> {
         use Bit::{Bit0, Bit1};
 
         let sign = self.x_sign(i);
@@ -205,7 +205,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    pub fn ver_edge_poly(&self, h_coords: BitSeq, i: usize) -> BasePoly<R> {
+    pub fn ver_edge_poly(&self, h_coords: BitSeq, i: usize) -> KRPoly<R> {
         use Bit::{Bit0, Bit1};
 
         let sign = self.x_sign(i);
@@ -214,7 +214,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         match (sign.is_positive(), h) {
             (true, Bit0) | (false, Bit1) => p.x_bc.clone(),
-            (true, Bit1) | (false, Bit0) => BasePoly::one()
+            (true, Bit1) | (false, Bit0) => KRPoly::one()
         }
     }
 
@@ -252,7 +252,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             link.traverse_edges((0, 0), |i, j| { 
                 let x = &link.data()[i];
                 let e = x.edge(j);
-                let x_i = BasePoly::variable(i);
+                let x_i = KRPoly::variable(i);
                 let p_i = match (is_vert(x, signs[i]), j) {
                     (true, 0) | (false, 3) =>  x_i,
                     (true, 1) | (false, 0) => -x_i,
@@ -272,7 +272,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             (path, mons)
         };
 
-        let traverse = |from: Edge, to: Edge| -> BasePoly<R> { 
+        let traverse = |from: Edge, to: Edge| -> KRPoly<R> { 
             let m = path.len(); // == 2 * n
             let i = path.iter().find_position(|&&e| e == from).unwrap().0;
             let j = path.iter().find_position(|&&e| e == to  ).unwrap().0;
@@ -367,7 +367,7 @@ mod tests {
     use super::*;
 
     type R = Ratio<i64>;
-    type P = BasePoly<R>;
+    type P = KRPoly<R>;
 
     #[test]
     fn collect_x_polys() { 

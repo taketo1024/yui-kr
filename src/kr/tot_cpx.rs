@@ -1,5 +1,4 @@
-#![allow(unused)] use std::ops::Index;
-// TODO remove
+use std::ops::Index;
 use std::sync::Arc;
 
 use cartesian::cartesian;
@@ -10,27 +9,25 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui::{EucRing, EucRingOps, isize2, Ring, RingOps};
 use yui_homology::utils::ChainReducer;
 use yui_homology::{ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol};
-use yui::lc::Lc;
 use yui_matrix::sparse::{SpVec, SpMat, MatType};
 
-use super::base::VertGen;
+use super::base::KRChain;
 use super::data::KRCubeData;
 use super::tot_cube::KRTotCube;
-use super::tot_homol::KRTotHomol;
 
 #[derive(Default)]
 pub struct KRTotComplexSummand<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    gens: Vec<Lc<VertGen, R>>
+    gens: Vec<KRChain<R>>
 }
 
 impl<R> KRTotComplexSummand<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    fn new(gens: Vec<Lc<VertGen, R>>) -> Self { 
+    fn new(gens: Vec<KRChain<R>>) -> Self { 
         Self { gens }
     }
 
-    pub fn gens(&self) -> &Vec<Lc<VertGen, R>> { 
+    pub fn gens(&self) -> &Vec<KRChain<R>> { 
         &self.gens
     }
 }
@@ -81,7 +78,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self { data, cube, summands }
     }
 
-    fn vectorize(&self, idx: isize2, z: &Lc<VertGen, R>) -> SpVec<R> {
+    fn vectorize(&self, idx: isize2, z: &KRChain<R>) -> SpVec<R> {
         let (i, j) = (idx.0 as usize, idx.1 as usize);
 
         debug_assert!(z.iter().all(|(x, _)| 
@@ -120,7 +117,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             let v = q.col_vec(l);
             let z = v.iter().map(|(k, a)| 
                 &gens[k] * a
-            ).sum::<Lc<_, _>>();
+            ).sum::<KRChain<R>>();
             
             let dz = z.apply(|x| self.cube.d(x));
             let w = self.vectorize(idx1, &dz);
@@ -176,7 +173,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> ChainComplexTrait<isize2> for KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type R = R;
-    type Element = Lc<VertGen, R>;
+    type Element = KRChain<R>;
 
     fn rank(&self, i: isize2) -> usize {
         self.summands[i].rank()
@@ -186,7 +183,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         isize2(0, 1)
     }
 
-    fn d(&self, i: isize2, z: &Self::Element) -> Self::Element {
+    fn d(&self, _i: isize2, z: &Self::Element) -> Self::Element {
         z.apply(|x| self.cube.d(x))
     }
 
@@ -203,7 +200,7 @@ mod tests {
     use yui_link::Link;
     use yui::Ratio;
     
-    use yui_homology::{ChainComplexCommon, RModStr, DisplayTable};
+    use yui_homology::{ChainComplexCommon, RModStr};
     use super::*;
 
     type R = Ratio<i64>;

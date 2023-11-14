@@ -4,13 +4,12 @@ use delegate::delegate;
 
 use yui::{Ring, RingOps, EucRing, EucRingOps};
 use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, XHomology, Grid1, XModStr};
-use yui::lc::Lc;
 use yui_matrix::sparse::SpMat;
 use yui::bitseq::BitSeq;
 
 use crate::kr::hor_cube::KRHorCube;
 
-use super::base::VertGen;
+use super::base::{KRGen, KRChain};
 use super::data::KRCubeData;
 use super::hor_excl::KRHorExcl;
 
@@ -19,7 +18,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     v_coords: BitSeq,
     q_slice: isize,
     excl: Arc<KRHorExcl<R>>,
-    inner: XChainComplex<VertGen, R>
+    inner: XChainComplex<KRGen, R>
 } 
 
 impl<R> KRHorComplex<R>
@@ -31,7 +30,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         Self { v_coords, q_slice, excl, inner }
     }
 
-    fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>) -> XChainComplex<VertGen, R> { 
+    fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>) -> XChainComplex<KRGen, R> { 
         let n = cube.dim() as isize;
         let summands = Grid1::generate(0..=n, |i| { 
             let gens = cube.gens(i as usize);
@@ -60,7 +59,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> GridTrait<isize> for KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     type Itr = GridIter<isize>;
-    type Output = XChainComplexSummand<VertGen, R>;
+    type Output = XChainComplexSummand<KRGen, R>;
 
     delegate! { 
         to self.inner { 
@@ -73,7 +72,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> Index<isize> for KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    type Output = XChainComplexSummand<VertGen, R>;
+    type Output = XChainComplexSummand<KRGen, R>;
 
     fn index(&self, i: isize) -> &Self::Output {
         self.get(i)
@@ -84,7 +83,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> ChainComplexTrait<isize> for KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     type R = R;
-    type Element = Lc<VertGen, R>;
+    type Element = KRChain<R>;
 
     delegate! { 
         to self.inner { 
@@ -94,7 +93,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    fn d(&self, i: isize, z: &Lc<VertGen, R>) -> Lc<VertGen, R> { 
+    fn d(&self, i: isize, z: &KRChain<R>) -> KRChain<R> { 
         let z_exc = self.excl.forward(z);
         let dz_exc = self.inner.d(i, &z_exc);
         let dz = self.excl.backward(&dz_exc, true);
@@ -104,7 +103,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> KRHorComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub fn homology(&self) -> XHomology<VertGen, R> { 
+    pub fn homology(&self) -> XHomology<KRGen, R> { 
         self.inner.homology(true)
     }
 }

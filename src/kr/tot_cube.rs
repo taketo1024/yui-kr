@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 use yui::{EucRing, EucRingOps};
-use yui::lc::Lc;
 use yui::bitseq::BitSeq;
 
-use super::base::{VertGen, BasePoly, sign_between};
+use super::base::{KRGen, KRPoly, KRChain, sign_between};
 use super::data::KRCubeData;
 use super::hor_homol::KRHorHomol;
 
@@ -44,11 +43,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         })
     }
 
-    pub fn edge_poly(&self, h_coords: BitSeq, i: usize) -> BasePoly<R> {
+    pub fn edge_poly(&self, h_coords: BitSeq, i: usize) -> KRPoly<R> {
         self.data.ver_edge_poly(h_coords, i)
     }
 
-    pub fn d(&self, e: &VertGen) -> Lc<VertGen, R> { 
+    pub fn d(&self, e: &KRGen) -> KRChain<R> { 
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
         let n = self.data.dim();
@@ -58,12 +57,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         ).flat_map(|i| {
             let v1 = v0.edit(|b| b.set_1(i));
             let e = R::from_sign( sign_between(v0, v1) );
-            let p = BasePoly::from( (x0.clone(), e ) );
+            let p = KRPoly::from( (x0.clone(), e ) );
             let f = self.edge_poly(h0, i);
             let q = f * p;
 
             q.into_iter().map(move |(x1, r)| 
-                (VertGen(h0, v1, x1), r)
+                (KRGen(h0, v1, x1), r)
             )
          }).collect()
     }
@@ -78,7 +77,7 @@ mod tests {
     use super::*;
 
     type R = Ratio<i64>;
-    type P = BasePoly<R>;
+    type P = KRPoly<R>;
 
     fn make_cube(l: &Link, q: isize) -> KRTotCube<R> {
         let data = Arc::new( KRCubeData::<R>::new(l, 2) );

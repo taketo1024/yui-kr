@@ -3,29 +3,32 @@ use std::iter::zip;
 use derive_more::{Display, DebugCustom};
 use itertools::{Itertools, FoldWhile};
 use yui::{Elem, Sign, PowMod2, GetSign};
-use yui::lc::Gen;
+use yui::lc::{Gen, Lc};
 use yui::poly::{PolyN, MultiVar};
 use yui::bitseq::{BitSeq, Bit};
 
-pub(crate) type BaseMono = MultiVar<'x', usize>;
-pub(crate) type BasePoly<R> = PolyN<'x', R>;
+pub(crate) type KRMono = MultiVar<'x', usize>;
+pub(crate) type KRPoly<R> = PolyN<'x', R>;
+
+pub type KRChain<R> = Lc<KRGen, R>;
+pub type KRPolyChain<R> = Lc<KRGen, KRPoly<R>>;
 
 #[derive(PartialEq, Eq, Hash, Default, Clone, Display, DebugCustom, PartialOrd, Ord)]
 #[display(fmt = "({}-{}, {})", _0, _1, _2)]
 #[debug(fmt = "{}", self)]
-pub struct VertGen(
+pub struct KRGen(
     pub BitSeq, // h-coords
     pub BitSeq, // v-coords
-    pub BaseMono
+    pub KRMono
 );
 
-impl Elem for VertGen {
+impl Elem for KRGen {
     fn math_symbol() -> String {
         String::from("")
     }
 }
 
-impl Gen for VertGen {}
+impl Gen for KRGen {}
 
 pub(crate) fn sign_between(from: BitSeq, to: BitSeq) -> Sign { 
     use Bit::*;
