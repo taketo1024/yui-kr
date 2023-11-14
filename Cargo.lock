@@ -925,7 +925,7 @@ checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
 [[package]]
 name = "yui"
 version = "0.2.0"
-source = "git+https://github.com/taketo1024/yui#1d9a11f02712f2961fa1be9ae6c286b84420d53f"
+source = "git+https://github.com/taketo1024/yui?branch=develop#a114b897f6da4e67c5295c527335c0571e766b60"
 dependencies = [
  "ahash",
  "auto-impl-ops",
@@ -943,7 +943,7 @@ dependencies = [
 [[package]]
 name = "yui-homology"
 version = "0.2.0"
-source = "git+https://github.com/taketo1024/yui#1d9a11f02712f2961fa1be9ae6c286b84420d53f"
+source = "git+https://github.com/taketo1024/yui?branch=develop#a114b897f6da4e67c5295c527335c0571e766b60"
 dependencies = [
  "bimap",
  "cartesian",
@@ -981,7 +981,7 @@ dependencies = [
 [[package]]
 name = "yui-link"
 version = "0.2.0"
-source = "git+https://github.com/taketo1024/yui#1d9a11f02712f2961fa1be9ae6c286b84420d53f"
+source = "git+https://github.com/taketo1024/yui?branch=develop#a114b897f6da4e67c5295c527335c0571e766b60"
 dependencies = [
  "derive_more",
  "itertools",
@@ -994,8 +994,9 @@ dependencies = [
 [[package]]
 name = "yui-matrix"
 version = "0.2.0"
-source = "git+https://github.com/taketo1024/yui#1d9a11f02712f2961fa1be9ae6c286b84420d53f"
+source = "git+https://github.com/taketo1024/yui?branch=develop#a114b897f6da4e67c5295c527335c0571e766b60"
 dependencies = [
+ "ahash",
  "auto-impl-ops",
  "cartesian",
  "derive_more",
