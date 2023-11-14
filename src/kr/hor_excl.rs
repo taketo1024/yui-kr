@@ -88,7 +88,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             self.find_excl_var_for(deg, i).map(|k| (i, k))
         });
 
-        let best = cands.max_by(|(i1, _), (i2, _)| { 
+        cands.max_by(|(i1, _), (i2, _)| { 
             let p1 = self.edge_polys[&i1].ngens();
             let p2 = self.edge_polys[&i2].ngens();
             // prefer smaller poly.
@@ -96,9 +96,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
                 // prefer smaller index.
                 Ord::cmp(&i1, &i2).reverse()
             )
-        });
-
-        best
+        })
     }
 
     fn find_excl_var_for(&self, deg: usize, i: usize) -> Option<usize> { 
@@ -115,15 +113,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         });
         
         // choose best candidate
-        let k_best = cands.max_by(|(k1, a1), (k2, a2)| { 
+        cands.max_by(|(k1, a1), (k2, a2)| { 
             // prefer coeff ±1
             Ord::cmp(&a1.is_pm_one(), &a2.is_pm_one()).then( 
                 // prefer smaller index
                 Ord::cmp(&k1, &k2).reverse() 
             )
-        }).map(|(k, _)| k);
-
-        k_best
+        }).map(|(k, _)| k)
     }
 
     fn perform_excl(&mut self, deg: usize, i: usize, k: usize) {
@@ -153,7 +149,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             // vars appearing in p are no longer indep. 
             for x in p.iter().map(|(x, _)| x) {
                 for l in x.deg().iter().map(|(l, _)| l) {
-                    self.remain_vars.remove(&l);
+                    self.remain_vars.remove(l);
                 }
             }
         }
@@ -266,8 +262,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         let x0 = if !is_cycle {
             let x1 = self.d(&z, step, true);
-            let x0 = self.send_back(&x1, i);
-            x0
+            self.send_back(&x1, i)
         } else { 
             LinComb::<_, BasePoly<R>>::zero()
         };
@@ -320,8 +315,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn trans_for(&self, from: &IndexList<VertGen>, to: &IndexList<VertGen>) -> Trans<R> {
-        let fwd = make_matrix_async(&from, &to, |x| self.forward_x(x));
-        let bwd = make_matrix_async(&to, &from, |x| self.backward_x(x));
+        let fwd = make_matrix_async(from, to, |x| self.forward_x(x));
+        let bwd = make_matrix_async(to, from, |x| self.backward_x(x));
         Trans::new(fwd, bwd)
     }
 
@@ -436,7 +431,7 @@ mod tests {
     type P = BasePoly<R>;
 
     fn vars(l: usize) -> Vec<P> {
-        (0..l).map(|i| P::variable(i)).collect_vec()
+        (0..l).map(P::variable).collect_vec()
     }
 
     fn vgen<const N: usize, const M: usize>(h: [usize; N], v: [usize; N], m: [usize; M]) -> VertGen {

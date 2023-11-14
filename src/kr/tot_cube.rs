@@ -39,7 +39,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn vert(&self, v_coords: BitSeq) -> &KRHorHomol<R> {
-        &self.hor_hmls[&v_coords].get_or_init(|| { 
+        self.hor_hmls[&v_coords].get_or_init(|| { 
             KRHorHomol::new(self.data.clone(), v_coords, self.q_slice)
         })
     }
@@ -81,15 +81,13 @@ mod tests {
     type P = BasePoly<R>;
 
     fn make_cube(l: &Link, q: isize) -> KRTotCube<R> {
-        let data = KRCubeData::<R>::new(&l, 2);
-        let rc = Arc::new(data);
-        let cube = KRTotCube::new(rc, q);
-        cube
+        let data = Arc::new( KRCubeData::<R>::new(l, 2) );
+        KRTotCube::new(data, q)
     }
 
     #[test]
     fn edge_poly() { 
-        let x = (0..3).map(|i| P::variable(i)).collect_vec();
+        let x = (0..3).map(P::variable).collect_vec();
 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let cube = make_cube(&l, 0);

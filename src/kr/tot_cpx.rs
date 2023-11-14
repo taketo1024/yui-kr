@@ -209,7 +209,7 @@ mod tests {
     type R = Ratio<i64>;
 
     fn make_cpx(link: &Link, q_slice: isize) -> KRTotComplex<R> {
-        let data = Arc::new( KRCubeData::<R>::new(&link, 2) );
+        let data = Arc::new( KRCubeData::<R>::new(link, 2) );
         KRTotComplex::new(data, q_slice)
     }
     
@@ -247,12 +247,12 @@ mod tests {
 
         assert_eq!(gens.len(), 4);
 
-        let _0 = R::from(0);
-        let _1 = R::from(1);
+        let r0 = R::from(0);
+        let r1 = R::from(1);
 
-        assert_eq!(c.vectorize(isize2(3, 3), &gens[0]), SpVec::from(vec![_1,_0,_0,_0]));
-        assert_eq!(c.vectorize(isize2(3, 3), &gens[1]), SpVec::from(vec![_0,_1,_0,_0]));
-        assert_eq!(c.vectorize(isize2(3, 3), &(&gens[0] - &gens[3])), SpVec::from(vec![_1,_0,_0,-_1]));
+        assert_eq!(c.vectorize(isize2(3, 3), &gens[0]), SpVec::from(vec![r1, r0, r0, r0]));
+        assert_eq!(c.vectorize(isize2(3, 3), &gens[1]), SpVec::from(vec![r0, r1, r0, r0]));
+        assert_eq!(c.vectorize(isize2(3, 3), &(&gens[0] - &gens[3])), SpVec::from(vec![r1, r0, r0, -r1]));
     }
 
     #[test]

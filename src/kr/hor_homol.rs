@@ -48,8 +48,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         (0..r).map(|k| { 
             let v = SpVec::unit(r, k);
-            let z = self.as_chain(i, &v);
-            z
+            self.as_chain(i, &v)
         }).collect()
     }
 
@@ -59,19 +58,16 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             x.1 == self.v_coords()
         ));
 
-        let i = i as isize;
-        let h = &self.inner[i];
-
         let z_exc = self.excl.forward(z);
-        let v_hml = h.vectorize(&z_exc);
-        v_hml
+
+        let h = &self.inner[i as isize];
+        h.vectorize(&z_exc)
     }
 
     pub fn as_chain(&self, i: usize, v_hml: &SpVec<R>) -> LinComb<VertGen, R> {
-        let i = i as isize;
-        let h = &self.inner[i];
-
+        let h = &self.inner[i as isize];
         let z_exc = h.as_chain(v_hml);
+        
         self.excl.backward(&z_exc, true)
     }
 }
@@ -109,7 +105,7 @@ mod tests {
     type R = Ratio<i64>;
 
     fn make_hml(l: &Link, v: BitSeq, q: isize) -> KRHorHomol<R> {
-        let data = KRCubeData::<R>::new(&l, 2);
+        let data = KRCubeData::<R>::new(l, 2);
         let rc = Arc::new(data);
         KRHorHomol::new(rc, v, q)
     }

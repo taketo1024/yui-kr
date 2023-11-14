@@ -25,7 +25,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRHomology<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(link: &Link) -> Self { 
-        let data = Arc::new(KRCubeData::new(&link, 2));
+        let data = Arc::new(KRCubeData::new(link, 2));
         let cache = UnsafeCell::new( HashMap::new() );
         let zero = HomologySummand::zero();
         Self { data, cache, zero }
@@ -39,25 +39,23 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn rank_all(&self) -> HashMap<isize3, usize> { 
-        let ranks = self.support().filter_map(|isize3(i, j, k)| {
+        self.support().filter_map(|isize3(i, j, k)| {
             let r = self[(i, j, k)].rank();
             if r > 0 { 
                 Some((isize3(i, j, k), r))
             } else { 
                 None
             }
-        }).collect();
-
-        ranks
+        }).collect()
     }
 
     pub fn tot_rank(&self) -> usize { 
-        self.rank_all().iter().map(|(_, r)| r).sum()
+        self.rank_all().values().sum()
     }
 
     pub fn qpoly_table(&self) -> HashMap<isize2, QPoly<R>> { 
         let str = self.rank_all();        
-        let polys = str.into_iter().into_group_map_by(|(idx, _)|
+        let elements = str.into_iter().into_group_map_by(|(idx, _)|
             isize2(idx.1, idx.2) // (j, k)
         ).into_iter().map(|(jk, list)| { 
             let q = QPoly::mono;
@@ -68,9 +66,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             });
             let p = QPoly::from_iter(elems);
             (jk, p)
-        }).collect();
-
-        polys
+        });
+        elements.collect()
     }
 
     pub fn print_table(&self) { 

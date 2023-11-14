@@ -120,7 +120,7 @@ mod tests {
     type R = Ratio<i64>;
 
     fn make_cpx(link: &Link, v_coords: BitSeq, q_slice: isize, level: usize, red: bool) -> KRHorComplex<R> {
-        let data = Arc::new( KRCubeData::<R>::new(&link, level) );
+        let data = Arc::new( KRCubeData::<R>::new(link, level) );
         let excl = data.excl(v_coords);
         let cube = KRHorCube::new(data.clone(), v_coords, q_slice);
         let inner = KRHorComplex::make_cpx(excl.clone(), cube);

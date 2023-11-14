@@ -42,7 +42,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> KRCubeData<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn new(link: &Link, excl_level: usize) -> Self {
-        let n = link.crossing_num() as usize;
+        let n = link.crossing_num();
         let w = link.writhe() as isize;
         let s = link.seifert_circles().len() as isize;
         let x_signs = link.crossing_signs();
@@ -219,7 +219,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn collect_x_polys(link: &Link) -> Vec<KRCrossData<R>> {
-        let n = link.crossing_num() as usize;
+        let n = link.crossing_num();
         let signs = link.crossing_signs();
 
         // TODO support links
@@ -332,7 +332,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     #[allow(dead_code)]
     fn resolve(link: &Link) -> Link {
-        let g = Self::seifert_graph(&link);
+        let g = Self::seifert_graph(link);
         let t = min_spanning_tree(&g).filter_map(|e| 
             match e { 
                 petgraph::data::Element::Edge { 
@@ -344,7 +344,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             }
         ).collect::<HashSet<_>>();
 
-        let n = link.crossing_num() as usize;
+        let n = link.crossing_num();
         let s0 = link.ori_pres_state();
         let mut data = link.data().clone();
 
@@ -373,7 +373,7 @@ mod tests {
     fn collect_x_polys() { 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let g = KRCubeData::<R>::collect_x_polys(&l);
-        let x = (0..3).map(|i| P::variable(i)).collect_vec();
+        let x = (0..3).map(P::variable).collect_vec();
 
         assert_eq!(g.len(), 3);
         assert_eq!(g[0].x_bc, x[0]);

@@ -44,16 +44,18 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn make_mons(tot_deg: usize, n: usize) -> Vec<BaseMono> { 
-        fn gen_iter(tot_deg: usize, n: usize, res: &mut Vec<HashMap<usize, usize>>, prev: HashMap<usize, usize>, i: usize, rem: usize) {
+        fn gen_iter(tot_deg: usize, n: usize, i: usize, res: &mut Vec<HashMap<usize, usize>>, prev: HashMap<usize, usize>) {
             if i < n - 1 { 
-                for d_i in (0..=rem).rev() { 
+                for d_i in (0..=tot_deg).rev() { 
                     let mut curr = prev.clone();
                     curr.insert(i, d_i);
-                    gen_iter(tot_deg, n, res, curr, i + 1, rem - d_i)
+                    
+                    let rem = tot_deg - d_i;
+                    gen_iter(rem, n, i + 1, res, curr)
                 }
             } else { 
                 let mut curr = prev;
-                curr.insert(i, rem);
+                curr.insert(i, tot_deg);
                 res.push(curr);
             }
         }
@@ -61,7 +63,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let mut res = vec![];
         let prev = HashMap::new();
 
-        gen_iter(tot_deg, n, &mut res, prev, 0, tot_deg);
+        gen_iter(tot_deg, n, 0, &mut res, prev);
 
         res.into_iter().map(|d| {
             BaseMono::from_iter(d)
@@ -145,10 +147,10 @@ mod tests {
     type P = BasePoly<R>;
 
     fn make_cube(l: &Link, v: BitSeq, q: isize) -> KRHorCube<R> {
-        let data = KRCubeData::<R>::new(&l, 0);
+        let data = KRCubeData::<R>::new(l, 0);
         let rc = Arc::new(data);
-        let cube = KRHorCube::new(rc, v, q);
-        cube
+        
+        KRHorCube::new(rc, v, q)
     }
 
     #[test]
@@ -206,7 +208,7 @@ mod tests {
 
     #[test]
     fn edge_poly() { 
-        let x = (0..3).map(|i| P::variable(i)).collect_vec();
+        let x = (0..3).map(P::variable).collect_vec();
 
         // p: neg, v: 0, h: 0 -> 1
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
