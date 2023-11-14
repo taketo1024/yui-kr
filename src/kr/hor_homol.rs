@@ -4,7 +4,7 @@ use delegate::delegate;
 
 use yui::{EucRing, EucRingOps};
 use yui_homology::{GridTrait, RModStr, GridIter, XHomology, XHomologySummand};
-use yui::lc::LinComb;
+use yui::lc::Lc;
 use yui_matrix::sparse::SpVec;
 use yui::bitseq::BitSeq;
 
@@ -42,7 +42,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.inner[i as isize].rank()
     }
 
-    pub fn gens(&self, i: usize) -> Vec<LinComb<VertGen, R>> { 
+    pub fn gens(&self, i: usize) -> Vec<Lc<VertGen, R>> { 
         let h = &self.inner[i as isize];
         let r = h.rank();
 
@@ -52,7 +52,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }).collect()
     }
 
-    pub fn vectorize(&self, i: usize, z: &LinComb<VertGen, R>) -> SpVec<R> {
+    pub fn vectorize(&self, i: usize, z: &Lc<VertGen, R>) -> SpVec<R> {
         debug_assert!(z.iter().all(|(x, _)| 
             x.0.weight() == i && 
             x.1 == self.v_coords()
@@ -64,7 +64,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         h.vectorize(&z_exc)
     }
 
-    pub fn as_chain(&self, i: usize, v_hml: &SpVec<R>) -> LinComb<VertGen, R> {
+    pub fn as_chain(&self, i: usize, v_hml: &SpVec<R>) -> Lc<VertGen, R> {
         let h = &self.inner[i as isize];
         let z_exc = h.as_chain(v_hml);
         

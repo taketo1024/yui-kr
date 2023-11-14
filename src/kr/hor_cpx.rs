@@ -4,7 +4,7 @@ use delegate::delegate;
 
 use yui::{Ring, RingOps, EucRing, EucRingOps};
 use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, XHomology, Grid1, XModStr};
-use yui::lc::LinComb;
+use yui::lc::Lc;
 use yui_matrix::sparse::SpMat;
 use yui::bitseq::BitSeq;
 
@@ -84,7 +84,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> ChainComplexTrait<isize> for KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     type R = R;
-    type Element = LinComb<VertGen, R>;
+    type Element = Lc<VertGen, R>;
 
     delegate! { 
         to self.inner { 
@@ -94,7 +94,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    fn d(&self, i: isize, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> { 
+    fn d(&self, i: isize, z: &Lc<VertGen, R>) -> Lc<VertGen, R> { 
         let z_exc = self.excl.forward(z);
         let dz_exc = self.inner.d(i, &z_exc);
         let dz = self.excl.backward(&dz_exc, true);

@@ -10,7 +10,7 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui::{EucRing, EucRingOps, isize2, Ring, RingOps};
 use yui_homology::utils::ChainReducer;
 use yui_homology::{ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol};
-use yui::lc::LinComb;
+use yui::lc::Lc;
 use yui_matrix::sparse::{SpVec, SpMat, MatType};
 
 use super::base::VertGen;
@@ -21,16 +21,16 @@ use super::tot_homol::KRTotHomol;
 #[derive(Default)]
 pub struct KRTotComplexSummand<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    gens: Vec<LinComb<VertGen, R>>
+    gens: Vec<Lc<VertGen, R>>
 }
 
 impl<R> KRTotComplexSummand<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    fn new(gens: Vec<LinComb<VertGen, R>>) -> Self { 
+    fn new(gens: Vec<Lc<VertGen, R>>) -> Self { 
         Self { gens }
     }
 
-    pub fn gens(&self) -> &Vec<LinComb<VertGen, R>> { 
+    pub fn gens(&self) -> &Vec<Lc<VertGen, R>> { 
         &self.gens
     }
 }
@@ -81,7 +81,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self { data, cube, summands }
     }
 
-    fn vectorize(&self, idx: isize2, z: &LinComb<VertGen, R>) -> SpVec<R> {
+    fn vectorize(&self, idx: isize2, z: &Lc<VertGen, R>) -> SpVec<R> {
         let (i, j) = (idx.0 as usize, idx.1 as usize);
 
         debug_assert!(z.iter().all(|(x, _)| 
@@ -120,7 +120,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             let v = q.col_vec(l);
             let z = v.iter().map(|(k, a)| 
                 &gens[k] * a
-            ).sum::<LinComb<_, _>>();
+            ).sum::<Lc<_, _>>();
             
             let dz = z.apply(|x| self.cube.d(x));
             let w = self.vectorize(idx1, &dz);
@@ -176,7 +176,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> ChainComplexTrait<isize2> for KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type R = R;
-    type Element = LinComb<VertGen, R>;
+    type Element = Lc<VertGen, R>;
 
     fn rank(&self, i: isize2) -> usize {
         self.summands[i].rank()

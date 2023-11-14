@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 use yui::{EucRing, EucRingOps};
-use yui::lc::LinComb;
+use yui::lc::Lc;
 use yui::bitseq::BitSeq;
 
 use super::base::{VertGen, BasePoly, sign_between};
@@ -48,7 +48,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.data.ver_edge_poly(h_coords, i)
     }
 
-    pub fn d(&self, e: &VertGen) -> LinComb<VertGen, R> { 
+    pub fn d(&self, e: &VertGen) -> Lc<VertGen, R> { 
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
         let n = self.data.dim();

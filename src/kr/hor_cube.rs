@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use yui::{Ring, RingOps};
 use yui_homology::{XChainComplex, Grid1, XModStr};
-use yui::lc::LinComb;
+use yui::lc::Lc;
 use yui::bitseq::BitSeq;
 
 use super::base::{BasePoly, BaseMono, VertGen, sign_between};
@@ -95,11 +95,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.data.hor_edge_poly(self.v_coords, i)
     }
 
-    pub fn d(&self, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> { 
+    pub fn d(&self, z: &Lc<VertGen, R>) -> Lc<VertGen, R> { 
         z.apply(|x| self.d_x(x))
     }
 
-    fn d_x(&self, e: &VertGen) -> LinComb<VertGen, R> { 
+    fn d_x(&self, e: &VertGen) -> Lc<VertGen, R> { 
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
         let n = self.dim();

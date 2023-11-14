@@ -3,7 +3,7 @@ use std::collections::{HashSet, HashMap};
 use num_traits::{Zero, One};
 use yui::{Ring, RingOps, IndexList};
 use yui_homology::utils::make_matrix_async;
-use yui::lc::LinComb;
+use yui::lc::Lc;
 use yui_matrix::sparse::Trans;
 use yui::poly::Mono;
 use yui::bitseq::BitSeq;
@@ -188,7 +188,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         )
     }
 
-    pub fn forward(&self, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> {
+    pub fn forward(&self, z: &Lc<VertGen, R>) -> Lc<VertGen, R> {
         // keep only non-vanishing gens. 
         let z = z.filter_gens(|v| 
             !self.should_vanish(v)
@@ -205,7 +205,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     }
 
-    fn forward_reduce(&self, z: LinComb<VertGen, BasePoly<R>>) -> LinComb<VertGen, BasePoly<R>> { 
+    fn forward_reduce(&self, z: Lc<VertGen, BasePoly<R>>) -> Lc<VertGen, BasePoly<R>> { 
         let res = self.process.iter().fold(z, |z, proc| { 
             let (p, k) = proc.divisor();
             z.into_map_coeffs::<BasePoly<R>, _>(|f| 
@@ -221,11 +221,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    fn forward_x(&self, v: &VertGen) -> LinComb<VertGen, R> {
-        self.forward(&LinComb::from(v.clone()))
+    fn forward_x(&self, v: &VertGen) -> Lc<VertGen, R> {
+        self.forward(&Lc::from(v.clone()))
     }
 
-    pub fn backward(&self, z: &LinComb<VertGen, R>, is_cycle: bool) -> LinComb<VertGen, R> {
+    pub fn backward(&self, z: &Lc<VertGen, R>, is_cycle: bool) -> Lc<VertGen, R> {
         let init = combine(z.clone());
         let l = self.process.len();
         
@@ -238,7 +238,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         decombine(res)
     }
 
-    fn backward_itr(&self, z: LinComb<VertGen, BasePoly<R>>, step: usize, is_cycle: bool) -> LinComb<VertGen, BasePoly<R>> {
+    fn backward_itr(&self, z: Lc<VertGen, BasePoly<R>>, step: usize, is_cycle: bool) -> Lc<VertGen, BasePoly<R>> {
         let res = self.backward_step(z, step, is_cycle);
         if step > 0 { 
             self.backward_itr(res, step - 1, is_cycle)
@@ -247,7 +247,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    fn backward_step(&self, z: LinComb<VertGen, BasePoly<R>>, step: usize, is_cycle: bool) -> LinComb<VertGen, BasePoly<R>> {
+    fn backward_step(&self, z: Lc<VertGen, BasePoly<R>>, step: usize, is_cycle: bool) -> Lc<VertGen, BasePoly<R>> {
         let d = &self.process[step];
         let i = d.dir;
         let (p, k) = d.divisor();
@@ -264,7 +264,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             let x1 = self.d(&z, step, true);
             self.send_back(&x1, i)
         } else { 
-            LinComb::<_, BasePoly<R>>::zero()
+            Lc::<_, BasePoly<R>>::zero()
         };
 
         let z0 = self.send_back(&z, i);
@@ -277,12 +277,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         z + w
     }
 
-    fn backward_x(&self, w: &VertGen) -> LinComb<VertGen, R> {
-        let z = LinComb::from(w.clone());
+    fn backward_x(&self, w: &VertGen) -> Lc<VertGen, R> {
+        let z = Lc::from(w.clone());
         self.backward(&z, false)
     }
 
-    fn send_back(&self, z: &LinComb<VertGen, BasePoly<R>>, dir: usize) -> LinComb<VertGen, BasePoly<R>> {
+    fn send_back(&self, z: &Lc<VertGen, BasePoly<R>>, dir: usize) -> Lc<VertGen, BasePoly<R>> {
         let i = dir;
         z.map::<_, BasePoly<R>, _>(|v, f| { 
             debug_assert!(v.0[i].is_one());
@@ -292,8 +292,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         })
     }
 
-    fn d(&self, z: &LinComb<VertGen, BasePoly<R>>, step: usize, mod_p: bool) -> LinComb<VertGen, BasePoly<R>> { 
-        type F<R> = LinComb<VertGen, BasePoly<R>>;
+    fn d(&self, z: &Lc<VertGen, BasePoly<R>>, step: usize, mod_p: bool) -> Lc<VertGen, BasePoly<R>> { 
+        type F<R> = Lc<VertGen, BasePoly<R>>;
         
         let d = &self.process[step];
         let (p, k) = d.divisor();
@@ -320,11 +320,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         Trans::new(fwd, bwd)
     }
 
-    pub fn diff_red(&self, z: &LinComb<VertGen, R>) -> LinComb<VertGen, R> { 
+    pub fn diff_red(&self, z: &Lc<VertGen, R>) -> Lc<VertGen, R> { 
         z.apply(|x| self.diff_red_x(x))
     }
 
-    fn diff_red_x(&self, e: &VertGen) -> LinComb<VertGen, R> { 
+    fn diff_red_x(&self, e: &VertGen) -> Lc<VertGen, R> { 
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
 
@@ -348,8 +348,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
-// convert LinComb<VertGen, R> -> LinComb<VertGen, EdgeRing<R>> 
-fn combine<R>(z: LinComb<VertGen, R>) -> LinComb<VertGen, BasePoly<R>>
+// convert Lc<VertGen, R> -> Lc<VertGen, EdgeRing<R>> 
+fn combine<R>(z: Lc<VertGen, R>) -> Lc<VertGen, BasePoly<R>>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     z.into_iter().map(|(v, r)| {
         let w = VertGen(v.0, v.1, BaseMono::one());
@@ -358,8 +358,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }).collect()
 }
 
-// convert LinComb<VertGen, EdgeRing<R>> -> LinComb<VertGen, R> 
-fn decombine<R>(z: LinComb<VertGen, BasePoly<R>>) -> LinComb<VertGen, R>
+// convert Lc<VertGen, EdgeRing<R>> -> Lc<VertGen, R> 
+fn decombine<R>(z: Lc<VertGen, BasePoly<R>>) -> Lc<VertGen, R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     debug_assert!(z.iter().all(|(v, _)| v.2.is_one()));
 
@@ -732,17 +732,17 @@ mod tests {
 
         excl.perform_excl(1, 0, 1); // x1 -> x2
 
-        assert_eq!(excl.forward_x(&vgen([0,0,0], [0,0,1], [0,0,0])), LinComb::zero()); // vanish
-        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [0,0,0])), LinComb::from_iter([
+        assert_eq!(excl.forward_x(&vgen([0,0,0], [0,0,1], [0,0,0])), Lc::zero()); // vanish
+        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [0,0,0])), Lc::from_iter([
             (vgen([1,0,0], [0,0,1], [0,0,0]), R::one()) // 1: id
         ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [1,0,0])), LinComb::from_iter([
+        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [1,0,0])), Lc::from_iter([
             (vgen([1,0,0], [0,0,1], [1,0,0]), R::one()) // x0: id
         ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [0,1,0])), LinComb::from_iter([
+        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [0,1,0])), Lc::from_iter([
             (vgen([1,0,0], [0,0,1], [0,0,1]), R::one()) // x1 -> x2
         ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [0,0,1])), LinComb::from_iter([
+        assert_eq!(excl.forward_x(&vgen([1,0,0], [0,0,1], [0,0,1])), Lc::from_iter([
             (vgen([1,0,0], [0,0,1], [0,0,1]), R::one()) // x2: id
         ]));
     }
@@ -758,25 +758,25 @@ mod tests {
         excl.perform_excl(1, 0, 1); // x1 -> x2
         excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
 
-        assert_eq!(excl.forward_x(&vgen([0,1,1], [0,0,1], [0,0,0])), LinComb::zero()); // vanish
-        assert_eq!(excl.forward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), LinComb::zero()); // vanish
+        assert_eq!(excl.forward_x(&vgen([0,1,1], [0,0,1], [0,0,0])), Lc::zero()); // vanish
+        assert_eq!(excl.forward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), Lc::zero()); // vanish
 
-        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), LinComb::from_iter([
+        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), Lc::from_iter([
             (vgen([1,0,1], [0,0,1], [0,0,0]), R::one()) // 1: id
         ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [1,0,0])), LinComb::from_iter([
+        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [1,0,0])), Lc::from_iter([
             (vgen([1,0,1], [0,0,1], [1,0,0]), R::one()) // x1: id
         ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,1,0])), LinComb::from_iter([
+        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,1,0])), Lc::from_iter([
             (vgen([1,0,1], [0,0,1], [0,0,1]), R::one()) // x1 -> x2
         ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,1])), LinComb::from_iter([
+        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,1])), Lc::from_iter([
             (vgen([1,0,1], [0,0,1], [0,0,1]), R::one()) // x2: id
         ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,2])), LinComb::from_iter([
+        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,2])), Lc::from_iter([
             (vgen([1,0,1], [0,0,1], [1,0,1]), R::one()) // x2^2 -> x0 x2
         ]));
-        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [1,1,1])), LinComb::from_iter([
+        assert_eq!(excl.forward_x(&vgen([1,0,1], [0,0,1], [1,1,1])), Lc::from_iter([
             (vgen([1,0,1], [0,0,1], [2,0,1]), R::one()) // x0x1x2 -> x0^2 x2
         ]));
     }
@@ -804,10 +804,10 @@ mod tests {
         assert!(!excl.should_vanish(&x));
         assert!( excl.should_reduce(&x.2));
 
-        let x = LinComb::from(x);
+        let x = Lc::from(x);
         let y = excl.forward(&x); // x2^4 -> (x0x3)^2 -> x1^2 x3^2
 
-        assert_eq!(y, LinComb::from(VertGen(h, v, MultiVar::from([0,2,0,2]))))
+        assert_eq!(y, Lc::from(VertGen(h, v, MultiVar::from([0,2,0,2]))))
     }
 
     #[test]
@@ -820,21 +820,21 @@ mod tests {
         
         excl.perform_excl(1, 0, 1); // x1 -> x2
 
-        assert_eq!(excl.backward_x(&vgen([1,0,0], [0,0,1], [0,0,0])), LinComb::from_iter([
+        assert_eq!(excl.backward_x(&vgen([1,0,0], [0,0,1], [0,0,0])), Lc::from_iter([
             (vgen([1,0,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,0,0]
             (vgen([0,0,1], [0,0,1], [0,0,1]), -R::one())  // -x2 at [0,0,1]
         ]));
 
-        assert_eq!(excl.backward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), LinComb::from_iter([
+        assert_eq!(excl.backward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), Lc::from_iter([
             (vgen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,0]
             (vgen([0,1,1], [0,0,1], [0,0,1]),  R::one())  //  x2 at [0,1,1]
         ]));
 
-        assert_eq!(excl.backward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), LinComb::from_iter([
+        assert_eq!(excl.backward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), Lc::from_iter([
             (vgen([1,0,1], [0,0,1], [0,0,0]),  R::one()), //  id at [1,0,1]
         ]));
 
-        assert_eq!(excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), LinComb::from_iter([
+        assert_eq!(excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), Lc::from_iter([
             (vgen([1,1,1], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,1]
         ]));
     }
@@ -850,12 +850,12 @@ mod tests {
         excl.perform_excl(1, 0, 1); // x1 -> x2
         excl.perform_excl(1, 1, 0); // x0 -> x2
 
-        assert_eq!(excl.backward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), LinComb::from_iter([
+        assert_eq!(excl.backward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), Lc::from_iter([
             (vgen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,0]
             (vgen([1,0,1], [0,0,1], [0,0,1]), -R::one()), // -x2 at [1,0,1]
             (vgen([0,1,1], [0,0,1], [0,0,1]),  R::one()), //  x2 at [0,1,1]
         ]));
-        assert_eq!(excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), LinComb::from_iter([
+        assert_eq!(excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), Lc::from_iter([
             (vgen([1,1,1], [0,0,1], [0,0,0]), R::one())
         ]));
     }
@@ -871,10 +871,10 @@ mod tests {
         excl.perform_excl(1, 0, 1); // x1 -> x2
         excl.perform_excl(2, 2, 2); // x2^2 -> x0 x2
 
-        assert_eq!(excl.backward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), LinComb::from_iter([
+        assert_eq!(excl.backward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), Lc::from_iter([
             (vgen([1,0,1], [0,0,1], [0,0,0]), R::one())
         ]));
-        assert_eq!(excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), LinComb::from_iter([
+        assert_eq!(excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), Lc::from_iter([
             (vgen([1,1,1], [0,0,1], [0,0,0]), R::one())
         ]));
     }
