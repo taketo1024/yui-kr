@@ -21,14 +21,13 @@ use super::tot_homol::KRTotHomol;
 #[derive(Default)]
 pub struct KRTotComplexSummand<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    gens: Vec<LinComb<VertGen, R>>,
-    empty: Vec<R>
+    gens: Vec<LinComb<VertGen, R>>
 }
 
 impl<R> KRTotComplexSummand<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     fn new(gens: Vec<LinComb<VertGen, R>>) -> Self { 
-        Self { gens, empty: vec![] }
+        Self { gens }
     }
 
     pub fn gens(&self) -> &Vec<LinComb<VertGen, R>> { 
@@ -44,8 +43,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.gens.len()
     }
 
-    fn tors(&self) -> &Vec<Self::R> {
-        &self.empty
+    fn tors(&self) -> &[R] {
+        &[]
     }
 }
 

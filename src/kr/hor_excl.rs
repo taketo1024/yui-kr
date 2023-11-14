@@ -89,8 +89,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         });
 
         let best = cands.max_by(|(i1, _), (i2, _)| { 
-            let p1 = self.edge_polys[&i1].len();
-            let p2 = self.edge_polys[&i2].len();
+            let p1 = self.edge_polys[&i1].ngens();
+            let p2 = self.edge_polys[&i2].ngens();
             // prefer smaller poly.
             Ord::cmp(&p1, &p2).reverse().then(
                 // prefer smaller index.
