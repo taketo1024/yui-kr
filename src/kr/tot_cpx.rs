@@ -7,9 +7,8 @@ use itertools::Itertools;
 use num_traits::Zero;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui::{EucRing, EucRingOps, isize2, Ring, RingOps};
-use yui_homology::utils::ChainReducer;
-use yui_homology::{ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol};
-use yui_matrix::sparse::{SpVec, SpMat, MatType};
+use yui_homology::{ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, ChainComplexCommon};
+use yui_matrix::sparse::{SpVec, SpMat};
 
 use super::base::KRChain;
 use super::data::KRCubeData;
@@ -114,21 +113,27 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         ).sum()
     }
 
-    fn d_matrix_for(&self, idx: isize2, q: &SpMat<R>) -> SpMat<R> { 
+    fn d_matrix_for(&self, idx: isize2) -> SpMat<R> { 
         let m = self.rank(idx + self.d_deg());
-        let n = q.cols();
+        let n = self.rank(idx);
 
-        let entries: Vec<_> = (0..n).into_par_iter().map(|j| { 
-            self.d_matrix_col(idx, q, j)
-        }).collect();
+        let entries = if crate::config::is_multithread_enabled() { 
+            (0..n).into_par_iter().map(|j| { 
+                self.d_matrix_col(idx, n, j)
+            }).collect::<Vec<_>>()
+        } else { 
+            (0..n).into_iter().map(|j| { 
+                self.d_matrix_col(idx, n, j)
+            }).collect()
+        };
 
         SpMat::from_entries((m, n), entries.into_iter().flatten())
     }
 
     #[inline(never)] // for profilability
-    fn d_matrix_col(&self, idx: isize2, q: &SpMat<R>, j: usize) -> Vec<(usize, usize, R)> {
-        let qj = q.col_vec(j);
-        let z = self.as_chain(idx, &qj);        
+    fn d_matrix_col(&self, idx: isize2, n: usize, j: usize) -> Vec<(usize, usize, R)> {
+        let ej = SpVec::unit(n, j);
+        let z = self.as_chain(idx, &ej);        
         let w = self.d(idx, &z);
         let dj = self.vectorize(idx + self.d_deg(), &w);
 
@@ -138,19 +143,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn reduced(self) -> ChainComplex2<R> {
-        let mut reducer = ChainReducer::new(self.support(), self.d_deg(), true);
-
-        for idx in reducer.support() {
-            let d = if let Some(t) = reducer.trans(idx) {
-                self.d_matrix_for(idx, t.backward_mat())
-            } else { 
-                self.d_matrix(idx)
-            };
-            reducer.set_matrix(idx, d);
-            reducer.reduce_at(idx);
-        }
-
-        reducer.into_complex()
+        self.as_generic().reduced(false)
     }
 }
 
@@ -195,9 +188,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn d_matrix(&self, idx: isize2) -> SpMat<Self::R> {
-        let n = self.rank(idx);
-        let q = SpMat::id(n);
-        self.d_matrix_for(idx, &q)
+        self.d_matrix_for(idx)
     }
 }
 
