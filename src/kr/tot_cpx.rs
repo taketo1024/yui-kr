@@ -78,7 +78,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self { data, cube, summands }
     }
 
-    fn vectorize(&self, idx: isize2, z: &KRChain<R>) -> SpVec<R> {
+    pub fn vectorize(&self, idx: isize2, z: &KRChain<R>) -> SpVec<R> {
         let (i, j) = (idx.0 as usize, idx.1 as usize);
 
         debug_assert!(z.iter().all(|(x, _)| 
@@ -107,27 +107,33 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         SpVec::from_entries(r, entries)
     }
 
-    fn d_matrix_for(&self, idx: isize2, q: &SpMat<R>) -> SpMat<R> { 
-        let idx1 = idx + self.d_deg();
-
-        let (m, n) = (self.rank(idx1), q.cols());
+    pub fn as_chain(&self, idx: isize2, v: &SpVec<R>) -> KRChain<R> { 
         let gens = self.get(idx).gens();
+        v.iter().map(|(i, a)| 
+            &gens[i] * a
+        ).sum()
+    }
 
-        let entries: Vec<_> = (0..n).into_par_iter().map(|l| { 
-            let v = q.col_vec(l);
-            let z = v.iter().map(|(k, a)| 
-                &gens[k] * a
-            ).sum::<KRChain<R>>();
-            
-            let dz = z.apply(|x| self.cube.d(x));
-            let w = self.vectorize(idx1, &dz);
+    fn d_matrix_for(&self, idx: isize2, q: &SpMat<R>) -> SpMat<R> { 
+        let m = self.rank(idx + self.d_deg());
+        let n = q.cols();
 
-            w.iter().map(|(k, b)| 
-                (k, l, b.clone())
-            ).collect_vec()
+        let entries: Vec<_> = (0..n).into_par_iter().map(|j| { 
+            self.d_matrix_col(idx, q, j)
         }).collect();
 
         SpMat::from_entries((m, n), entries.into_iter().flatten())
+    }
+
+    fn d_matrix_col(&self, idx: isize2, q: &SpMat<R>, j: usize) -> Vec<(usize, usize, R)> {
+        let qj = q.col_vec(j);
+        let z = self.as_chain(idx, &qj);        
+        let w = self.d(idx, &z);
+        let dj = self.vectorize(idx + self.d_deg(), &w);
+
+        dj.iter().map(|(i, a)| 
+            (i, j, a.clone())
+        ).collect_vec()
     }
 
     pub fn reduced(self) -> ChainComplex2<R> {
