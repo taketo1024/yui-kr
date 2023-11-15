@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use yui::{Ring, RingOps};
@@ -42,33 +41,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.q_slice + h + (i0 - i) / 2
     }
 
-    fn make_mons(tot_deg: usize, n: usize) -> Vec<KRMono> { 
-        fn gen_iter(tot_deg: usize, n: usize, i: usize, res: &mut Vec<HashMap<usize, usize>>, prev: HashMap<usize, usize>) {
-            if i < n - 1 { 
-                for d_i in (0..=tot_deg).rev() { 
-                    let mut curr = prev.clone();
-                    curr.insert(i, d_i);
-                    
-                    let rem = tot_deg - d_i;
-                    gen_iter(rem, n, i + 1, res, curr)
-                }
-            } else { 
-                let mut curr = prev;
-                curr.insert(i, tot_deg);
-                res.push(curr);
-            }
-        }
-
-        let mut res = vec![];
-        let prev = HashMap::new();
-
-        gen_iter(tot_deg, n, 0, &mut res, prev);
-
-        res.into_iter().map(|d| {
-            KRMono::from_iter(d)
-        }).collect()
-    }
-
     pub fn vert_gens(&self, h_coords: BitSeq) -> Vec<KRGen> {
         let deg = self.mon_deg(h_coords);
         if deg < 0 { 
@@ -77,7 +49,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         let deg = deg as usize;
         let n = self.dim();
-        let gens = Self::make_mons(deg, n);
+        let gens = KRMono::generate(n, deg);
 
         gens.into_iter().map(|x| 
             KRGen(h_coords, self.v_coords, x)
@@ -147,14 +119,6 @@ mod tests {
         let rc = Arc::new(data);
         
         KRHorCube::new(rc, v, q)
-    }
-
-    #[test]
-    fn gen_mons() { 
-        let tot = 5;
-        let n = 3;
-        let mons = KRHorCube::<R>::make_mons(tot, n);
-        assert_eq!(mons.len(), 21); // (1,2,2) <-> *|**|**
     }
 
     #[test]
