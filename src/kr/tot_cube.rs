@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 use yui::{EucRing, EucRingOps};
 use yui::bitseq::BitSeq;
 
@@ -11,21 +11,22 @@ pub struct KRTotCube<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     data: Arc<KRCubeData<R>>,
     q_slice: isize,
-    hor_hmls: HashMap<BitSeq, OnceLock<KRHorHomol<R>>>
+    verts: HashMap<BitSeq, KRHorHomol<R>>
 } 
 
 impl<R> KRTotCube<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self {
         let n = data.dim();
-        let hor_homols = BitSeq::generate(n).into_iter().map(|v|
-            (v, OnceLock::new())
-        ).collect();
+        let hor_homols = BitSeq::generate(n).into_iter().map(|v| {
+            let h_v = KRHorHomol::new(data.clone(), v, q_slice);
+            (v, h_v)
+        }).collect();
 
         Self {
             data,
             q_slice,
-            hor_hmls: hor_homols
+            verts: hor_homols
         }
     }
 
@@ -38,9 +39,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn vert(&self, v_coords: BitSeq) -> &KRHorHomol<R> {
-        self.hor_hmls[&v_coords].get_or_init(|| { 
-            KRHorHomol::new(self.data.clone(), v_coords, self.q_slice)
-        })
+        &self.verts[&v_coords]
     }
 
     pub fn edge_poly(&self, h_coords: BitSeq, i: usize) -> KRPoly<R> {
