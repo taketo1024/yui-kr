@@ -6,7 +6,8 @@ use num_integer::Integer;
 use num_traits::One;
 use petgraph::{Graph, algo::min_spanning_tree};
 
-use yui::{Ring, RingOps, Sign, isize3};
+use yui::{Ring, RingOps, Sign};
+use yui_homology::isize3;
 use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
 use yui::bitseq::{BitSeq, Bit};
 

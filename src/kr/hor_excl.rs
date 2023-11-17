@@ -416,7 +416,7 @@ mod tests {
     use yui_matrix::sparse::MatType;
     use yui::poly::MultiVar;
     use yui::Ratio;
-    use yui::macros::map;
+    use yui::util::macros::map;
     use yui::bitseq::BitSeq;
 
     use crate::kr::data::KRCubeData;

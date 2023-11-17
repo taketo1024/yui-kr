@@ -108,7 +108,7 @@ mod tests {
     use yui_homology::{RModStr, ChainComplexCommon};
     use yui::Ratio;
     use yui_link::Link;
-    use yui::macros::map;
+    use yui::util::macros::map;
     use super::*;
 
     type R = Ratio<i64>;

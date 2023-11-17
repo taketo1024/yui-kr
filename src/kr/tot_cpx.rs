@@ -6,8 +6,8 @@ use delegate::delegate;
 use itertools::Itertools;
 use num_traits::Zero;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use yui::{EucRing, EucRingOps, isize2, Ring, RingOps};
-use yui_homology::{ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, ChainComplexCommon};
+use yui::{EucRing, EucRingOps, Ring, RingOps};
+use yui_homology::{isize2, ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, ChainComplexCommon};
 use yui_matrix::sparse::{SpVec, SpMat};
 
 use super::base::KRChain;

@@ -2,8 +2,8 @@ use std::ops::Index;
 use std::sync::Arc;
 use delegate::delegate;
 
-use yui::{EucRing, EucRingOps, isize2};
-use yui_homology::{Homology2, GridTrait, GridIter, HomologySummand};
+use yui::{EucRing, EucRingOps};
+use yui_homology::{isize2, Homology2, GridTrait, GridIter, HomologySummand};
 
 use crate::kr::tot_cpx::KRTotComplex;
 use super::data::KRCubeData;

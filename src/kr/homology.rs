@@ -5,8 +5,8 @@ use std::sync::Arc;
 
 use cartesian::{cartesian, TuplePrepend};
 use itertools::Itertools;
-use yui::{EucRing, EucRingOps, isize2, isize3};
-use yui_homology::{GridTrait, RModStr, GridIter, HomologySummand};
+use yui::{EucRing, EucRingOps};
+use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand};
 use yui_link::Link;
 use yui::poly::LPoly;
 
@@ -75,7 +75,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let k_range = self.data.k_range().rev().step_by(2);
         let polys = self.qpoly_table();   
 
-        let table = yui::format::table("k\\j", k_range, j_range, |&k, &j| { 
+        let table = yui::util::format::table("k\\j", k_range, j_range, |&k, &j| { 
             if let Some(p) = polys.get(&isize2(j, k)) { 
                 p.to_string()
             } else { 
