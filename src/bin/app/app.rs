@@ -17,6 +17,9 @@ pub struct CliArgs {
     #[arg(short, long, default_value = "i64")]
     int_type: IntType,
 
+    #[arg(short, long)]
+    mirror: bool,
+
     #[arg(long)]
     debug: bool
 }
@@ -98,6 +101,7 @@ impl App {
         let target = &self.args.target;
         let braid = Braid::load(target)?;
         let link = braid.closure();
+        let link = if self.args.mirror { link.mirror() } else { link };
 
         let kr = KRHomology::<Ratio<I>>::new(&link);
         let res = kr.display_table();
