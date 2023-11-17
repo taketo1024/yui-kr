@@ -434,7 +434,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 fn div<R>(f: KRPoly<R>, p: &KRPoly<R>, k: usize) -> KRPoly<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     let (q, r) = div_rem(f, p, k);
-    assert!(r.is_zero());
+    assert_eq!(r, KRPoly::zero());
     q
 }
 
