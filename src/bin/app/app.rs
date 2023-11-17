@@ -1,7 +1,8 @@
 use log::{info, error};
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use derive_more::Display;
-use yui::Ratio;
+use num_bigint::BigInt;
+use yui::{Ratio, Integer, IntOps};
 use yui_homology::DisplayTable;
 use yui_kr::kr::KRHomology;
 use yui_link::Braid;
@@ -13,8 +14,20 @@ use super::utils::*;
 pub struct CliArgs {
     target: String,
 
+    #[arg(short, long, default_value = "i64")]
+    int_type: IntType,
+
     #[arg(long)]
     debug: bool
+}
+
+#[derive(ValueEnum, Clone, Copy, Default, Debug)]
+#[clap(rename_all="lower")]
+pub enum IntType { 
+    #[default]
+    I64, 
+    I128, 
+    BigInt
 }
 
 #[derive(Debug, Display)]
@@ -73,13 +86,20 @@ impl App {
     }
 
     fn dispatch(&self) -> Result<String, Box<dyn std::error::Error>> { 
-        type R = Ratio<i128>;
+        match self.args.int_type { 
+            IntType::I64    => self.compute::<i64>(),
+            IntType::I128   => self.compute::<i128>(),
+            IntType::BigInt => self.compute::<BigInt>(),
+        }
+    }
 
+    fn compute<I>(&self) -> Result<String, Box<dyn std::error::Error>>
+    where I: Integer, for<'x> &'x I: IntOps<I> { 
         let target = &self.args.target;
         let braid = Braid::load(target)?;
         let link = braid.closure();
 
-        let kr = KRHomology::<R>::new(&link);
+        let kr = KRHomology::<Ratio<I>>::new(&link);
         let res = kr.display_table();
 
         Ok(res)
