@@ -1,12 +1,12 @@
 use std::cell::UnsafeCell;
 use std::collections::HashMap;
-use std::ops::Index;
+use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
 use cartesian::{cartesian, TuplePrepend};
 use itertools::Itertools;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand};
+use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand, DisplayTable};
 use yui_link::Link;
 use yui::poly::LPoly;
 
@@ -69,22 +69,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         });
         elements.collect()
     }
-
-    pub fn print_table(&self) { 
-        let j_range = self.data.j_range().step_by(2);
-        let k_range = self.data.k_range().rev().step_by(2);
-        let polys = self.qpoly_table();   
-
-        let table = yui::util::format::table("k\\j", k_range, j_range, |&k, &j| { 
-            if let Some(p) = polys.get(&isize2(j, k)) { 
-                p.to_string()
-            } else { 
-                ".".to_string()
-            }
-        });
-
-        println!("{table}");
-    }
 }
 
 impl<R> GridTrait<isize3> for KRHomology<R> 
@@ -130,6 +114,40 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = HomologySummand<R>;
     fn index(&self, index: (isize, isize, isize)) -> &Self::Output {
         self.get(index.into())
+    }
+}
+
+impl<R> DisplayTable<isize2> for KRHomology<R>
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    fn display_table(&self) -> String {
+        let polys = self.qpoly_table();   
+        let j_range = range(polys.keys().map(|idx| idx.0)).step_by(2);
+        let k_range = range(polys.keys().map(|idx| idx.1)).rev().step_by(2);
+
+        yui::util::format::table("k\\j", k_range, j_range, |&k, &j| { 
+            if let Some(p) = polys.get(&isize2(j, k)) { 
+                p.to_string()
+            } else { 
+                ".".to_string()
+            }
+        })
+    }
+}
+
+fn range<Itr>(itr: Itr) -> RangeInclusive<isize>
+where Itr: Iterator<Item = isize> {
+    if let Some((l, r)) = itr.fold(None, |res, i| { 
+        if let Some((mut l, mut r)) = res { 
+            if i < l { l = i }
+            if r < i { r = i }
+            Some((l, r))
+        } else { 
+            Some((i, i))
+        }
+    }) { 
+        l..=r
+    } else { 
+        0..=0
     }
 }
 
