@@ -118,7 +118,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         // collect terms of the form a * (x_k)^deg.
         let cands = p.iter().filter_map(|(x, a)| {
-            if x.total_deg() == deg && x.deg().nvars() == 1 { 
+            if x.total_deg() == deg && x.deg().ninds() == 1 { 
                 let k = x.deg().min_index().unwrap();
                 Some((k, a))
             } else {
