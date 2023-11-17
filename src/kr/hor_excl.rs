@@ -205,19 +205,25 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn forward_reduce(&self, z: KRPolyChain<R>) -> KRPolyChain<R> { 
-        let res = self.process.iter().fold(z, |z, proc| { 
-            let (p, k) = proc.divisor();
-            z.into_map_coeffs::<KRPoly<R>, _>(|f| 
-                rem(f, p, k)
-            )
-        });
-
-        // repeat if should-reduce monomials remain.
-        if res.iter().any(|(_, f)| f.iter().any(|(x, _)| self.should_reduce(x))) { 
-            self.forward_reduce(res)
-        } else { 
-            res
+        #[tailcall::tailcall] // prevents stack-overflow. 
+        fn reduce<R>(_self: &KRHorExcl<R>, z: KRPolyChain<R>) -> KRPolyChain<R>
+        where R: Ring, for<'x> &'x R: RingOps<R> {
+            let res = _self.process.iter().fold(z, |z, proc| { 
+                let (p, k) = proc.divisor();
+                z.into_map_coeffs::<KRPoly<R>, _>(|f| 
+                    rem(f, p, k)
+                )
+            });
+    
+            // repeat if should-reduce monomials remain.
+            if res.iter().any(|(_, f)| f.iter().any(|(x, _)| _self.should_reduce(x))) { 
+                reduce(_self, res)
+            } else { 
+                res
+            }
         }
+
+        reduce(self, z)
     }
 
     fn forward_x(&self, v: &KRGen) -> KRChain<R> {

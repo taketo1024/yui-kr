@@ -8,6 +8,15 @@ debug = true
 overflow-checks = true
 
 [dependencies]
+yui  =         { git = "https://github.com/taketo1024/yui", branch = "develop" }
+yui-link =     { git = "https://github.com/taketo1024/yui", branch = "develop" }
+yui-matrix =   { git = "https://github.com/taketo1024/yui", branch = "develop" }
+yui-homology = { git = "https://github.com/taketo1024/yui", branch = "develop" }
+# yui  =         { path = "../yui/yui" }
+# yui-link =     { path = "../yui/yui-link" }
+# yui-matrix =   { path = "../yui/yui-matrix" }
+# yui-homology = { path = "../yui/yui-homology" }
+
 num-bigint = "0.4.4"
 num-traits = "0.2.16"
 itertools = "0.11.0"
@@ -17,13 +26,4 @@ cartesian = "0.2.1"
 delegate = "0.10.0"
 num-integer = "0.1.45"
 rayon = "1.8.0"
-
-yui  =         { git = "https://github.com/taketo1024/yui", branch = "develop" }
-yui-link =     { git = "https://github.com/taketo1024/yui", branch = "develop" }
-yui-matrix =   { git = "https://github.com/taketo1024/yui", branch = "develop" }
-yui-homology = { git = "https://github.com/taketo1024/yui", branch = "develop" }
-
-# yui  =         { path = "../yui/yui" }
-# yui-link =     { path = "../yui/yui-link" }
-# yui-matrix =   { path = "../yui/yui-matrix" }
-# yui-homology = { path = "../yui/yui-homology" }
+tailcall = "0.1.6"
