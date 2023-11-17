@@ -39,11 +39,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         })
     }
 
-    fn rank_all(&self) -> HashMap<isize3, usize> { 
+    pub fn rank_all(&self) -> HashMap<(isize, isize, isize), usize> { 
         self.support().filter_map(|isize3(i, j, k)| {
             let r = self[(i, j, k)].rank();
             if r > 0 { 
-                Some((isize3(i, j, k), r))
+                Some(((i, j, k), r))
             } else { 
                 None
             }
@@ -54,10 +54,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.rank_all().values().sum()
     }
 
-    pub fn qpoly_table(&self) -> HashMap<isize2, QPoly<R>> { 
+    pub fn qpoly_table(&self) -> HashMap<(isize, isize), QPoly<R>> { 
         let str = self.rank_all();        
         let elements = str.into_iter().into_group_map_by(|(idx, _)|
-            isize2(idx.1, idx.2) // (j, k)
+            (idx.1, idx.2) // (j, k)
         ).into_iter().map(|(jk, list)| { 
             let q = QPoly::mono;
             let elems = list.into_iter().map(|(idx, r)| {
@@ -126,7 +126,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let k_range = range(polys.keys().map(|idx| idx.1)).rev().step_by(2);
 
         yui::util::format::table("k\\j", k_range, j_range, |&k, &j| { 
-            if let Some(p) = polys.get(&isize2(j, k)) { 
+            if let Some(p) = polys.get(&(j, k)) { 
                 p.to_string()
             } else { 
                 ".".to_string()
