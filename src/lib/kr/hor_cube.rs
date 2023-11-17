@@ -115,7 +115,7 @@ mod tests {
     type P = KRPoly<R>;
 
     fn make_cube(l: &Link, v: BitSeq, q: isize) -> KRHorCube<R> {
-        let data = KRCubeData::<R>::new(l, 0);
+        let data = KRCubeData::<R>::new_no_excl(l);
         let rc = Arc::new(data);
         
         KRHorCube::new(rc, v, q)

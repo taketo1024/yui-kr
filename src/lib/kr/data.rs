@@ -44,7 +44,12 @@ impl<R> KRCubeData<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn new(link: &Link, excl_level: usize) -> Self {
         assert!(excl_level <= 2);
-        
+        let mut data = Self::new_no_excl(link);
+        data.perform_excl(excl_level);
+        data
+    }
+
+    pub(crate) fn new_no_excl(link: &Link) -> Self { 
         let n = link.crossing_num();
         let w = link.writhe() as isize;
         let s = link.seifert_circles().len() as isize;
@@ -52,21 +57,21 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let x_polys = Self::collect_x_polys(link);
         let excl = HashMap::new();
 
-        let mut res = Self {
+        Self {
             n_cross: n,
             writhe: w,
             n_seif: s,
             x_signs,
             x_polys,
             excl // empty
-        };
+        }
+    }
 
-        res.excl = res.all_verts().into_iter().map(|v| {
-            let excl = Arc::new( KRHorExcl::from(&res, v, excl_level) );
+    fn perform_excl(&mut self, excl_level: usize) {
+        self.excl = self.all_verts().into_iter().map(|v| {
+            let excl = Arc::new( KRHorExcl::from(&self, v, excl_level) );
             (v, excl)
         }).collect();
-
-        res
     }
 
     pub fn dim(&self) -> usize { 
