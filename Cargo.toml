@@ -1,7 +1,17 @@
 [package]
 name = "yui-kr"
 version = "0.1.0"
+authors = ["Taketo Sano <taketo1024@gmail.com>"]
+description = "YUI-KR"
+license = "MIT"
 edition = "2021"
+
+[[bin]]
+name = "ykr"
+path = "src/bin/main.rs"
+
+[lib]
+path = "src/lib/lib.rs"
 
 [profile.release]
 debug = true
