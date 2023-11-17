@@ -25,7 +25,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRHomology<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(link: &Link) -> Self { 
-        let data = Arc::new(KRCubeData::new(link, 2));
+        let excl_level = 2;
+        let data = Arc::new(KRCubeData::new(link, excl_level));
         let cache = UnsafeCell::new( HashMap::new() );
         let zero = HomologySummand::zero();
         Self { data, cache, zero }
@@ -153,20 +154,70 @@ where Itr: Iterator<Item = isize> {
 
 #[cfg(test)]
 mod tests { 
-    use yui_link::Link;
+    use yui_link::Braid;
     use yui::Ratio;
     use super::*;
 
     type R = Ratio<i64>;
 
     #[test]
-    fn rank() { 
-        let l = Link::trefoil();
+    fn b3_1() { 
+        let b = Braid::from([1,1,1]);
+        let l = b.closure();
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 3);
-        assert_eq!(h[( 0,-4, 2)].rank(), 1);
-        assert_eq!(h[(-2,-2, 2)].rank(), 1);
-        assert_eq!(h[( 2,-2,-2)].rank(), 1);
+
+        assert_eq!(h[(0,4,-2)].rank(), 1);
+        assert_eq!(h[(-2,2,2)].rank(), 1);
+        assert_eq!(h[(2,2,-2)].rank(), 1);
+    }
+    
+    #[test]
+    fn b4_1() { 
+        let b = Braid::from([1,-2,1,-2]);
+        let l = b.closure();
+        let h = KRHomology::<R>::new(&l);
+
+        assert_eq!(h.tot_rank(), 5);
+
+        assert_eq!(h[(0,-2,2)].rank(), 1);
+        assert_eq!(h[(-2,0,2)].rank(), 1);
+        assert_eq!(h[(0,2,-2)].rank(), 1);
+        assert_eq!(h[(0,0,0)].rank(), 1);
+        assert_eq!(h[(2,0,-2)].rank(), 1);
+    }
+
+    #[test]
+    fn b5_1() { 
+        let b = Braid::from([1,1,1,1,1]);
+        let l = b.closure();
+        let h = KRHomology::<R>::new(&l);
+
+        assert_eq!(h.tot_rank(), 5);
+
+        assert_eq!(h[(0,4,0)].rank(), 1);
+        assert_eq!(h[(-2,6,0)].rank(), 1);
+        assert_eq!(h[(-4,4,4)].rank(), 1);
+        assert_eq!(h[(4,4,-4)].rank(), 1);
+        assert_eq!(h[(2,6,-4)].rank(), 1);
+    }
+
+    #[test]
+    #[ignore]
+    fn b5_2() { 
+        let b = Braid::from([1,1,1,2,-1,2]);
+        let l = b.closure();
+        let h = KRHomology::<R>::new(&l);
+
+        assert_eq!(h.tot_rank(), 7);
+
+        assert_eq!(h[(2,4,-4)].rank(), 1);
+        assert_eq!(h[(2,2,-2)].rank(), 1);
+        assert_eq!(h[(0,4,-2)].rank(), 1);
+        assert_eq!(h[(-2,4,0)].rank(), 1);
+        assert_eq!(h[(0,2,0)].rank(), 1);
+        assert_eq!(h[(0,6,-4)].rank(), 1);
+        assert_eq!(h[(-2,2,2)].rank(), 1);
     }
 }

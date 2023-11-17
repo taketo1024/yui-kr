@@ -43,6 +43,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> KRCubeData<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn new(link: &Link, excl_level: usize) -> Self {
+        assert!(excl_level <= 2);
+        
         let n = link.crossing_num();
         let w = link.writhe() as isize;
         let s = link.seifert_circles().len() as isize;
