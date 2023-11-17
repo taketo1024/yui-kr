@@ -204,7 +204,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn b5_2() { 
         let b = Braid::from([1,1,1,2,-1,2]);
         let l = b.closure();
@@ -219,5 +218,69 @@ mod tests {
         assert_eq!(h[(0,2,0)].rank(), 1);
         assert_eq!(h[(0,6,-4)].rank(), 1);
         assert_eq!(h[(-2,2,2)].rank(), 1);
+    }
+
+    #[test]
+    #[ignore]
+    fn b6_1() { 
+        let b = Braid::from([1,1,2,-1,-3,2,-3]);
+        let l = b.closure();
+        let h = KRHomology::<R>::new(&l);
+
+        h.print_table();
+
+        assert_eq!(h.tot_rank(), 9);
+
+        assert_eq!(h[(0,-2,2)].rank(), 1);
+        assert_eq!(h[(0,0,0)].rank(), 2);
+        assert_eq!(h[(2,0,-2)].rank(), 1);
+        assert_eq!(h[(2,2,-4)].rank(), 1);
+        assert_eq!(h[(0,4,-4)].rank(), 1);
+        assert_eq!(h[(0,2,-2)].rank(), 1);
+        assert_eq!(h[(-2,2,0)].rank(), 1);
+        assert_eq!(h[(-2,0,2)].rank(), 1);
+    }
+
+    #[test]
+    #[ignore]
+    fn b6_2() { 
+        let b = Braid::from([1,1,1,-2,1,-2]);
+        let l = b.closure();
+        let h = KRHomology::<R>::new(&l);
+
+        assert_eq!(h.tot_rank(), 11);
+
+        assert_eq!(h[(0,4,-2)].rank(), 1);
+        assert_eq!(h[(2,4,-4)].rank(), 1);
+        assert_eq!(h[(-2,4,0)].rank(), 1);
+        assert_eq!(h[(0,2,0)].rank(), 2);
+        assert_eq!(h[(2,2,-2)].rank(), 1);
+        assert_eq!(h[(2,0,0)].rank(), 1);
+        assert_eq!(h[(-2,2,2)].rank(), 1);
+        assert_eq!(h[(-2,0,4)].rank(), 1);
+        assert_eq!(h[(4,2,-4)].rank(), 1);
+        assert_eq!(h[(-4,2,4)].rank(), 1);
+    }
+
+    #[test]
+    #[ignore]
+    fn b6_3() { 
+        let b = Braid::from([1,1,-2,1,-2,-2]);
+        let l = b.closure();
+        let h = KRHomology::<R>::new(&l);
+
+        assert_eq!(h.tot_rank(), 13);
+
+        assert_eq!(h[(4,0,-4)].rank(), 1);
+        assert_eq!(h[(2,-2,0)].rank(), 1);
+        assert_eq!(h[(0,0,0)].rank(), 3);
+        assert_eq!(h[(2,2,-4)].rank(), 1);
+        assert_eq!(h[(-2,2,0)].rank(), 1);
+        assert_eq!(h[(0,2,-2)].rank(), 1);
+        assert_eq!(h[(0,-2,2)].rank(), 1);
+        assert_eq!(h[(-2,0,2)].rank(), 1);
+        assert_eq!(h[(-4,0,4)].rank(), 1);
+        assert_eq!(h[(2,0,-2)].rank(), 1);
+        assert_eq!(h[(-2,-2,4)].rank(), 1);
     }
 }
