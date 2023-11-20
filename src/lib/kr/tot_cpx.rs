@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ops::Index;
 use std::sync::Arc;
 
@@ -6,6 +7,7 @@ use delegate::delegate;
 use itertools::Itertools;
 use num_traits::Zero;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use yui::bitseq::BitSeq;
 use yui::{EucRing, EucRingOps, Ring, RingOps};
 use yui_homology::{isize2, ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, ChainComplexCommon};
 use yui_matrix::sparse::{SpVec, SpMat};
@@ -77,6 +79,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self { data, cube, summands }
     }
 
+    #[inline(never)] // for profilability
     pub fn vectorize(&self, idx: isize2, z: &KRChain<R>) -> SpVec<R> {
         let (i, j) = (idx.0 as usize, idx.1 as usize);
 
@@ -85,13 +88,13 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             x.1.weight() == j
         ));
 
+        let z_decomp = decomp(z);
+
         let (r, entries) = self.data.verts(j).iter().fold((0, vec![]), |acc, &v| { 
             let (mut r, mut entries) = acc;
 
             let h_v = self.cube.vert(v);
-            let z_v = z.filter_gens(|x| x.1 == v); // project z to h_v.
-
-            if !z_v.is_zero() {
+            if let Some(z_v) = z_decomp.get(&v) { 
                 let vec = h_v.vectorize(i, &z_v);
                 for (i, a) in vec.iter() { 
                     entries.push((i + r, a.clone()))
@@ -106,6 +109,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         SpVec::from_entries(r, entries)
     }
 
+    #[inline(never)] // for profilability
     pub fn as_chain(&self, idx: isize2, v: &SpVec<R>) -> KRChain<R> { 
         let gens = self.get(idx).gens();
         v.iter().map(|(i, a)| 
@@ -146,6 +150,22 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.as_generic().reduced(false)
     }
 }
+
+fn decomp<R>(z: &KRChain<R>) -> HashMap<BitSeq, KRChain<R>>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    let mut res = z.iter()
+        .into_grouping_map_by(|(v, _)| v.1)
+        .aggregate(|acc, _, pair| {
+            let mut z = acc.unwrap_or(KRChain::zero());
+            z.add_pair_ref(pair);
+            Some(z)
+        });
+
+    res.iter_mut().for_each(|(_, f)| f.clean());
+
+    res
+}
+
 
 impl<R> GridTrait<isize2> for KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
