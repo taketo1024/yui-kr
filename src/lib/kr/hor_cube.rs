@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
+use num_traits::One;
 use yui::{Ring, RingOps};
 use yui_homology::{XChainComplex, Grid1, XModStr};
 use yui::bitseq::BitSeq;
 
-use super::base::{KRPoly, KRMono, KRGen, KRChain, sign_between};
+use super::base::{KRPoly, KRMono, KRGen, KRChain, KRPolyChain, sign_between, combine, decombine};
 use super::data::KRCubeData;
 
 pub struct KRHorCube<R>
@@ -67,27 +68,27 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn d(&self, z: &KRChain<R>) -> KRChain<R> { 
-        z.apply(|x| self.d_x(x))
-    }
-
-    fn d_x(&self, e: &KRGen) -> KRChain<R> { 
-        let (h0, v0) = (e.0, e.1);
-        let x0 = &e.2;
+        let z = combine(z.clone());
         let n = self.dim();
 
-        (0..n).filter(|&i| 
-            h0[i].is_zero()
-        ).flat_map(|i| {
-            let h1 = h0.edit(|b| b.set_1(i));
-            let e = R::from_sign( sign_between(h0, h1) );
-            let p = KRPoly::from( (x0.clone(), e ) );
-            let f = self.edge_poly(i);
-            let q = f * p;
+        let dz = z.iter().flat_map(|(v, f)| { 
+            (0..n).filter(|&i|
+                v.0[i].is_zero()
+            ).map(move |i| {
+                let w = KRGen(v.0.edit(|b| b.set_1(i)), v.1, KRMono::one());
+                let e = R::from_sign( sign_between(v.0, w.0) );
+                let g = self.edge_poly(i);
+                let h = f * g * e;
+                (w, h)
+            })
+        }).collect::<KRPolyChain<_>>();
 
-            q.into_iter().map(move |(x1, r)| 
-                (KRGen(h1, v0, x1), r)
-            )
-         }).collect()
+        decombine(dz)
+    }
+
+    #[allow(unused)]
+    fn d_x(&self, e: &KRGen) -> KRChain<R> { 
+        self.d(&KRChain::from(e.clone()))
     }
 
     pub fn into_complex(self) -> XChainComplex<KRGen, R> {

@@ -2,7 +2,8 @@ use std::iter::zip;
 
 use derive_more::{Display, DebugCustom};
 use itertools::{Itertools, FoldWhile};
-use yui::{Elem, Sign, PowMod2, GetSign};
+use num_traits::One;
+use yui::{Elem, Sign, PowMod2, GetSign, Ring, RingOps};
 use yui::lc::{Gen, Lc};
 use yui::poly::{PolyN, MultiVar};
 use yui::bitseq::{BitSeq, Bit};
@@ -46,6 +47,27 @@ pub(crate) fn sign_between(from: BitSeq, to: BitSeq) -> Sign {
     ).into_inner() as u32;
 
     (-1).pow_mod2(e).sign()
+}
+
+pub fn combine<R>(z: KRChain<R>) -> KRPolyChain<R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    z.into_iter().map(|(v, r)| {
+        let w = KRGen(v.0, v.1, KRMono::one());
+        let p = KRPoly::from((v.2, r));
+        (w, p)
+    }).collect()
+}
+
+pub fn decombine<R>(z: KRPolyChain<R>) -> KRChain<R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    debug_assert!(z.iter().all(|(v, _)| v.2.is_one()));
+
+    z.into_iter().flat_map(|(v, p)| { 
+        p.into_iter().map(move |(x, a)| {
+            let v = KRGen(v.0, v.1, x);
+            (v, a)
+        })
+    }).collect()
 }
 
 #[cfg(test)]

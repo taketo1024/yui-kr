@@ -8,7 +8,7 @@ use yui::poly::Mono;
 use yui::bitseq::BitSeq;
 
 use crate::kr::base::sign_between;
-use super::base::{KRMono, KRPoly, KRGen, KRChain, KRPolyChain};
+use super::base::{KRMono, KRPoly, KRGen, KRChain, KRPolyChain, combine, decombine};
 use super::data::KRCubeData;
 
 static DEBUG: bool = false;
@@ -386,27 +386,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let bwd = make_matrix_async(to, from, |x| self.backward_x(x));
         Trans::new(fwd, bwd)
     }
-}
-
-fn combine<R>(z: KRChain<R>) -> KRPolyChain<R>
-where R: Ring, for<'x> &'x R: RingOps<R> {
-    z.into_iter().map(|(v, r)| {
-        let w = KRGen(v.0, v.1, KRMono::one());
-        let p = KRPoly::from((v.2, r));
-        (w, p)
-    }).collect()
-}
-
-fn decombine<R>(z: KRPolyChain<R>) -> KRChain<R>
-where R: Ring, for<'x> &'x R: RingOps<R> {
-    debug_assert!(z.iter().all(|(v, _)| v.2.is_one()));
-
-    z.into_iter().flat_map(|(v, p)| { 
-        p.into_iter().map(move |(x, a)| {
-            let v = KRGen(v.0, v.1, x);
-            (v, a)
-        })
-    }).collect()
 }
 
 fn div_rem<R>(f: KRPoly<R>, g: &KRPoly<R>, k: usize) -> (KRPoly<R>, KRPoly<R>)

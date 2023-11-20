@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use num_traits::One;
 use yui::{EucRing, EucRingOps};
 use yui::bitseq::BitSeq;
 
-use super::base::{KRGen, KRPoly, KRChain, sign_between};
+use super::base::{KRGen, KRPoly, KRMono, KRChain, KRPolyChain, sign_between, combine, decombine};
 use super::data::KRCubeData;
 use super::hor_homol::KRHorHomol;
 
@@ -46,24 +47,23 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.data.ver_edge_poly(h_coords, i)
     }
 
-    pub fn d(&self, e: &KRGen) -> KRChain<R> { 
-        let (h0, v0) = (e.0, e.1);
-        let x0 = &e.2;
-        let n = self.data.dim();
+    pub fn d(&self, z: &KRChain<R>) -> KRChain<R> { 
+        let z = combine(z.clone());
+        let n = self.dim();
 
-        (0..n).filter(|&i| 
-            v0[i].is_zero()
-        ).flat_map(|i| {
-            let v1 = v0.edit(|b| b.set_1(i));
-            let e = R::from_sign( sign_between(v0, v1) );
-            let p = KRPoly::from( (x0.clone(), e ) );
-            let f = self.edge_poly(h0, i);
-            let q = f * p;
+        let dz = z.iter().flat_map(|(v, f)| { 
+            (0..n).filter(|&i|
+                v.1[i].is_zero()
+            ).map(move |i| {
+                let w = KRGen(v.0, v.1.edit(|b| b.set_1(i)), KRMono::one());
+                let e = R::from_sign( sign_between(v.1, w.1) );
+                let g = self.edge_poly(v.0, i);
+                let h = f * g * e;
+                (w, h)
+            })
+        }).collect::<KRPolyChain<_>>();
 
-            q.into_iter().map(move |(x1, r)| 
-                (KRGen(h0, v1, x1), r)
-            )
-         }).collect()
+        decombine(dz)
     }
 }
 

@@ -184,7 +184,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn d(&self, _i: isize2, z: &Self::Element) -> Self::Element {
-        z.apply(|x| self.cube.d(x))
+        self.cube.d(z)
     }
 
     fn d_matrix(&self, idx: isize2) -> SpMat<Self::R> {
