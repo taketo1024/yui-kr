@@ -115,8 +115,8 @@ impl App {
         let target = &self.args.target;
         let braid = Braid::load(target)?;
 
-        if braid.len() >= MAX_BRAID_LEN { 
-            err!("braid len {} of '{target}' exceeds limit: {MAX_BRAID_LEN}", braid.len())?;
+        if braid.len() > MAX_BRAID_LEN { 
+            err!("braid-length {} of '{target}' exceeds limit: {MAX_BRAID_LEN}", braid.len())?;
         }
 
         let link = braid.closure();
