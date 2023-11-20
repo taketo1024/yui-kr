@@ -1,5 +1,3 @@
-// cargo test -r --test k8 -- --include-ignored
-
 mod common;
 use common::test;
 

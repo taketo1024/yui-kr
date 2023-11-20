@@ -1,4 +1,3 @@
-// cargo test -r --test k9 -- --include-ignored
 mod common;
 use common::test;
 
