@@ -14,7 +14,7 @@ pub type KRChain<R> = Lc<KRGen, R>;
 pub type KRPolyChain<R> = Lc<KRGen, KRPoly<R>>;
 
 #[derive(PartialEq, Eq, Hash, Default, Clone, Display, DebugCustom, PartialOrd, Ord)]
-#[display(fmt = "({}-{}, {})", _0, _1, _2)]
+#[display(fmt = "<{}; {}-{}>", _2, _0, _1)]
 #[debug(fmt = "{}", self)]
 pub struct KRGen(
     pub BitSeq, // h-coords
