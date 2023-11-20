@@ -1,4 +1,4 @@
-// cargo test -r --test k3-7 -- --include-ignored
+// cargo test -r --test k10 -- --include-ignored
 mod common;
 use common::test;
 
