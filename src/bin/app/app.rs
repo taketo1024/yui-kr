@@ -10,23 +10,26 @@ use yui_kr::kr::KRHomology;
 use yui_link::Braid;
 use super::utils::*;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Default)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
 pub struct CliArgs {
-    target: String,
+    pub target: String,
 
     #[arg(short, long, default_value = "i64")]
-    int_type: IntType,
+    pub int_type: IntType,
 
     #[arg(short, long)]
-    mirror: bool,
+    pub mirror: bool,
 
     #[arg(short, long)]
-    save_result: bool,
+    pub check_result: bool,
+
+    #[arg(short, long)]
+    pub save_result: bool,
 
     #[arg(long)]
-    debug: bool
+    pub debug: bool
 }
 
 #[derive(ValueEnum, Clone, Copy, Default, Debug)]
@@ -46,7 +49,7 @@ macro_rules! err {
     ($($arg:tt)*) => {{
         let msg = format!($($arg)*);
         let e = AppErr(msg);
-        std::result::Result::Err(e.into())
+        Result::Err( Box::new(e) )
     }}
 }
 
@@ -115,8 +118,12 @@ impl App {
         let kr = KRHomology::<Ratio<I>>::new(&link);
         let res = kr.rank_all();
 
+        if self.args.check_result { 
+            Self::check_result(target, &res)?;
+        }
+
         if self.args.save_result { 
-            Self::save_data_checked(target, res, true)?;
+            Self::save_data(target, &res)?;
         }
 
         let res = kr.display_table();
@@ -144,24 +151,23 @@ impl App {
     }
 
     pub fn save_data(name: &str, data: &Res) -> Result<(), Box<dyn std::error::Error>> { 
+        if Self::data_exists(name) { 
+            info!("overwriting existing result: {}", Self::path_for(name));
+        }
         let path = Self::path_for(name);
         let json = serde_json::to_string(&data.iter().collect::<Vec<_>>())?;
         std::fs::write(path, json)?;
         Ok(())
     }
 
-    pub fn save_data_checked(name: &str, data: Res, overwrite: bool) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn check_result(name: &str, data: &Res) -> Result<(), Box<dyn std::error::Error>> {
         if Self::data_exists(name) { 
-            let saved = Self::load_data(name)?;
-            if data != saved && overwrite { 
-                info!("overwriting existing result: {}", Self::path_for(name));
-                Self::save_data(name, &data)
-            } else { 
-                Ok(())
+            let expected = Self::load_data(name)?;
+            if data != &expected { 
+                err!("Incorrect result for {name}.\nComputed: {data:#?},\nExpected: {expected:#?}")?;
             }
-        } else { 
-            Self::save_data(name, &data)
         }
+        Ok(())
     }
 }
 
