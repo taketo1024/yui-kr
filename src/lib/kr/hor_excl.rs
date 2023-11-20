@@ -191,6 +191,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.process.push(d);
     }
 
+    fn is_free(&self, p: &KRPoly<R>) -> bool { 
+        p.iter().all(|(x, _)| 
+            x.deg().iter().all(|(k, _)| 
+                self.remain_vars.contains(&k)
+            )
+        )
+    }
+
     pub fn reduce_gens(&self, gens: &Vec<KRGen>) -> Vec<KRGen> {
         gens.iter().filter_map(|v| 
             if self.should_vanish(v) || self.should_reduce(&v.2) { 
@@ -215,18 +223,58 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         )
     }
 
-    fn is_free(&self, p: &KRPoly<R>) -> bool { 
-        p.iter().all(|(x, _)| 
-            x.deg().iter().all(|(k, _)| 
-                self.remain_vars.contains(&k)
-            )
-        )
-    }
-
     fn is_reduced(&self, p: &KRPoly<R>) -> bool { 
         p.iter().all(|(x, _)| 
             !self.should_reduce(x)
         )
+    }
+
+    pub fn d(&self, z: &KRChain<R>) -> KRChain<R> { 
+        z.apply(|x| self.d_x(x))
+    }
+
+    fn d_x(&self, e: &KRGen) -> KRChain<R> { 
+        let (h0, v0) = (e.0, e.1);
+        let x0 = &e.2;
+
+        let de = self.edge_polys.iter().filter(|(&i, _)|
+            h0[i].is_zero()
+        ).map(|(&i, f)| {
+
+            let h1 = h0.edit(|b| b.set_1(i));
+            let e = R::from_sign( sign_between(h0, h1) );
+            let p = KRPoly::from((x0.clone(), e));
+            let g = f * p;
+
+            let v = KRGen(h1, v0, KRMono::one());
+            let w = KRPolyChain::from((v, g));
+            
+            self.forward_poly(w)
+        }).sum();
+
+        decombine(de)
+    }
+    
+    fn d_step(&self, z: &KRPolyChain<R>, step: usize, mod_p: bool) -> KRPolyChain<R> { 
+        type F<R> = KRPolyChain<R>;
+        
+        let d = &self.process[step];
+        let (p, k) = d.divisor();
+
+        z.iter().map(|(v, f)| { 
+            d.edge_polys.iter().filter(|(&i, _)|
+                v.0[i].is_zero()
+            ).map(|(&i, g)| {
+                let w = KRGen(v.0.edit(|b| b.set_1(i)), v.1, v.2.clone());
+                let e = R::from_sign( sign_between(v.0, w.0) );
+                let h = if mod_p { 
+                    rem(f * g, p, k) * e
+                } else { 
+                    f * g * e
+                };
+                (w, h)
+            }).collect::<F<R>>()
+        }).sum()
     }
 
     pub fn forward(&self, z: &KRChain<R>) -> KRChain<R> {
@@ -265,7 +313,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn backward(&self, z: &KRChain<R>, is_cycle: bool) -> KRChain<R> {
         if is_cycle { 
             debug_assert_eq!(
-                self.diff_red(&z), 
+                self.d(&z), 
                 KRChain::zero()
             );
         }
@@ -297,17 +345,17 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         let x0 = if is_cycle {
             debug_assert_eq!(
-                self.forward_poly(self.d(&z, step, true)), 
+                self.d_step(&z, step, true), 
                 KRPolyChain::zero()
             );
             KRPolyChain::zero()
         } else {
-            let x1 = self.d(&z, step, true);
+            let x1 = self.d_step(&z, step, true);
             self.send_back(&x1, i)
         };
 
         let z0 = self.send_back(&z, i);
-        let y0 = self.d(&z0, step, false);
+        let y0 = self.d_step(&z0, step, false);
 
         let w = (x0 + y0).into_map_coeffs::<KRPoly<R>, _>(|f| {
             div(f, p, k)
@@ -337,58 +385,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         })
     }
 
-    fn d(&self, z: &KRPolyChain<R>, step: usize, mod_p: bool) -> KRPolyChain<R> { 
-        type F<R> = KRPolyChain<R>;
-        
-        let d = &self.process[step];
-        let (p, k) = d.divisor();
-
-        z.iter().map(|(v, f)| { 
-            d.edge_polys.iter().filter(|(&i, _)|
-                v.0[i].is_zero()
-            ).map(|(&i, g)| {
-                let w = KRGen(v.0.edit(|b| b.set_1(i)), v.1, v.2.clone());
-                let e = R::from_sign( sign_between(v.0, w.0) );
-                let h = if mod_p { 
-                    rem(f * g, p, k) * e
-                } else { 
-                    f * g * e
-                };
-                (w, h)
-            }).collect::<F<R>>()
-        }).sum()
-    }
-
     pub fn trans_for(&self, from: &IndexList<KRGen>, to: &IndexList<KRGen>) -> Trans<R> {
         let fwd = make_matrix_async(from, to, |x| self.forward_x(x));
         let bwd = make_matrix_async(to, from, |x| self.backward_x(x));
         Trans::new(fwd, bwd)
-    }
-
-    pub fn diff_red(&self, z: &KRChain<R>) -> KRChain<R> { 
-        z.apply(|x| self.diff_red_x(x))
-    }
-
-    fn diff_red_x(&self, e: &KRGen) -> KRChain<R> { 
-        let (h0, v0) = (e.0, e.1);
-        let x0 = &e.2;
-
-        let de = self.edge_polys.iter().filter(|(&i, _)|
-            h0[i].is_zero()
-        ).map(|(&i, f)| {
-
-            let h1 = h0.edit(|b| b.set_1(i));
-            let e = R::from_sign( sign_between(h0, h1) );
-            let p = KRPoly::from((x0.clone(), e));
-            let g = f * p;
-
-            let v = KRGen(h1, v0, KRMono::one());
-            let w = KRPolyChain::from((v, g));
-            
-            self.forward_poly(w)
-        }).sum();
-
-        decombine(de)
     }
 }
 

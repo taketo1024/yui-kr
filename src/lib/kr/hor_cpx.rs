@@ -39,7 +39,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         });
         
         XChainComplex::new(summands, 1, move |_, e| {
-            excl.diff_red(e)
+            excl.d(e)
         })
     }
 
