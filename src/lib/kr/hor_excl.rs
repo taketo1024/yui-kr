@@ -301,14 +301,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     fn backward_poly(&self, z: KRPolyChain<R>, is_cycle: bool) -> KRPolyChain<R> { 
         let l = self.process.len();
-        if l > 0 { 
-            self.backward_itr(z, l - 1, is_cycle)
-        } else { 
-            z
-        }
+        (0..l).rev().fold(z, |z, step|
+            self.backward_poly_step(z, step, is_cycle)
+        )
     }
 
-    fn backward_itr(&self, z: KRPolyChain<R>, step: usize, is_cycle: bool) -> KRPolyChain<R> {
+    fn backward_poly_step(&self, z: KRPolyChain<R>, step: usize, is_cycle: bool) -> KRPolyChain<R> {
         let d = &self.process[step];
         let i = d.dir;
         let (p, k) = d.divisor();
@@ -339,13 +337,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             div(f, p, k)
         });
         
-        let res = z + w;
-
-        if step > 0 { 
-            self.backward_itr(res, step - 1, is_cycle)
-        } else { 
-            res
-        }
+        z + w
     }
 
     fn backward_x(&self, w: &KRGen) -> KRChain<R> {
