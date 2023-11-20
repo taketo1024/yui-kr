@@ -84,18 +84,16 @@ impl App {
         ).unwrap()
     }
 
-    pub fn run(&self) -> Result<String, i32> { 
+    pub fn run(&self) -> Result<String, Box<dyn std::error::Error>> { 
         info!("args: {:?}", self.args);
 
         let (res, time) = measure(|| guard_panic(||
             self.dispatch()
         ));
 
-        let res = res.map_err(|e| { 
-            error!("{}", e);
-            eprintln!("\x1b[0;31merror\x1b[0m: {e}");
-            1 // error code
-        });
+        if let Some(e) = res.as_ref().err() { 
+            error!("{e}");
+        }
 
         info!("time: {:?}", time);
 

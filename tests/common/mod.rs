@@ -15,8 +15,15 @@ macro_rules! test {
                 save_result: true,
                 ..Default::default()
             };
+
             let app = App::new_with(args);
-            app.run().unwrap();
+            let res = app.run();
+
+            if let Some(e) = res.as_ref().err() { 
+                eprintln!("error: {e}");
+            }
+            
+            assert!(res.is_ok())
         }
     };
 }
