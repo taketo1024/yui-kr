@@ -159,8 +159,16 @@ impl App {
 
     pub fn save_data(name: &str, data: &Res) -> Result<(), Box<dyn std::error::Error>> { 
         if Self::data_exists(name) { 
-            info!("overwriting existing result: {}", Self::path_for(name));
+            let exist = Self::load_data(name)?;
+            if data == &exist { 
+                info!("data already exists: {}", Self::path_for(name));
+                return Ok(())
+            }
+            info!("overwrite existing result: {}", Self::path_for(name));
+        } else { 
+            info!("save: {}", Self::path_for(name));
         }
+
         let path = Self::path_for(name);
         let json = serde_json::to_string(&data.iter().collect::<Vec<_>>())?;
         std::fs::write(path, json)?;
