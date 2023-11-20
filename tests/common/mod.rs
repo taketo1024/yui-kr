@@ -12,6 +12,7 @@ macro_rules! test {
                 target: $name.to_string(), 
                 int_type: IntType::BigInt,
                 check_result: true,
+                save_result: true,
                 ..Default::default()
             };
             let app = App::new_with(args);
