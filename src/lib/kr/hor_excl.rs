@@ -263,6 +263,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn backward(&self, z: &KRChain<R>, is_cycle: bool) -> KRChain<R> {
+        if is_cycle { 
+            debug_assert_eq!(
+                self.diff_red(&z), 
+                KRChain::zero()
+            );
+        }
+        
         let init = combine(z.clone());
         let l = self.process.len();
         
@@ -289,7 +296,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         //
 
         let x0 = if is_cycle {
-            debug_assert!(self.d(&z, step, true).is_zero());
+            debug_assert_eq!(
+                self.forward_poly(self.d(&z, step, true)), 
+                KRPolyChain::zero()
+            );
             KRPolyChain::zero()
         } else {
             let x1 = self.d(&z, step, true);
@@ -363,23 +373,22 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let (h0, v0) = (e.0, e.1);
         let x0 = &e.2;
 
-        self.edge_polys.iter().filter(|(&i, _)|
+        let de = self.edge_polys.iter().filter(|(&i, _)|
             h0[i].is_zero()
-        ).flat_map(|(&i, f)| {
+        ).map(|(&i, f)| {
 
             let h1 = h0.edit(|b| b.set_1(i));
             let e = R::from_sign( sign_between(h0, h1) );
             let p = KRPoly::from((x0.clone(), e));
             let g = f * p;
 
-            // expand as lin-comb
-            let w = g.into_iter().map(|(x1, r)|
-                (KRGen(h1, v0, x1), r)
-            ).collect();
+            let v = KRGen(h1, v0, KRMono::one());
+            let w = KRPolyChain::from((v, g));
+            
+            self.forward_poly(w)
+        }).sum();
 
-            self.forward(&w).into_iter()
-
-        }).collect()
+        decombine(de)
     }
 }
 
