@@ -47,6 +47,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.data.ver_edge_poly(h_coords, i)
     }
 
+    #[inline(never)] // for profilability
     pub fn d(&self, z: &KRChain<R>) -> KRChain<R> { 
         let z = combine(z.clone());
         let n = self.dim();
