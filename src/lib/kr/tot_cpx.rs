@@ -70,7 +70,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let summands = Grid2::generate(range, |idx| { 
             let (i, j) = (idx.0 as usize, idx.1 as usize);
-            let gens = data.verts(j).into_iter().flat_map(|v| {
+            let gens = data.verts_of_weight(j).iter().flat_map(|&v| {
                 cube.vert(v).gens(i)
             }).collect();
             KRTotComplexSummand::new(gens)
@@ -90,7 +90,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let z_decomp = decomp(z);
 
-        let (r, entries) = self.data.verts(j).iter().fold((0, vec![]), |acc, &v| { 
+        let (r, entries) = self.data.verts_of_weight(j).iter().fold((0, vec![]), |acc, &v| { 
             let (mut r, mut entries) = acc;
 
             let h_v = self.cube.vert(v);

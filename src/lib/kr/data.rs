@@ -37,6 +37,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     n_seif: isize,
     x_signs: Vec<Sign>,
     x_polys: Vec<KRCrossData<R>>,
+    verts: HashMap<usize, Vec<BitSeq>>,
     excl: HashMap<BitSeq, Arc<KRHorExcl<R>>>
 }
 
@@ -55,6 +56,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let s = link.seifert_circles().len() as isize;
         let x_signs = link.crossing_signs();
         let x_polys = Self::collect_x_polys(link);
+        let verts = BitSeq::generate(n).into_iter().into_group_map_by(|b| b.weight());
         let excl = HashMap::new();
 
         Self {
@@ -63,12 +65,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             n_seif: s,
             x_signs,
             x_polys,
+            verts,
             excl // empty
         }
     }
 
     fn perform_excl(&mut self, excl_level: usize) {
-        self.excl = self.all_verts().into_iter().map(|v| {
+        let n = self.n_cross;
+        self.excl = BitSeq::generate(n).into_iter().map(|v| {
             let excl = Arc::new( KRHorExcl::from(&self, v, excl_level) );
             (v, excl)
         }).collect();
@@ -90,14 +94,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         Arc::clone( &self.excl[&v_coods] )
     }
 
-    pub fn all_verts(&self) -> Vec<BitSeq> { 
-        let n = self.dim();
-        BitSeq::generate(n)
-    }
-
-    // TODO cache
-    pub fn verts(&self, k: usize) -> Vec<BitSeq> {
-        self.all_verts().into_iter().filter(|v| v.weight() == k).collect()
+    pub fn verts_of_weight(&self, k: usize) -> &[BitSeq] {
+        if let Some(vs) = self.verts.get(&k) { 
+            &vs
+        } else {
+            &[]
+        }
     }
 
     fn l_grad_shift(&self) -> isize3 { 

@@ -58,7 +58,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn gens(&self, i: usize) -> Vec<KRGen> {
-        self.data.verts(i).into_iter().flat_map(|v| 
+        self.data.verts_of_weight(i).iter().flat_map(|&v| 
             self.vert_gens(v)
         ).collect()
     }
