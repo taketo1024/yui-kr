@@ -13,6 +13,9 @@ path = "src/bin/main.rs"
 [lib]
 path = "src/lib/lib.rs"
 
+[features]
+batch_test = []
+
 [profile.release]
 debug = true
 overflow-checks = true

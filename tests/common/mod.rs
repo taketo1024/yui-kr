@@ -5,7 +5,6 @@ pub mod app;
 macro_rules! test {
     ($test:ident, $name:literal) => {
         #[test]
-        #[ignore]
         fn $test() { 
             use common::app::*;
             let args = CliArgs { 
