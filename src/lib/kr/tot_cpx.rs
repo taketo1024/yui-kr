@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use std::ops::Index;
 use std::sync::Arc;
 
+use ahash::AHashMap;
 use cartesian::cartesian;
 use delegate::delegate;
 use itertools::Itertools;
@@ -91,23 +91,27 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let z_decomp = decomp(z);
 
         let (r, entries) = self.data.verts_of_weight(j).iter().fold((0, vec![]), |acc, &v| { 
-            let (mut r, mut entries) = acc;
+            let (r0, mut entries) = acc;
+            let (r, vec) = self.vectorize_v(i, v, z_decomp.get(&v));
 
-            let h_v = self.cube.vert(v);
-            if let Some(z_v) = z_decomp.get(&v) { 
-                let vec = h_v.vectorize(i, &z_v);
-                for (i, a) in vec.iter() { 
-                    entries.push((i + r, a.clone()))
-                }
+            if let Some(vec) = vec { 
+                entries.extend(vec.iter().map(|(k, a)| (r0 + k, a.clone())));
             }
 
-            r += h_v.rank(i);
-
-            (r, entries)
+            (r0 + r, entries)
         });
 
         SpVec::from_entries(r, entries)
     }
+
+    #[inline(never)] // for profilability
+    pub fn vectorize_v(&self, i: usize, v: BitSeq, z_v: Option<&KRChain<R>>) -> (usize, Option<SpVec<R>>) {
+        let h_v = self.cube.vert(v);
+        let r = h_v.rank(i);
+        let vec = z_v.map(|z_v| h_v.vectorize(i, &z_v));
+        (r, vec)
+    }
+
 
     #[inline(never)] // for profilability
     pub fn as_chain(&self, idx: isize2, v: &SpVec<R>) -> KRChain<R> { 
@@ -151,19 +155,16 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 }
 
-fn decomp<R>(z: &KRChain<R>) -> HashMap<BitSeq, KRChain<R>>
+fn decomp<R>(z: &KRChain<R>) -> AHashMap<BitSeq, KRChain<R>>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    let mut res = z.iter()
-        .into_grouping_map_by(|(v, _)| v.1)
-        .aggregate(|acc, _, pair| {
-            let mut z = acc.unwrap_or(KRChain::zero());
-            z.add_pair_ref(pair);
-            Some(z)
-        });
+    let mut res = z.iter().fold(AHashMap::new(), |mut res, (v, r)| {
+        res.entry(v.1).or_insert(KRChain::zero()).add_pair_ref((v, r));
+        res
+    });
 
     res.iter_mut().for_each(|(_, f)| f.clean());
 
-    res
+    res 
 }
 
 
