@@ -311,33 +311,35 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let i = d.dir;
         let (p, k) = d.divisor();
 
-        //              i-th
-        //         z . . . . . > z0
-        //         |             |
-        // d mod p |             | d
-        //         V             V
-        //        x1 . . . > x0, y0 ~> w = (x0 + y0)/p
+        //    iz < . . . . . . z
+        //    |                |
+        //  d |                | d'
+        //    V                V
+        //   diz + id'z < . . d'z
+        //   ---------
+        //       p
         //
+        //  ψ(z) := ((diz + id'z) / p, z).
 
-        let x0 = if is_cycle {
+        let iz = self.send_back(&z, i);
+        let diz = self.d_step(&iz, step, false);
+
+        let idz = if is_cycle {
             debug_assert_eq!(
                 self.d_step(&z, step, true), 
                 KRPolyChain::zero()
             );
             KRPolyChain::zero()
         } else {
-            let x1 = self.d_step(&z, step, true);
-            self.send_back(&x1, i)
+            let dz = self.d_step(&z, step, true);
+            self.send_back(&dz, i)
         };
 
-        let z0 = self.send_back(&z, i);
-        let y0 = self.d_step(&z0, step, false);
-
-        let w = (x0 + y0).into_map_coeffs::<KRPoly<R>, _>(|f| {
+        let w = (diz + idz).into_map_coeffs::<KRPoly<R>, _>(|f| {
             div(f, p, k)
         });
         
-        z + w
+        w + z
     }
 
     fn backward_x(&self, w: &KRGen) -> KRChain<R> {
