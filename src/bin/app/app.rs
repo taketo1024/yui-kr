@@ -31,6 +31,9 @@ pub struct CliArgs {
     pub save_result: bool,
 
     #[arg(long)]
+    pub no_multithread: bool,
+
+    #[arg(long)]
     pub debug: bool
 }
 
@@ -71,6 +74,9 @@ impl App {
         if args.debug { 
             Self::init_logger();
         }
+        if args.no_multithread { 
+            Self::set_multithread_enabled(false);
+        }
         App { args }
     }
 
@@ -82,6 +88,12 @@ impl App {
             TerminalMode::Mixed,
             ColorChoice::Auto
         ).unwrap()
+    }
+
+    fn set_multithread_enabled(flag: bool) { 
+        yui_matrix::config::set_multithread_enabled(flag);
+        yui_homology::config::set_multithread_enabled(flag);
+        yui_kr::config::set_multithread_enabled(flag);
     }
 
     pub fn run(&self) -> Result<String, Box<dyn std::error::Error>> { 
