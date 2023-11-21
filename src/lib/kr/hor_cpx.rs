@@ -50,10 +50,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn q_slice(&self) -> isize { 
         self.q_slice
     }
-
-    pub fn excl(&self) -> Arc<KRHorExcl<R>> { 
-        self.excl.clone()
-    }
 }
 
 impl<R> GridTrait<isize> for KRHorComplex<R>

@@ -1,9 +1,9 @@
 use std::ops::Index;
 use std::sync::Arc;
-use delegate::delegate;
 
+use num_traits::Zero;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{GridTrait, RModStr, GridIter, XHomology, XHomologySummand};
+use yui_homology::{GridTrait, RModStr, XHomologySummand};
 use yui_matrix::sparse::SpVec;
 use yui::bitseq::BitSeq;
 
@@ -17,16 +17,22 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     v_coords: BitSeq,
     q_slice: isize,
     excl: Arc<KRHorExcl<R>>,
-    inner: XHomology<KRGen, R>
+    summands: Vec<XHomologySummand<KRGen, R>>,
+    _zero: XHomologySummand<KRGen, R>
 } 
 
 impl<R> KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
+        let excl = data.excl(v_coords);
         let complex = KRHorComplex::new(data.clone(), v_coords, q_slice);
-        let excl = complex.excl();
-        let inner = complex.homology();
-        Self { v_coords, q_slice, excl, inner }
+        let homol = complex.homology();
+
+        // extract for fast access.
+        let summands = homol.into_iter().map(|(_, e)| e).collect();
+        let _zero = XHomologySummand::zero();
+        
+        Self { v_coords, q_slice, excl, summands, _zero }
     }
 
     pub fn v_coords(&self) -> BitSeq { 
@@ -38,60 +44,69 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn rank(&self, i: usize) -> usize {
-        self.inner[i as isize].rank()
+        self.summands[i].rank()
     }
 
     pub fn gens(&self, i: usize) -> Vec<KRChain<R>> { 
-        let h = &self.inner[i as isize];
-        let r = h.rank();
-
+        let r = self.rank(i);
         (0..r).map(|k| { 
             let v = SpVec::unit(r, k);
             self.as_chain(i, &v)
         }).collect()
     }
 
+    #[inline(never)] // for profilability
     pub fn vectorize(&self, i: usize, z: &KRChain<R>) -> SpVec<R> {
         debug_assert!(z.iter().all(|(x, _)| 
             x.0.weight() == i && 
             x.1 == self.v_coords()
         ));
 
-        let z_exc = self.excl.forward(z);
+        if self.rank(i).is_zero() { 
+            return SpVec::zero(0)
+        }
 
-        let h = &self.inner[i as isize];
+        let z_exc = self.excl.forward(z);
+        let h = &self.summands[i];
         h.vectorize(&z_exc)
     }
 
     pub fn as_chain(&self, i: usize, v_hml: &SpVec<R>) -> KRChain<R> {
-        let h = &self.inner[i as isize];
+        let h = &self.summands[i];
         let z_exc = h.as_chain(v_hml);
-        
         self.excl.backward(&z_exc, true)
     }
 }
 
 impl<R> GridTrait<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Itr = GridIter<isize>;
+    type Itr = std::ops::Range<isize>;
     type Output = XHomologySummand<KRGen, R>;
 
-    delegate! { 
-        to self.inner {
-            fn support(&self) -> Self::Itr;
-            fn is_supported(&self, i: isize) -> bool;
-            fn get(&self, i: isize) -> &Self::Output;
+    fn support(&self) -> Self::Itr { 
+        0..self.summands.len() as isize
+    }
+
+    fn is_supported(&self, i: isize) -> bool {
+        0 <= i && i < self.summands.len() as isize
+    }
+
+    fn get(&self, i: isize) -> &Self::Output { 
+        if self.is_supported(i) {
+            &self.summands[i as usize]
+        } else { 
+            &self._zero
         }
+
     }
 }
 
 impl<R> Index<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = XHomologySummand<KRGen, R>;
-    delegate! { 
-        to self.inner { 
-            fn index(&self, index: isize) -> &Self::Output;
-        }
+    
+    fn index(&self, index: isize) -> &Self::Output { 
+        self.get(index)
     }
 }
 
