@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use cartesian::{cartesian, TuplePrepend};
 use itertools::Itertools;
+use log::info;
 use yui::{EucRing, EucRingOps};
 use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand};
 use yui_link::Link;
@@ -24,6 +25,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRHomology<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(link: &Link) -> Self { 
+        info!("init KRHomology");
         let excl_level = 2;
         let data = Arc::new(KRCubeData::new(link, excl_level));
         let cache = UnsafeCell::new( HashMap::new() );
@@ -34,15 +36,20 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn tot_hml(&self, q_slice: isize) -> &KRTotHomol<R> {
         let cache = unsafe { &mut *self.cache.get() };
         cache.entry(q_slice).or_insert_with(|| {
+            info!("compute KRHomol for q: {q_slice}");
             KRTotHomol::new(self.data.clone(), q_slice)
         })
     }
 
     pub fn structure(&self) -> KRHomologyStr { 
-        self.support().filter_map(|isize3(i, j, k)| {
-            let r = self[(i, j, k)].rank();
+        self.support().filter_map(|idx| {
+            let h = self.get(idx);
+            let r = h.rank();
+
+            info!("H[{idx}] = {}", h.math_symbol());
+            
             if r > 0 { 
-                Some(((i, j, k), r))
+                Some(((idx.0, idx.1, idx.2), r))
             } else { 
                 None
             }

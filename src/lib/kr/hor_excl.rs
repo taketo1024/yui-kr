@@ -1,5 +1,6 @@
 use std::collections::{HashSet, HashMap};
 
+use log::{info, debug};
 use num_traits::{Zero, One};
 use yui::{Ring, RingOps, IndexList};
 use yui_homology::utils::make_matrix_async;
@@ -10,8 +11,6 @@ use yui::bitseq::BitSeq;
 use crate::kr::base::sign_between;
 use super::base::{KRMono, KRPoly, KRGen, KRChain, KRPolyChain, combine, decombine};
 use super::data::KRCubeData;
-
-static DEBUG: bool = false;
 
 #[derive(Debug, Clone)]
 struct Process<R>
@@ -67,16 +66,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         let mut res = Self::new(v_coords, edge_polys);
 
-        if DEBUG { 
-            println!("==========");
-            println!("start excl");
-            println!("==========\n");
-            println!("edge-polys: {:#?}\n", res.edge_polys);
-        }
+        info!("start excl for v: {v_coords}");
+        info!("initial: {:#?}", res.edge_polys);
 
         for d in 1..=level { 
             res.excl_all(d);
         }
+
+        info!("result: {:#?}", res.edge_polys);
 
         res
     }
@@ -177,18 +174,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             }
         }
 
-        if DEBUG { 
-            println!("------------");
-            println!("excl step: {}", self.process.len());
-            println!("------------\n");
-            println!("target: {}", KRMono::from((k, deg)));
-            println!("    {i}: {}", p);
-            println!("edge-poly: {:#?}", self.edge_polys);
-            println!("remain: {:?}", self.remain_vars);
-            println!("fst_exc: {:?}", self.fst_exc_vars);
-            println!("snd_exc: {:?}", self.snd_exc_vars);
-            println!();
-        }
+        debug!("excl step: {}", self.process.len());
+        debug!("direction: {i}");
+        debug!("chosen: {} in {p}", KRMono::from((k, deg)));
+        debug!("edge-poly: {:#?}", self.edge_polys);
+        debug!("remain: {:?}", self.remain_vars);
+        debug!("fst_exc: {:?}", self.fst_exc_vars);
+        debug!("snd_exc: {:?}", self.snd_exc_vars);
 
         // insert new process.
         let d = Process {
@@ -198,6 +190,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             divisor: p,
             edge_polys,
         };
+        
         self.process.push(d);
     }
 
