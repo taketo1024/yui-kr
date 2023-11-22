@@ -1,7 +1,7 @@
+use std::collections::HashMap;
 use std::ops::Index;
 use std::sync::Arc;
 
-use ahash::AHashMap;
 use cartesian::cartesian;
 use delegate::delegate;
 use itertools::Itertools;
@@ -155,9 +155,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 }
 
-fn decomp<R>(z: &KRChain<R>) -> AHashMap<BitSeq, KRChain<R>>
+fn decomp<R>(z: &KRChain<R>) -> HashMap<BitSeq, KRChain<R>>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    let mut res = z.iter().fold(AHashMap::new(), |mut res, (v, r)| {
+    let mut res = z.iter().fold(HashMap::new(), |mut res, (v, r)| {
         res.entry(v.1).or_insert(KRChain::zero()).add_pair_ref((v, r));
         res
     });
