@@ -453,7 +453,7 @@ mod tests {
     use yui_matrix::sparse::MatType;
     use yui::poly::MultiVar;
     use yui::Ratio;
-    use yui::util::macros::map;
+    use yui::util::macros::hashmap;
     use yui::bitseq::BitSeq;
 
     use crate::kr::data::KRCubeData;
@@ -483,7 +483,7 @@ mod tests {
         assert!(excl.process.is_empty());
 
         let x = P::variable;
-        assert_eq!(excl.edge_polys, map!{ 
+        assert_eq!(excl.edge_polys, hashmap!{ 
             0 => -x(1) - x(2),
             1 => x(1),
             2 => x(2) * (x(0) + x(1))
@@ -519,7 +519,7 @@ mod tests {
 
         excl.perform_excl(0, 1, 1); // x1 -> -x2
 
-        assert_eq!(excl.edge_polys, map!{ 
+        assert_eq!(excl.edge_polys, hashmap!{ 
             1 => -x(2),
             2 => x(2) * (x(0) - x(2))
         });
@@ -535,7 +535,7 @@ mod tests {
         assert_eq!(proc.dir, 0);
         assert_eq!(proc.var, 1);
         assert_eq!(proc.divisor, -x(1) - x(2));
-        assert_eq!(proc.edge_polys, map!{ 
+        assert_eq!(proc.edge_polys, hashmap!{ 
             1 => x(1),
             2 => x(2) * (x(0) + x(1))
         });
@@ -553,7 +553,7 @@ mod tests {
         excl.perform_excl(0, 1, 1); // x1 -> -x2
         excl.perform_excl(1, 2, 1); // x2 -> 0
 
-        assert_eq!(excl.edge_polys, map!{ 
+        assert_eq!(excl.edge_polys, hashmap!{ 
             2 => P::zero()
         });
 
@@ -568,7 +568,7 @@ mod tests {
         assert_eq!(proc.dir, 1);
         assert_eq!(proc.var, 2);
         assert_eq!(proc.divisor, -x(2));
-        assert_eq!(proc.edge_polys, map!{ 
+        assert_eq!(proc.edge_polys, hashmap!{ 
             2 => x(2) * (x(0) - x(2))
         });
     }
@@ -590,7 +590,7 @@ mod tests {
 
         excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
 
-        assert_eq!(excl.edge_polys, map!{ 
+        assert_eq!(excl.edge_polys, hashmap!{ 
             1 => -x(2)
         });
 
@@ -605,7 +605,7 @@ mod tests {
         assert_eq!(proc.dir, 2);
         assert_eq!(proc.var, 2);
         assert_eq!(proc.divisor, x(2) * (x(0) - x(2)));
-        assert_eq!(proc.edge_polys, map!{ 
+        assert_eq!(proc.edge_polys, hashmap!{ 
             1 => -x(2)
         });
     }

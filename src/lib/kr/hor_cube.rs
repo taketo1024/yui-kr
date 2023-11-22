@@ -109,7 +109,7 @@ mod tests {
     use yui_homology::{RModStr, ChainComplexCommon};
     use yui::Ratio;
     use yui_link::Link;
-    use yui::util::macros::map;
+    use yui::util::macros::hashmap;
     use super::*;
 
     type R = Ratio<i64>;
@@ -203,22 +203,22 @@ mod tests {
         let z = KRGen(h, v, one.clone());
         let ys = cube.d_x(&z);
 
-        assert_eq!(ys, map!{
+        assert_eq!(ys, hashmap!{
             KRGen(BitSeq::from([1,0,0]), v, x(1)) => -R::one(),
             KRGen(BitSeq::from([1,0,0]), v, x(2)) => -R::one(),
             KRGen(BitSeq::from([0,1,0]), v, x(1)) =>  R::one(),
             KRGen(BitSeq::from([0,0,1]), v, x(2)) =>  R::one()
-        });
+        }.into());
 
         let h = BitSeq::from([0,1,0]);
         let z = KRGen(h, v, one.clone());
         let ys = cube.d_x(&z);
 
-        assert_eq!(ys, map! {
+        assert_eq!(ys, hashmap! {
             KRGen(BitSeq::from([1,1,0]), v, x(1)) => -R::one(),
             KRGen(BitSeq::from([1,1,0]), v, x(2)) => -R::one(),
             KRGen(BitSeq::from([0,1,1]), v, x(2)) => -R::one()
-        });
+        }.into());
 
         let h = BitSeq::from([1,1,1]);
         let z = KRGen(h, v, one.clone());

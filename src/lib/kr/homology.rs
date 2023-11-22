@@ -110,7 +110,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 mod tests { 
     use yui_link::Braid;
     use yui::Ratio;
-    use yui::util::macros::map;
+    use yui::util::macros::hashmap;
     use super::*;
 
     type R = Ratio<i64>;
@@ -122,7 +122,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 3);
-        assert_eq!(h.structure(), map!{ 
+        assert_eq!(h.structure(), hashmap!{ 
             (0,4,-2) => 1,
             (-2,2,2) => 1,
             (2,2,-2) => 1
@@ -136,7 +136,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 5);
-        assert_eq!(h.structure(), map!{ 
+        assert_eq!(h.structure(), hashmap!{ 
             (0,-2,2) => 1,
             (-2,0,2) => 1,
             (0,2,-2) => 1,
@@ -152,7 +152,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 5);
-        assert_eq!(h.structure(), map!{             
+        assert_eq!(h.structure(), hashmap!{             
             (0,4,0)  => 1,
             (-2,6,0) => 1,
             (-4,4,4) => 1,
@@ -168,7 +168,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 7);
-        assert_eq!(h.structure(), map!{ 
+        assert_eq!(h.structure(), hashmap!{ 
             (2,4,-4) => 1,
             (2,2,-2) => 1,
             (0,4,-2) => 1,
@@ -186,7 +186,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 9);
-        assert_eq!(h.structure(), map!{ 
+        assert_eq!(h.structure(), hashmap!{ 
             (0,-2,2) => 1,
             (0,0,0)  => 2,
             (2,0,-2) => 1,
@@ -205,7 +205,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 11);
-        assert_eq!(h.structure(), map!{ 
+        assert_eq!(h.structure(), hashmap!{ 
             (0,4,-2) => 1,
             (2,4,-4) => 1,
             (-2,4,0) => 1,
@@ -226,7 +226,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 13);
-        assert_eq!(h.structure(), map!{ 
+        assert_eq!(h.structure(), hashmap!{ 
             (4,0,-4)  => 1,
             (2,-2,0)  => 1,
             (0,0,0)   => 3,
