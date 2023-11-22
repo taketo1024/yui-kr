@@ -4,11 +4,11 @@ use std::sync::Arc;
 use itertools::{Itertools, izip};
 use num_integer::Integer;
 use num_traits::One;
-use petgraph::{Graph, algo::min_spanning_tree};
 
 use yui::{Ring, RingOps, Sign};
 use yui_homology::isize3;
-use yui_link::{Link, LinkComp, CrossingType, Crossing, Edge};
+use yui_link::util::seifert_graph;
+use yui_link::{Link, CrossingType, Crossing, Edge};
 use yui::bitseq::{BitSeq, Bit};
 
 use super::base::KRPoly;
@@ -24,6 +24,8 @@ use super::hor_excl::KRHorExcl;
  * x_ac = x_a - x_c = -(x_b - x_d),
  * x_bc = x_b - x_c = -(x_a - x_d)
  */
+
+#[derive(Debug, Clone)]
 pub struct KRCrossData<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
     pub x_ac: KRPoly<R>,
@@ -231,36 +233,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     fn collect_x_polys(link: &Link) -> Vec<KRCrossData<R>> {
         let n = link.crossing_num();
         let signs = link.crossing_signs();
+        let resolved = Self::resolve(link);
 
-        // TODO support links
-        assert_eq!(link.components().len(), 1); 
+        assert_eq!(resolved.components().len(), 1); 
 
-        // is_vert: 
-        //          
-        //  a(3) b(2)   c(3) a(2)
-        //    ↑\ /↑        \ /→  
-        //      X           X    
-        //     / \         / \→   
-        //  c(0) d(1)   d(0) b(1)
-        //
-        //    true        false
-       
-        let is_vert = |x: &Crossing, sign: Sign| -> bool { 
-            use CrossingType::*;
-            match (x.ctype(), sign.is_positive()) {
-                (X, false) | (Xm, true)  | (V, _) => true,
-                (X, true)  | (Xm, false) | (H, _) => false
-            }
-        };
-
-        // collect edges and monomials.
-        
         let (path, mons) = { 
             let mut path = vec![];
             let mut mons = vec![];
 
-            link.traverse_edges((0, 0), |i, j| { 
-                let x = &link.data()[i];
+            resolved.traverse_edges((0, 0), |i, j| { 
+                let x = &resolved.data()[i];
                 let e = x.edge(j);
                 let x_i = KRPoly::variable(i);
                 let p_i = match (is_vert(x, signs[i]), j) {
@@ -295,7 +277,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         };
 
         (0 .. n).map(|i| {
-            let x = &link.data()[i];
+            let x = &resolved.data()[i];
             let (a,b,c) = if is_vert(x, signs[i]) { 
                 (3,2,0)
             } else { 
@@ -309,47 +291,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }).collect()
     }
 
-    #[allow(dead_code)]
-    fn seifert_graph(link: &Link) -> Graph<LinkComp, usize> { 
-        type G = Graph<LinkComp, usize>;
-        let s0 = link.ori_pres_state();
-        let l0 = link.resolved_by(&s0);
-        let mut graph = Graph::new();
-
-        for c in l0.components() {
-            graph.add_node(c);
-        }
-
-        let find_node = |graph: &G, e| { 
-            graph.node_indices().find(|&i| 
-                graph[i].contains(e)
-            )
-        };
-
-        for (i, x) in l0.data().iter().enumerate() {
-            let (e1, e2) = if x.ctype() == CrossingType::V {
-                (x.edge(0), x.edge(1))
-            } else { 
-                (x.edge(0), x.edge(2))
-            };
-            let n1 = find_node(&graph, e1).unwrap();
-            let n2 = find_node(&graph, e2).unwrap();
-            graph.add_edge(n1, n2, i);
-        }
-
-        graph
-    }
-
-    #[allow(dead_code)]
     fn resolve(link: &Link) -> Link {
-        let g = Self::seifert_graph(link);
+        use petgraph::algo::min_spanning_tree;
+        use petgraph::data::Element::Edge as GraphEdge;
+
+        let g = seifert_graph(link);
         let t = min_spanning_tree(&g).filter_map(|e| 
             match e { 
-                petgraph::data::Element::Edge { 
-                    source: _, 
-                    target: _, 
-                    weight: x 
-                } => Some(x),
+                GraphEdge { weight: x, ..} => Some(x),
                 _ => None
             }
         ).collect::<HashSet<_>>();
@@ -369,6 +318,24 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
+// is_vert: 
+//          
+//  a(3) b(2)   c(3) a(2)
+//    ↑\ /↑        \ /→  
+//      X           X    
+//     / \         / \→   
+//  c(0) d(1)   d(0) b(1)
+//
+//    true        false
+
+fn is_vert(x: &Crossing, sign: Sign) -> bool { 
+    use CrossingType::*;
+    match (x.ctype(), sign.is_positive()) {
+        (X, false) | (Xm, true)  | (V, _) => true,
+        (X, true)  | (Xm, false) | (H, _) => false
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use yui::Ratio;
@@ -378,36 +345,6 @@ mod tests {
 
     type R = Ratio<i64>;
     type P = KRPoly<R>;
-
-    #[test]
-    fn collect_x_polys() { 
-        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
-        let g = KRCubeData::<R>::collect_x_polys(&l);
-        let x = (0..3).map(P::variable).collect_vec();
-
-        assert_eq!(g.len(), 3);
-        assert_eq!(g[0].x_bc, x[0]);
-        assert_eq!(g[1].x_bc, x[1]);
-        assert_eq!(g[2].x_bc, x[2]);
-        assert_eq!(g[0].x_ac, -&x[1] + &x[2]);
-        assert_eq!(g[1].x_ac, -&x[2] + &x[0]);
-        assert_eq!(g[2].x_ac, -&x[0] + &x[1]);
-    }
-
-    #[test]
-    fn seif_graph() { 
-        let l = Link::trefoil();
-        let g = KRCubeData::<R>::seifert_graph(&l);
-        assert_eq!(g.node_count(), 2);
-        assert_eq!(g.edge_count(), 3);
-    }
-
-    #[test]
-    fn resolve() { 
-        let l = Link::hopf_link();
-        let u = KRCubeData::<R>::resolve(&l);
-        assert_eq!(u.components().len(), 1);
-    }
 
     #[test]
     fn grad_shift() { 
@@ -427,5 +364,27 @@ mod tests {
         let v = BitSeq::from([0,1,0]);
         let grad1 = data.grad_at(h, v);
         assert_eq!(grad1, isize3(4,-6,-2));
+    }
+
+    #[test]
+    fn resolve() { 
+        let l = Link::hopf_link();
+        let u = KRCubeData::<R>::resolve(&l);
+        assert_eq!(u.components().len(), 1);
+    }
+
+    #[test]
+    fn collect_x_polys() { 
+        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
+        let g = KRCubeData::<R>::collect_x_polys(&l);
+        let x = (0..3).map(P::variable).collect_vec();
+
+        assert_eq!(g.len(), 3);
+        assert_eq!(g[0].x_ac, -&x[1] - &x[2]);
+        assert_eq!(g[0].x_bc, x[0]);
+        assert_eq!(g[1].x_ac, x[1]);
+        assert_eq!(g[1].x_bc, &x[0] + &x[2]);
+        assert_eq!(g[2].x_ac, x[2]);
+        assert_eq!(g[2].x_bc, &x[0] - &x[1]);
     }
 }

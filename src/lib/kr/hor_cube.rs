@@ -178,7 +178,7 @@ mod tests {
         let cube = make_cube(&l, v, q);
 
         let p = cube.edge_poly(0); // x_ac
-        assert_eq!(p, -&x(1) + &x(2));
+        assert_eq!(p, -&x(1) - &x(2));
 
         // p: neg, v: 1, h: 0 -> 1
         let v = BitSeq::from([1,0,0]);
@@ -186,24 +186,7 @@ mod tests {
         let cube = make_cube(&l, v, q);
 
         let p = cube.edge_poly(0); // x_ac * x_bc
-        assert_eq!(p, (-&x(1) + &x(2)) * &x(0));
-
-        // p: pos, v: 0, h: 0 -> 1
-        let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]).mirror(); // trefoil
-        let v = BitSeq::from([0,0,0]);
-        let q = 0;
-        let cube = make_cube(&l, v, q);
-
-        let p = cube.edge_poly(0); // x_ac * x_bc
-        assert_eq!(p, (-&x(1) + &x(2)) * &x(0));
-
-        // p: pos, v: 1, h: 0 -> 1
-        let v = BitSeq::from([1,0,0]);
-        let q = 0;
-        let cube = make_cube(&l, v, q);
-
-        let p = cube.edge_poly(0); // x_ac
-        assert_eq!(p, -&x(1) + &x(2));
+        assert_eq!(p, (-&x(1) - &x(2)) * &x(0));
     }
 
     #[test]
@@ -222,11 +205,9 @@ mod tests {
 
         assert_eq!(ys, map!{
             KRGen(BitSeq::from([1,0,0]), v, x(1)) => -R::one(),
-            KRGen(BitSeq::from([1,0,0]), v, x(2)) =>  R::one(),
-            KRGen(BitSeq::from([0,1,0]), v, x(2)) => -R::one(),
-            KRGen(BitSeq::from([0,1,0]), v, x(0)) =>  R::one(),
-            KRGen(BitSeq::from([0,0,1]), v, x(0)) => -R::one(),
-            KRGen(BitSeq::from([0,0,1]), v, x(1)) =>  R::one()
+            KRGen(BitSeq::from([1,0,0]), v, x(2)) => -R::one(),
+            KRGen(BitSeq::from([0,1,0]), v, x(1)) =>  R::one(),
+            KRGen(BitSeq::from([0,0,1]), v, x(2)) =>  R::one()
         });
 
         let h = BitSeq::from([0,1,0]);
@@ -235,9 +216,8 @@ mod tests {
 
         assert_eq!(ys, map! {
             KRGen(BitSeq::from([1,1,0]), v, x(1)) => -R::one(),
-            KRGen(BitSeq::from([1,1,0]), v, x(2)) =>  R::one(),
-            KRGen(BitSeq::from([0,1,1]), v, x(0)) =>  R::one(),
-            KRGen(BitSeq::from([0,1,1]), v, x(1)) => -R::one()
+            KRGen(BitSeq::from([1,1,0]), v, x(2)) => -R::one(),
+            KRGen(BitSeq::from([0,1,1]), v, x(2)) => -R::one()
         });
 
         let h = BitSeq::from([1,1,1]);

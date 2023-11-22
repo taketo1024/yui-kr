@@ -68,7 +68,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let mut res = Self::new(v_coords, edge_polys);
 
         if DEBUG { 
-            println!("start excl: {:#?}", res.edge_polys);
+            println!("==========");
+            println!("start excl");
+            println!("==========\n");
+            println!("edge-polys: {:#?}\n", res.edge_polys);
         }
 
         for d in 1..=level { 
@@ -84,7 +87,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     fn excl_all(&mut self, deg: usize) {
         while let Some((i, k)) = self.find_excl_var(deg) { 
-            self.perform_excl(deg, i, k);
+            self.perform_excl(i, k, deg);
         }
     }
 
@@ -95,7 +98,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         
         let cands = self.edge_polys.keys().filter_map(|&i| { 
             let p = &self.edge_polys[&i];
-            self.find_excl_var_in(deg, p).map(|k| (i, k))
+            self.find_excl_var_in(p, deg).map(|k| (i, k))
         });
 
         cands.max_by(|(i1, _), (i2, _)| { 
@@ -109,7 +112,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         })
     }
 
-    fn find_excl_var_in(&self, deg: usize, p: &KRPoly<R>) -> Option<usize> { 
+    fn find_excl_var_in(&self, p: &KRPoly<R>, deg: usize) -> Option<usize> { 
         assert!(deg > 0);
 
         // all vars consisting p must be contained in remain_vars. 
@@ -137,11 +140,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }).map(|(k, _)| k)
     }
 
-    fn perform_excl(&mut self, deg: usize, i: usize, k: usize) {
+    fn perform_excl(&mut self, i: usize, k: usize, deg: usize) {
+        assert!(deg == 1 || deg == 2);
+        
         // take divisor and edge-polys.
         let p = self.edge_polys.remove(&i).unwrap();
         let edge_polys = std::mem::take(&mut self.edge_polys);
 
+        debug_assert!(p.lead_term_for(k).unwrap().0.deg_for(k) == deg);
         debug_assert!(self.is_free(&p));
 
         // update edge-polys.
@@ -172,8 +178,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
 
         if DEBUG { 
+            println!("------------");
             println!("excl step: {}", self.process.len());
-            println!("target {}", KRMono::from((k, deg)));
+            println!("------------\n");
+            println!("target: {}", KRMono::from((k, deg)));
             println!("    {i}: {}", p);
             println!("edge-poly: {:#?}", self.edge_polys);
             println!("remain: {:?}", self.remain_vars);
@@ -456,11 +464,7 @@ mod tests {
     type R = Ratio<i64>;
     type P = KRPoly<R>;
 
-    fn vars(l: usize) -> Vec<P> {
-        (0..l).map(P::variable).collect_vec()
-    }
-
-    fn vgen<const N: usize, const M: usize>(h: [usize; N], v: [usize; N], m: [usize; M]) -> KRGen {
+    fn gen<const N: usize, const M: usize>(h: [usize; N], v: [usize; N], m: [usize; M]) -> KRGen {
         KRGen(BitSeq::from(h), BitSeq::from(v), MultiVar::from(m))
     }
 
@@ -478,15 +482,11 @@ mod tests {
         assert_eq!(excl.remain_vars, [0,1,2].into());
         assert!(excl.process.is_empty());
 
-        let xs = vars(3);
-        let x0 = &xs[0];
-        let x1 = &xs[1];
-        let x2 = &xs[2];
-
+        let x = P::variable;
         assert_eq!(excl.edge_polys, map!{ 
-            0 => x1 - x2,
-            1 => -x0 + x2,
-            2 => x0 * x2 - x1 * x2
+            0 => -x(1) - x(2),
+            1 => x(1),
+            2 => x(2) * (x(0) + x(1))
         });
     }
 
@@ -499,13 +499,13 @@ mod tests {
         let excl = KRHorExcl::from(&data, v, 0);
         let p = &excl.edge_polys;
 
-        assert_eq!(excl.find_excl_var_in(1, &p[&0]), Some(1));
-        assert_eq!(excl.find_excl_var_in(1, &p[&1]), Some(0));
-        assert_eq!(excl.find_excl_var_in(1, &p[&2]), None);
+        assert_eq!(excl.find_excl_var_in(&p[&0], 1), Some(1));
+        assert_eq!(excl.find_excl_var_in(&p[&1], 1), Some(1));
+        assert_eq!(excl.find_excl_var_in(&p[&2], 1), None);
         
-        assert_eq!(excl.find_excl_var_in(2, &p[&0]), None);
-        assert_eq!(excl.find_excl_var_in(2, &p[&1]), None);
-        assert_eq!(excl.find_excl_var_in(1, &p[&2]), None);
+        assert_eq!(excl.find_excl_var_in(&p[&0], 2), None);
+        assert_eq!(excl.find_excl_var_in(&p[&1], 2), None);
+        assert_eq!(excl.find_excl_var_in(&p[&2], 1), None);
     }
 
     #[test]
@@ -515,18 +515,13 @@ mod tests {
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
+        let x = P::variable;
 
-        // replaces x1 -> x2
-        excl.perform_excl(1, 0, 1);
-
-        let xs = vars(3);
-        let x0 = &xs[0];
-        let x1 = &xs[1];
-        let x2 = &xs[2];
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
 
         assert_eq!(excl.edge_polys, map!{ 
-            1 => -x0 + x2,
-            2 => x0 * x2 - x2 * x2
+            1 => -x(2),
+            2 => x(2) * (x(0) - x(2))
         });
 
         assert_eq!(excl.exc_dirs, [0].into());
@@ -539,10 +534,10 @@ mod tests {
 
         assert_eq!(proc.dir, 0);
         assert_eq!(proc.var, 1);
-        assert_eq!(proc.divisor, x1 - x2);
+        assert_eq!(proc.divisor, -x(1) - x(2));
         assert_eq!(proc.edge_polys, map!{ 
-            1 => -x0 + x2,
-            2 => x0 * x2 - x1 * x2
+            1 => x(1),
+            2 => x(2) * (x(0) + x(1))
         });
     }
 
@@ -553,38 +548,28 @@ mod tests {
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
+        let x = P::variable;
 
-        // replaces x1 -> x2
-        excl.perform_excl(1, 0, 1);
-
-        let p = &excl.edge_polys;
-        assert_eq!(excl.find_excl_var_in(1, &p[&1]), Some(0));
-        assert_eq!(excl.find_excl_var_in(1, &p[&2]), None);
-
-        // replaces x0 -> x2
-        excl.perform_excl(1, 1, 0);
-
-        let xs = vars(3);
-        let x0 = &xs[0];
-        let x2 = &xs[2];
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
+        excl.perform_excl(1, 2, 1); // x2 -> 0
 
         assert_eq!(excl.edge_polys, map!{ 
             2 => P::zero()
         });
 
         assert_eq!(excl.exc_dirs, [0,1].into());
-        assert_eq!(excl.fst_exc_vars, [0,1].into());
+        assert_eq!(excl.fst_exc_vars, [1,2].into());
         assert_eq!(excl.snd_exc_vars, [].into());
-        assert_eq!(excl.remain_vars, [2].into());
+        assert_eq!(excl.remain_vars, [0].into());
         assert_eq!(excl.process.len(), 2);
 
         let proc = &excl.process[1];
         
         assert_eq!(proc.dir, 1);
-        assert_eq!(proc.var, 0);
-        assert_eq!(proc.divisor, -x0 + x2);
+        assert_eq!(proc.var, 2);
+        assert_eq!(proc.divisor, -x(2));
         assert_eq!(proc.edge_polys, map!{ 
-            2 => x0 * x2 - x2 * x2
+            2 => x(2) * (x(0) - x(2))
         });
     }
 
@@ -595,23 +580,18 @@ mod tests {
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
+        let x = P::variable;
 
-        // replaces x1 -> x2
-        excl.perform_excl(1, 0, 1);
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
 
         let p = &excl.edge_polys;
-        assert_eq!(excl.find_excl_var_in(2, &p[&1]), None);
-        assert_eq!(excl.find_excl_var_in(2, &p[&2]), Some(2));
+        assert_eq!(excl.find_excl_var_in(&p[&1], 2), None);
+        assert_eq!(excl.find_excl_var_in(&p[&2], 2), Some(2));
 
-        // replaces x2 * x2 -> x0 * x2
-        excl.perform_excl(2, 2, 2);
-
-        let xs = vars(3);
-        let x0 = &xs[0];
-        let x2 = &xs[2];
+        excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
 
         assert_eq!(excl.edge_polys, map!{ 
-            1 => -x0 + x2
+            1 => -x(2)
         });
 
         assert_eq!(excl.exc_dirs, [0,2].into());
@@ -624,9 +604,9 @@ mod tests {
 
         assert_eq!(proc.dir, 2);
         assert_eq!(proc.var, 2);
-        assert_eq!(proc.divisor, x0 * x2 - x2 * x2);
+        assert_eq!(proc.divisor, x(2) * (x(0) - x(2)));
         assert_eq!(proc.edge_polys, map!{ 
-            1 => -x0 + x2
+            1 => -x(2)
         });
     }
 
@@ -654,10 +634,10 @@ mod tests {
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
-        excl.perform_excl(1, 0, 1);
+        excl.perform_excl(0, 1, 1);
 
-        assert!( excl.should_vanish(&vgen([0,1,0], [0,0,1], [1,2,3]))); // h[0] = 0
-        assert!(!excl.should_vanish(&vgen([1,0,0], [0,0,1], [1,2,3])));
+        assert!( excl.should_vanish(&gen([0,1,0], [0,0,1], [1,2,3]))); // h[0] = 0
+        assert!(!excl.should_vanish(&gen([1,0,0], [0,0,1], [1,2,3])));
     }
 
     #[test]
@@ -684,7 +664,7 @@ mod tests {
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
-        excl.perform_excl(1, 0, 1); // x_1 is reduced
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
 
         assert!(!excl.should_reduce(&MultiVar::from([0,0,0])));
         assert!(!excl.should_reduce(&MultiVar::from([1,0,0])));
@@ -700,8 +680,8 @@ mod tests {
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
-        excl.perform_excl(1, 0, 1); // x_1 is reduced.
-        excl.perform_excl(2, 2, 2); // (x_2)^2 is reduced.
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
+        excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
 
         assert!(!excl.should_reduce(&MultiVar::from([0,0,0])));
         assert!(!excl.should_reduce(&MultiVar::from([1,0,0])));
@@ -728,7 +708,7 @@ mod tests {
         assert_eq!(g[2].len(), 26);
         assert_eq!(g[3].len(), 15);
 
-        excl.perform_excl(1, 0, 1); // x_1 is reduced.
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
 
         let rg = g.iter().map(|g| 
             excl.reduce_gens(g)
@@ -738,8 +718,28 @@ mod tests {
         assert_eq!(rg[1].len(), 2);
         assert_eq!(rg[2].len(), 7);
         assert_eq!(rg[3].len(), 5);
+    }
 
-        excl.perform_excl(2, 2, 2); // (x_2)^2 is reduced.
+    #[test]
+    fn reduce_gens_2() {
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+
+        let data = KRCubeData::<R>::new_no_excl(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
+        let cube = KRHorCube::new(Arc::new(data), v, 0);
+
+        let g = (0..=3).map(|i| 
+            cube.gens(i)
+        ).collect_vec();
+
+        assert_eq!(g[0].len(),  1);
+        assert_eq!(g[1].len(), 12);
+        assert_eq!(g[2].len(), 26);
+        assert_eq!(g[3].len(), 15);
+
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
+        excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
 
         let rg = g.iter().map(|g| 
             excl.reduce_gens(g)
@@ -759,27 +759,27 @@ mod tests {
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
-        excl.perform_excl(1, 0, 1); // x1 -> x2
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
 
         assert_eq!(
-            excl.forward_x(&vgen([0,0,0], [0,0,1], [0,0,0])), 
+            excl.forward_x(&gen([0,0,0], [0,0,1], [0,0,0])), 
             KRChain::zero()
         ); // vanish
         assert_eq!(
-            excl.forward_x(&vgen([1,0,0], [0,0,1], [0,0,0])), 
-              KRChain::from(vgen([1,0,0], [0,0,1], [0,0,0])) // 1: id
+            excl.forward_x(&gen([1,0,0], [0,0,1], [0,0,0])), 
+              KRChain::from(gen([1,0,0], [0,0,1], [0,0,0])) // 1: id
         );
         assert_eq!(
-            excl.forward_x(&vgen([1,0,0], [0,0,1], [1,0,0])), 
-              KRChain::from(vgen([1,0,0], [0,0,1], [1,0,0])) // x0: id
+            excl.forward_x(&gen([1,0,0], [0,0,1], [1,0,0])), 
+              KRChain::from(gen([1,0,0], [0,0,1], [1,0,0])) // x0: id
         );
         assert_eq!(
-            excl.forward_x(&vgen([1,0,0], [0,0,1], [0,1,0])), 
-              KRChain::from(vgen([1,0,0], [0,0,1], [0,0,1])) // x1 -> x2
+            excl.forward_x(&gen([1,0,0], [0,0,1], [0,1,0])), 
+              KRChain::from((gen([1,0,0], [0,0,1], [0,0,1]), -R::one())) // x1 -> -x2
         );
         assert_eq!(
-            excl.forward_x(&vgen([1,0,0], [0,0,1], [0,0,1])), 
-              KRChain::from(vgen([1,0,0], [0,0,1], [0,0,1])) // x2: id
+            excl.forward_x(&gen([1,0,0], [0,0,1], [0,0,1])), 
+              KRChain::from(gen([1,0,0], [0,0,1], [0,0,1])) // x2: id
         );
     }
 
@@ -791,41 +791,41 @@ mod tests {
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
 
-        excl.perform_excl(1, 0, 1); // x1 -> x2
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
         excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
 
         assert_eq!(
-            excl.forward_x(&vgen([0,1,1], [0,0,1], [0,0,0])), 
+            excl.forward_x(&gen([0,1,1], [0,0,1], [0,0,0])), 
             KRChain::zero()
         ); // vanish
         assert_eq!(
-            excl.forward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), 
+            excl.forward_x(&gen([1,1,0], [0,0,1], [0,0,0])), 
             KRChain::zero()
         ); // vanish
 
         assert_eq!(
-            excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), 
-              KRChain::from(vgen([1,0,1], [0,0,1], [0,0,0])) // 1: id
+            excl.forward_x(&gen([1,0,1], [0,0,1], [0,0,0])), 
+              KRChain::from(gen([1,0,1], [0,0,1], [0,0,0])) // 1: id
         );
         assert_eq!(
-            excl.forward_x(&vgen([1,0,1], [0,0,1], [1,0,0])), 
-              KRChain::from(vgen([1,0,1], [0,0,1], [1,0,0])) // x1: id
+            excl.forward_x(&gen([1,0,1], [0,0,1], [1,0,0])), 
+              KRChain::from(gen([1,0,1], [0,0,1], [1,0,0])) // x1: id
         );
         assert_eq!(
-            excl.forward_x(&vgen([1,0,1], [0,0,1], [0,1,0])), 
-              KRChain::from(vgen([1,0,1], [0,0,1], [0,0,1])) // x1 -> x2
+            excl.forward_x(&gen([1,0,1], [0,0,1], [0,1,0])), 
+              KRChain::from((gen([1,0,1], [0,0,1], [0,0,1]), -R::one())) // x1 -> -x2
         );
         assert_eq!(
-            excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,1])), 
-              KRChain::from(vgen([1,0,1], [0,0,1], [0,0,1])) // x2: id
+            excl.forward_x(&gen([1,0,1], [0,0,1], [0,0,1])), 
+              KRChain::from(gen([1,0,1], [0,0,1], [0,0,1])) // x2: id
         );
         assert_eq!(
-            excl.forward_x(&vgen([1,0,1], [0,0,1], [0,0,2])), 
-              KRChain::from(vgen([1,0,1], [0,0,1], [1,0,1])) // x2^2 -> x0 x2
+            excl.forward_x(&gen([1,0,1], [0,0,1], [0,0,2])), 
+              KRChain::from(gen([1,0,1], [0,0,1], [1,0,1])) // x2^2 -> x0 x2
         );
         assert_eq!(
-            excl.forward_x(&vgen([1,0,1], [0,0,1], [1,1,1])), 
-              KRChain::from(vgen([1,0,1], [0,0,1], [2,0,1])) // x0x1x2 -> x0^2 x2
+            excl.forward_x(&gen([1,0,1], [0,0,1], [1,1,1])), 
+              KRChain::from((gen([1,0,1], [0,0,1], [2,0,1]), -R::one())) // x0x1x2 -> -x0^2 x2
         );
     }
 
@@ -837,32 +837,36 @@ mod tests {
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
         
-        excl.perform_excl(1, 0, 1); // x1 -> x2
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
 
         assert_eq!(
-            excl.backward_x(&vgen([1,0,0], [0,0,1], [0,0,0])), 
+            excl.backward_x(&gen([1,0,0], [0,0,1], [0,0,0])), // 1 at [1,0,0]
             KRChain::from_iter([
-                (vgen([1,0,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,0,0]
-                (vgen([0,0,1], [0,0,1], [0,0,1]), -R::one())  // -x2 at [0,0,1]
+                (gen([1,0,0], [0,0,1], [0,0,0]),  R::one()), //   1 at [1,0,0]
+                (gen([0,1,0], [0,0,1], [0,0,0]), -R::one()), //  -1 at [0,1,0]
+                (gen([0,0,1], [0,0,1], [0,0,1]), -R::one())  // -x2 at [0,0,1]
             ])
         );
 
         assert_eq!(
-            excl.backward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), 
+            excl.backward_x(&gen([1,1,0], [0,0,1], [0,0,0])), // 1 at [1,1,0]
             KRChain::from_iter([
-                (vgen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,0]
-                (vgen([0,1,1], [0,0,1], [0,0,1]),  R::one())  //  x2 at [0,1,1]
+                (gen([1,1,0], [0,0,1], [0,0,0]), R::one()), //   1 at [1,1,0]
+                (gen([0,1,1], [0,0,1], [0,0,1]), R::one())  //  x2 at [0,1,1]
             ])
         );
 
         assert_eq!(
-            excl.backward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), 
-               KRChain::from(vgen([1,0,1], [0,0,1], [0,0,0])), //  id at [1,0,1]
+            excl.backward_x(&gen([1,0,1], [0,0,1], [0,0,0])), 
+            KRChain::from_iter([
+                (gen([1,0,1], [0,0,1], [0,0,0]),  R::one()), //  1 at [1,0,1]
+                (gen([0,1,1], [0,0,1], [0,0,0]), -R::one()), // -1 at [0,1,1]
+            ])
         );
 
         assert_eq!(
-            excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), 
-               KRChain::from(vgen([1,1,1], [0,0,1], [0,0,0])), //  id at [1,1,1]
+            excl.backward_x(&gen([1,1,1], [0,0,1], [0,0,0])), 
+               KRChain::from(gen([1,1,1], [0,0,1], [0,0,0])), //  id at [1,1,1]
         );
     }
 
@@ -874,20 +878,21 @@ mod tests {
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
         
-        excl.perform_excl(1, 0, 1); // x1 -> x2
-        excl.perform_excl(1, 1, 0); // x0 -> x2
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
+        excl.perform_excl(1, 2, 1); // x2 -> 0
 
         assert_eq!(
-            excl.backward_x(&vgen([1,1,0], [0,0,1], [0,0,0])), 
+            excl.backward_x(&gen([1,1,0], [0,0,1], [0,0,0])), 
             KRChain::from_iter([
-                (vgen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //  id at [1,1,0]
-                (vgen([1,0,1], [0,0,1], [0,0,1]), -R::one()), // -x2 at [1,0,1]
-                (vgen([0,1,1], [0,0,1], [0,0,1]),  R::one()), //  x2 at [0,1,1]
+                (gen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //     id at [1,1,0]
+                (gen([1,0,1], [0,0,1], [1,0,0]), -R::one()), //    -x0
+                (gen([1,0,1], [0,0,1], [0,0,1]),  R::one()), //    +x2 at [1,0,1]
+                (gen([0,1,1], [0,0,1], [1,0,0]),  R::one()), //     x0 at [0,1,1]
             ])
         );
         assert_eq!(
-            excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), 
-               KRChain::from(vgen([1,1,1], [0,0,1], [0,0,0]))
+            excl.backward_x(&gen([1,1,1], [0,0,1], [0,0,0])), 
+               KRChain::from(gen([1,1,1], [0,0,1], [0,0,0]))
         );
     }
 
@@ -899,17 +904,45 @@ mod tests {
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
         
-        excl.perform_excl(1, 0, 1); // x1 -> x2
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
         excl.perform_excl(2, 2, 2); // x2^2 -> x0 x2
 
         assert_eq!(
-            excl.backward_x(&vgen([1,0,1], [0,0,1], [0,0,0])), 
-               KRChain::from(vgen([1,0,1], [0,0,1], [0,0,0]))
+            excl.backward_x(&gen([1,0,1], [0,0,1], [0,0,0])), 
+            KRChain::from_iter([
+                (gen([1,0,1], [0,0,1], [0,0,0]),  R::one()),
+                (gen([0,1,1], [0,0,1], [0,0,0]), -R::one()),
+            ])
         );
         assert_eq!(
-            excl.backward_x(&vgen([1,1,1], [0,0,1], [0,0,0])), 
-               KRChain::from(vgen([1,1,1], [0,0,1], [0,0,0]))
+            excl.backward_x(&gen([1,1,1], [0,0,1], [0,0,0])), 
+               KRChain::from(gen([1,1,1], [0,0,1], [0,0,0]))
         );
+    }
+
+    fn make_trans<R>(excl: &KRHorExcl<R>, gens: &Vec<KRGen>) -> Trans<R>
+    where R: Ring, for<'x> &'x R: RingOps<R> { 
+        let from = IndexList::from_iter( gens.clone() );
+        let to = IndexList::from_iter( excl.reduce_gens(&gens) );
+        excl.trans_for(&from, &to)
+    }
+
+    #[test]
+    fn trans_before() { 
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
+
+        let data = KRCubeData::<R>::new_no_excl(&l);
+        let excl = KRHorExcl::from(&data, v, 0);
+        let cube = KRHorCube::new(Arc::new(data), v, 0);
+
+        let gens = cube.gens(2);
+        let t = make_trans(&excl, &gens);
+
+        assert_eq!(gens.len(), 26);
+        assert_eq!(t.forward_mat().shape(), (26, 26));
+        assert!(t.forward_mat().is_id());
+        assert!(t.backward_mat().is_id());
     }
 
     #[test]
@@ -922,31 +955,30 @@ mod tests {
         let cube = KRHorCube::new(Arc::new(data), v, 0);
 
         let gens = cube.gens(2);
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
 
-        let trans = |excl: &KRHorExcl<R>| {
-            let from = IndexList::from_iter( gens.clone() );
-            let to = IndexList::from_iter( excl.reduce_gens(&gens) );
-            excl.trans_for(&from, &to)
-        };
+        let t = make_trans(&excl, &gens);
 
-        let t0 = trans(&excl);
+        assert_eq!(t.forward_mat().shape(), (7, 26));
+        assert!((t.forward_mat() * t.backward_mat()).is_id());
+    }
 
-        assert_eq!(t0.forward_mat().shape(), (26, 26));
-        assert!(t0.forward_mat().is_id());
-        assert!(t0.backward_mat().is_id());
+    #[test]
+    fn trans_2() { 
+        let l = Link::trefoil();
+        let v = BitSeq::from_iter([0,0,1]);
 
-        excl.perform_excl(1, 0, 1); // x1 -> x2
+        let data = KRCubeData::<R>::new_no_excl(&l);
+        let mut excl = KRHorExcl::from(&data, v, 0);
+        let cube = KRHorCube::new(Arc::new(data), v, 0);
 
-        let t1 = trans(&excl);
+        let gens = cube.gens(2);
+        excl.perform_excl(0, 1, 1); // x1 -> -x2
+        excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
 
-        assert_eq!(t1.forward_mat().shape(), (7, 26));
-        assert!((t1.forward_mat() * t1.backward_mat()).is_id());
+        let t = make_trans(&excl, &gens);
 
-        excl.perform_excl(1, 1, 0); // x0 -> x2
-
-        let t2 = trans(&excl);
-
-        assert_eq!(t2.forward_mat().shape(), (1, 26));
-        assert!((t2.forward_mat() * t2.backward_mat()).is_id());
+        assert_eq!(t.forward_mat().shape(), (2, 26));
+        assert!((t.forward_mat() * t.backward_mat()).is_id());
     }
 }
