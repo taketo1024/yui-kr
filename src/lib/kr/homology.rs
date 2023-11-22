@@ -1,19 +1,18 @@
 use std::cell::UnsafeCell;
 use std::collections::HashMap;
-use std::ops::{Index, RangeInclusive};
+use std::ops::Index;
 use std::sync::Arc;
 
 use cartesian::{cartesian, TuplePrepend};
 use itertools::Itertools;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand, DisplayTable};
+use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand};
 use yui_link::Link;
-use yui::poly::LPoly;
 
 use super::data::KRCubeData;
 use super::tot_homol::KRTotHomol;
 
-type QPoly<R> = LPoly<'q', R>;
+pub type KRHomologyStr = HashMap<(isize, isize, isize), usize>;
 
 pub struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
@@ -39,7 +38,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         })
     }
 
-    pub fn rank_all(&self) -> HashMap<(isize, isize, isize), usize> { 
+    pub fn structure(&self) -> KRHomologyStr { 
         self.support().filter_map(|isize3(i, j, k)| {
             let r = self[(i, j, k)].rank();
             if r > 0 { 
@@ -51,24 +50,13 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn tot_rank(&self) -> usize { 
-        self.rank_all().values().sum()
+        self.structure().values().sum()
     }
 
-    pub fn qpoly_table(&self) -> HashMap<(isize, isize), QPoly<R>> { 
-        let str = self.rank_all();        
-        let elements = str.into_iter().into_group_map_by(|(idx, _)|
-            (idx.1, idx.2) // (j, k)
-        ).into_iter().map(|(jk, list)| { 
-            let q = QPoly::mono;
-            let elems = list.into_iter().map(|(idx, r)| {
-                let i = idx.0;
-                let a = R::from(r as i32);
-                (q(i), a) // a.q^i
-            });
-            let p = QPoly::from_iter(elems);
-            (jk, p)
-        });
-        elements.collect()
+    pub fn display_table(&self) -> String {
+        use crate::util::make_qpoly_table;
+        let str = self.structure();
+        make_qpoly_table(&str)
     }
 }
 
@@ -118,40 +106,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 }
 
-impl<R> DisplayTable<isize2> for KRHomology<R>
-where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    fn display_table(&self) -> String {
-        let polys = self.qpoly_table();   
-        let j_range = range(polys.keys().map(|idx| idx.0)).step_by(2);
-        let k_range = range(polys.keys().map(|idx| idx.1)).rev().step_by(2);
-
-        yui::util::format::table("k\\j", k_range, j_range, |&k, &j| { 
-            if let Some(p) = polys.get(&(j, k)) { 
-                p.to_string()
-            } else { 
-                ".".to_string()
-            }
-        })
-    }
-}
-
-fn range<Itr>(itr: Itr) -> RangeInclusive<isize>
-where Itr: Iterator<Item = isize> {
-    if let Some((l, r)) = itr.fold(None, |res, i| { 
-        if let Some((mut l, mut r)) = res { 
-            if i < l { l = i }
-            if r < i { r = i }
-            Some((l, r))
-        } else { 
-            Some((i, i))
-        }
-    }) { 
-        l..=r
-    } else { 
-        0..=0
-    }
-}
-
 #[cfg(test)]
 mod tests { 
     use yui_link::Braid;
@@ -168,7 +122,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 3);
-        assert_eq!(h.rank_all(), map!{ 
+        assert_eq!(h.structure(), map!{ 
             (0,4,-2) => 1,
             (-2,2,2) => 1,
             (2,2,-2) => 1
@@ -182,7 +136,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 5);
-        assert_eq!(h.rank_all(), map!{ 
+        assert_eq!(h.structure(), map!{ 
             (0,-2,2) => 1,
             (-2,0,2) => 1,
             (0,2,-2) => 1,
@@ -198,7 +152,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 5);
-        assert_eq!(h.rank_all(), map!{             
+        assert_eq!(h.structure(), map!{             
             (0,4,0)  => 1,
             (-2,6,0) => 1,
             (-4,4,4) => 1,
@@ -214,7 +168,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 7);
-        assert_eq!(h.rank_all(), map!{ 
+        assert_eq!(h.structure(), map!{ 
             (2,4,-4) => 1,
             (2,2,-2) => 1,
             (0,4,-2) => 1,
@@ -232,7 +186,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 9);
-        assert_eq!(h.rank_all(), map!{ 
+        assert_eq!(h.structure(), map!{ 
             (0,-2,2) => 1,
             (0,0,0)  => 2,
             (2,0,-2) => 1,
@@ -251,7 +205,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 11);
-        assert_eq!(h.rank_all(), map!{ 
+        assert_eq!(h.structure(), map!{ 
             (0,4,-2) => 1,
             (2,4,-4) => 1,
             (-2,4,0) => 1,
@@ -272,7 +226,7 @@ mod tests {
         let h = KRHomology::<R>::new(&l);
 
         assert_eq!(h.tot_rank(), 13);
-        assert_eq!(h.rank_all(), map!{ 
+        assert_eq!(h.structure(), map!{ 
             (4,0,-4)  => 1,
             (2,-2,0)  => 1,
             (0,0,0)   => 3,

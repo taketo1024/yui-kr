@@ -1,12 +1,10 @@
-use std::collections::HashMap;
-
 use log::{info, error};
 use clap::{Parser, ValueEnum};
 use derive_more::Display;
 use num_bigint::BigInt;
 use yui::{Ratio, Integer, IntOps};
-use yui_homology::DisplayTable;
-use yui_kr::kr::KRHomology;
+use yui_kr::{KRHomology, KRHomologyStr};
+use yui_kr::util::{make_qpoly_table, mirror};
 use yui_link::Braid;
 use super::utils::*;
 
@@ -99,6 +97,7 @@ impl App {
     pub fn run(&self) -> Result<String, Box<dyn std::error::Error>> { 
         info!("args: {:?}", self.args);
 
+        let target = &self.args.target;
         let (res, time) = measure(|| guard_panic(||
             self.dispatch()
         ));
@@ -107,12 +106,24 @@ impl App {
             error!("{e}");
         }
 
+        let res = res?;
+
+        if self.args.check_result { 
+            Self::check_result(target, &res)?;
+        }
+        
+        if self.args.save_result { 
+            Self::save_data(target, &res)?;
+        }
+
+        let output = make_qpoly_table(&res);
+
         info!("time: {:?}", time);
 
-        res
+        Ok(output)
     }
 
-    fn dispatch(&self) -> Result<String, Box<dyn std::error::Error>> { 
+    fn dispatch(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> { 
         match self.args.int_type { 
             IntType::I64    => self.compute::<i64>(),
             IntType::I128   => self.compute::<i128>(),
@@ -120,7 +131,7 @@ impl App {
         }
     }
 
-    fn compute<I>(&self) -> Result<String, Box<dyn std::error::Error>>
+    fn compute<I>(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>>
     where I: Integer, for<'x> &'x I: IntOps<I> { 
         let target = &self.args.target;
         let braid = Braid::load(target)?;
@@ -129,21 +140,22 @@ impl App {
             err!("braid-length {} of '{target}' exceeds limit: {MAX_BRAID_LEN}", braid.len())?;
         }
 
+        info!("braid: {}", braid);
+
         let link = braid.closure();
         let link = if self.args.mirror { link.mirror() } else { link };
 
-        let kr = KRHomology::<Ratio<I>>::new(&link);
-        let res = kr.rank_all();
+        info!("n: {}, w: {}", link.crossing_num(), link.writhe());
 
-        if self.args.check_result { 
-            Self::check_result(target, &res)?;
-        }
-
-        if self.args.save_result { 
-            Self::save_data(target, &res)?;
-        }
-
-        let res = kr.display_table();
+        let res = if link.writhe() > 0 { 
+            info!("compute from mirror.");
+            let link = link.mirror();
+            let kr = KRHomology::<Ratio<I>>::new(&link);
+            mirror(&kr.structure())
+        } else { 
+            let kr = KRHomology::<Ratio<I>>::new(&link);
+            kr.structure()
+        };
 
         Ok(res)
     }
@@ -159,7 +171,7 @@ impl App {
         std::path::Path::new(&path).exists()
     }
 
-    pub fn load_data(name: &str) -> Result<Res, Box<dyn std::error::Error>> {
+    pub fn load_data(name: &str) -> Result<KRHomologyStr, Box<dyn std::error::Error>> {
         let path = Self::path_for(name);
         let json = std::fs::read_to_string(path)?;
         let list: Vec<((isize, isize, isize), usize)> = serde_json::from_str(&json)?;
@@ -167,7 +179,7 @@ impl App {
         Ok(data)
     }
 
-    pub fn save_data(name: &str, data: &Res) -> Result<(), Box<dyn std::error::Error>> { 
+    pub fn save_data(name: &str, data: &KRHomologyStr) -> Result<(), Box<dyn std::error::Error>> { 
         if Self::data_exists(name) { 
             let exist = Self::load_data(name)?;
             if data == &exist { 
@@ -185,7 +197,7 @@ impl App {
         Ok(())
     }
 
-    pub fn check_result(name: &str, data: &Res) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn check_result(name: &str, data: &KRHomologyStr) -> Result<(), Box<dyn std::error::Error>> {
         if Self::data_exists(name) { 
             let expected = Self::load_data(name)?;
             if data != &expected { 
@@ -195,5 +207,3 @@ impl App {
         Ok(())
     }
 }
-
-type Res = HashMap<(isize, isize, isize), usize>;
