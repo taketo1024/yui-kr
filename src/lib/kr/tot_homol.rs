@@ -2,8 +2,9 @@ use std::ops::Index;
 use std::sync::Arc;
 use delegate::delegate;
 
+use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, Homology2, GridTrait, GridIter, HomologySummand};
+use yui_homology::{isize2, Homology2, GridTrait, GridIter, HomologySummand, DisplayTable};
 
 use crate::kr::tot_cpx::KRTotComplex;
 use super::data::KRCubeData;
@@ -17,10 +18,18 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
-        let complex = KRTotComplex::new(data, q_slice);
-        let inner = complex.reduced().homology(false);
+        info!("compute tot-homol for q: {q_slice}.");
 
-        Self { q_slice, homology: inner }
+        let complex = KRTotComplex::new(data, q_slice);
+        info!("tot-complex, q: {q_slice}\n{}.", complex.display_table());
+
+        let reduced = complex.reduced();
+        info!("reduced tot-complex, q: {q_slice}\n{}.", reduced.display_table());
+        
+        let homology = reduced.homology(false);
+        info!("tot-homology, q: {q_slice} \n{}", homology.display_table());
+
+        Self { q_slice, homology }
     }
 
     pub fn q_slice(&self) -> isize { 

@@ -5,6 +5,7 @@ use std::sync::Arc;
 use cartesian::cartesian;
 use delegate::delegate;
 use itertools::Itertools;
+use log::info;
 use num_traits::Zero;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui::bitseq::BitSeq;
@@ -72,7 +73,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             let (i, j) = (idx.0 as usize, idx.1 as usize);
             let gens = data.verts_of_weight(j).iter().flat_map(|&v| {
                 cube.vert(v).gens(i)
-            }).collect();
+            }).collect_vec();
+
+            info!("  C[{idx}] : {}", gens.len());
+
             KRTotComplexSummand::new(gens)
         });
 
@@ -124,6 +128,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn d_matrix_for(&self, idx: isize2) -> SpMat<R> { 
         let m = self.rank(idx + self.d_deg());
         let n = self.rank(idx);
+
+        info!("  d-matrix {idx}, size: {:?}.", (m, n));
 
         let entries = if crate::config::is_multithread_enabled() { 
             (0..n).into_par_iter().map(|j| { 

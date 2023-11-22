@@ -36,7 +36,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn tot_hml(&self, q_slice: isize) -> &KRTotHomol<R> {
         let cache = unsafe { &mut *self.cache.get() };
         cache.entry(q_slice).or_insert_with(|| {
-            info!("compute KRHomol for q: {q_slice}");
             KRTotHomol::new(self.data.clone(), q_slice)
         })
     }

@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use log::info;
+use num_integer::binomial;
 use num_traits::One;
 use yui::{Ring, RingOps};
 use yui_homology::{XChainComplex, Grid1, XModStr};
@@ -50,6 +52,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         let deg = deg as usize;
         let n = self.dim();
+
+        let count = binomial(n + deg - 1, n - 1);
+        if count > 100_000 { 
+            info!("generating {count} gens at h: {h_coords}");
+        }
+
         let gens = KRMono::generate(n, deg);
 
         gens.into_iter().map(|x| 
