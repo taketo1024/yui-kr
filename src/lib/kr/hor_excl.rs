@@ -73,6 +73,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             res.excl_all(d);
         }
 
+        info!("reduced: {:?}", res.reduced_vars());
         info!("result: {:#?}", res.edge_polys);
 
         res
@@ -192,6 +193,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         };
         
         self.process.push(d);
+    }
+
+    fn reduced_vars(&self) -> Vec<KRMono> { 
+        Iterator::chain(
+            self.fst_exc_vars.iter().map(|&k| KRMono::from((k, 1))),
+            self.snd_exc_vars.iter().map(|&k| KRMono::from((k, 2)))
+        ).collect()
     }
 
     pub fn reduce_gens(&self, gens: &Vec<KRGen>) -> Vec<KRGen> {
