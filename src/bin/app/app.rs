@@ -5,7 +5,7 @@ use num_bigint::BigInt;
 use yui::{Ratio, Integer, IntOps};
 use yui_kr::{KRHomology, KRHomologyStr};
 use yui_kr::util::{make_qpoly_table, mirror};
-use yui_link::Braid;
+use yui_link::{Braid, Link};
 use super::utils::*;
 
 const MAX_BRAID_LEN: usize = 14;
@@ -150,14 +150,19 @@ impl App {
         let res = if link.writhe() > 0 { 
             info!("compute from mirror.");
             let link = link.mirror();
-            let kr = KRHomology::<Ratio<I>>::new(&link);
-            mirror(&kr.structure())
+            let res = Self::compute_kr(&link);
+            mirror(&res)
         } else { 
-            let kr = KRHomology::<Ratio<I>>::new(&link);
-            kr.structure()
+            Self::compute_kr(&link)
         };
 
         Ok(res)
+    }
+
+    fn compute_kr<I>(link: &Link) -> KRHomologyStr
+    where I: Integer, for<'x> &'x I: IntOps<I> { 
+        let kr = KRHomology::<Ratio<I>>::new(&link);
+        kr.structure()
     }
 
     pub fn path_for(name: &str) -> String { 
