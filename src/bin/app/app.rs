@@ -207,3 +207,38 @@ impl App {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests { 
+    use yui::hashmap;
+
+    use super::*;
+
+    #[test]
+    fn data_exists() { 
+        assert!( App::data_exists("3_1"));
+        assert!(!App::data_exists("3_2"));
+    }
+
+    #[test]
+    fn check_result_ok() { 
+        let data = hashmap!{ 
+            (0,4,-2) => 1,
+            (-2,2,2) => 1,
+            (2,2,-2) => 1
+        };
+        let res = App::check_result("3_1", &data);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn check_result_ng() { 
+        let data = hashmap!{ 
+            (0,4,-2) => 1,
+            (-2,2,2) => 2,
+            (2,2,-2) => 1
+        };
+        let res = App::check_result("3_1", &data);
+        assert!(res.is_err());
+    }
+}
