@@ -40,9 +40,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>) -> XChainComplex<KRGen, R> { 
         let n = cube.dim() as isize;
         let summands = Grid1::generate(0..=n, |i| { 
-            let gens = cube.gens(i as usize);
-            let red_xs = excl.reduce_gens(&gens);
-            XModStr::free(red_xs)
+            let gens = cube.gens(i as usize).filter(|v| 
+                excl.should_remain(v)
+            );
+            XModStr::free(gens)
         });
         
         XChainComplex::new(summands, 1, move |_, e| {

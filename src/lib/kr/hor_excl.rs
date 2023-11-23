@@ -73,7 +73,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             res.excl_all(d);
         }
 
-        info!("reduced: {:?}", res.reduced_vars());
+        info!("excluded: {:?}", res.excl_vars());
         info!("result: {:#?}", res.edge_polys);
 
         res
@@ -195,24 +195,26 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.process.push(d);
     }
 
-    fn reduced_vars(&self) -> Vec<KRMono> { 
+    fn is_free(&self, p: &KRPoly<R>) -> bool { 
+        p.iter().all(|(x, _)| 
+            x.deg().iter().all(|(k, _)| 
+                self.remain_vars.contains(&k)
+            )
+        )
+    }
+
+    pub fn excl_vars(&self) -> Vec<KRMono> { 
         Iterator::chain(
             self.fst_exc_vars.iter().map(|&k| KRMono::from((k, 1))),
             self.snd_exc_vars.iter().map(|&k| KRMono::from((k, 2)))
         ).collect()
     }
 
-    pub fn reduce_gens(&self, gens: &Vec<KRGen>) -> Vec<KRGen> {
-        gens.iter().filter_map(|v| 
-            if self.should_vanish(v) || self.should_reduce(&v.2) { 
-                None
-            } else {
-                Some(v.clone())
-            }
-        ).collect()
+    pub fn should_remain(&self, v: &KRGen) -> bool {
+        !self.should_drop(v) && !self.should_reduce(&v.2)
     }
 
-    fn should_vanish(&self, v: &KRGen) -> bool { 
+    fn should_drop(&self, v: &KRGen) -> bool { 
         let h = &v.0;
         self.exc_dirs.iter().any(|&i| 
             h[i].is_zero()
@@ -223,14 +225,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         x.deg().iter().any(|(k, &d)| 
             self.fst_exc_vars.contains(k) || 
             (self.snd_exc_vars.contains(k) && d >= 2)
-        )
-    }
-
-    fn is_free(&self, p: &KRPoly<R>) -> bool { 
-        p.iter().all(|(x, _)| 
-            x.deg().iter().all(|(k, _)| 
-                self.remain_vars.contains(&k)
-            )
         )
     }
 
@@ -313,7 +307,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn forward(&self, z: &KRChain<R>) -> KRChain<R> {
         // keep only non-vanishing gens. 
         let z = z.filter_gens(|v| 
-            !self.should_vanish(v)
+            !self.should_drop(v)
         );
 
         // reduce monomials. 
@@ -469,6 +463,11 @@ mod tests {
         KRGen(BitSeq::from(h), BitSeq::from(v), MultiVar::from(m))
     }
 
+    fn reduce<R>(excl: &KRHorExcl<R>, gens: &Vec<KRGen>) -> Vec<KRGen>
+    where R: Ring, for<'x> &'x R: RingOps<R> { 
+        gens.iter().filter(|&v| excl.should_remain(v)).cloned().collect_vec()
+    }
+
     #[test]
     fn init() { 
         let l = Link::trefoil();
@@ -621,8 +620,8 @@ mod tests {
         let cube = KRHorCube::new(Arc::new(data), v, 0);
 
         assert!((0..=3).all(|i| 
-            cube.gens(i).iter().all(|v| 
-                !excl.should_vanish(v)
+            cube.gens(i).all(|v| 
+                !excl.should_drop(&v)
             )
         ));
     }
@@ -637,8 +636,8 @@ mod tests {
 
         excl.perform_excl(0, 1, 1);
 
-        assert!( excl.should_vanish(&gen([0,1,0], [0,0,1], [1,2,3]))); // h[0] = 0
-        assert!(!excl.should_vanish(&gen([1,0,0], [0,0,1], [1,2,3])));
+        assert!( excl.should_drop(&gen([0,1,0], [0,0,1], [1,2,3]))); // h[0] = 0
+        assert!(!excl.should_drop(&gen([1,0,0], [0,0,1], [1,2,3])));
     }
 
     #[test]
@@ -651,7 +650,7 @@ mod tests {
         let cube = KRHorCube::new(Arc::new(data), v, 0);
 
         assert!((0..=3).all(|i| 
-            cube.gens(i).iter().all(|v| 
+            cube.gens(i).all(|v| 
                 !excl.should_reduce(&v.2)
             )
         ));
@@ -701,7 +700,7 @@ mod tests {
         let cube = KRHorCube::new(Arc::new(data), v, 0);
 
         let g = (0..=3).map(|i| 
-            cube.gens(i)
+            cube.gens(i).collect_vec()
         ).collect_vec();
 
         assert_eq!(g[0].len(),  1);
@@ -711,8 +710,8 @@ mod tests {
 
         excl.perform_excl(0, 1, 1); // x1 -> -x2
 
-        let rg = g.iter().map(|g| 
-            excl.reduce_gens(g)
+        let rg = g.iter().map(|g|
+            reduce(&excl, g)
         ).collect_vec();
 
         assert_eq!(rg[0].len(), 0);
@@ -731,7 +730,7 @@ mod tests {
         let cube = KRHorCube::new(Arc::new(data), v, 0);
 
         let g = (0..=3).map(|i| 
-            cube.gens(i)
+            cube.gens(i).collect_vec()
         ).collect_vec();
 
         assert_eq!(g[0].len(),  1);
@@ -742,8 +741,8 @@ mod tests {
         excl.perform_excl(0, 1, 1); // x1 -> -x2
         excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
 
-        let rg = g.iter().map(|g| 
-            excl.reduce_gens(g)
+        let rg = g.iter().map(|g|
+            reduce(&excl, g)
         ).collect_vec();
 
         assert_eq!(rg[0].len(), 0);
@@ -923,8 +922,8 @@ mod tests {
 
     fn make_trans<R>(excl: &KRHorExcl<R>, gens: &Vec<KRGen>) -> Trans<R>
     where R: Ring, for<'x> &'x R: RingOps<R> { 
-        let from = IndexList::from_iter( gens.clone() );
-        let to = IndexList::from_iter( excl.reduce_gens(&gens) );
+        let from = IndexList::from_iter( gens.iter().cloned() );
+        let to = IndexList::from_iter( reduce(excl, gens) );
         excl.trans_for(&from, &to)
     }
 
@@ -937,7 +936,7 @@ mod tests {
         let excl = KRHorExcl::from(&data, v, 0);
         let cube = KRHorCube::new(Arc::new(data), v, 0);
 
-        let gens = cube.gens(2);
+        let gens = cube.gens(2).collect_vec();
         let t = make_trans(&excl, &gens);
 
         assert_eq!(gens.len(), 26);
@@ -955,7 +954,7 @@ mod tests {
         let mut excl = KRHorExcl::from(&data, v, 0);
         let cube = KRHorCube::new(Arc::new(data), v, 0);
 
-        let gens = cube.gens(2);
+        let gens = cube.gens(2).collect_vec();
         excl.perform_excl(0, 1, 1); // x1 -> -x2
 
         let t = make_trans(&excl, &gens);
@@ -973,7 +972,7 @@ mod tests {
         let mut excl = KRHorExcl::from(&data, v, 0);
         let cube = KRHorCube::new(Arc::new(data), v, 0);
 
-        let gens = cube.gens(2);
+        let gens = cube.gens(2).collect_vec();
         excl.perform_excl(0, 1, 1); // x1 -> -x2
         excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
 

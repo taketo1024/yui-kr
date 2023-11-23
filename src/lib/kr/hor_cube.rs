@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use log::info;
-use num_integer::binomial;
 use num_traits::One;
 use yui::{Ring, RingOps};
 use yui_homology::{XChainComplex, Grid1, XModStr};
@@ -44,31 +42,28 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.q_slice + h + (i0 - i) / 2
     }
 
-    pub fn vert_gens(&self, h_coords: BitSeq) -> Vec<KRGen> {
+    pub fn vert_gens(&self, h_coords: BitSeq) -> impl Iterator<Item = KRGen> + '_ {
         let deg = self.mon_deg(h_coords);
-        if deg < 0 { 
-            return vec![]
-        }
+        
+        let gens = if deg >= 0 {
+            let n = self.dim();
+            KRMono::generate(n, deg as usize)
+        } else { 
+            // a trick to make empty iter
+            let mut itr = KRMono::generate(1, 1);
+            itr.next();
+            itr
+        };
 
-        let deg = deg as usize;
-        let n = self.dim();
-
-        let count = binomial(n + deg - 1, n - 1);
-        if count > 100_000 { 
-            info!("generating {count} gens at h: {h_coords}");
-        }
-
-        let gens = KRMono::generate(n, deg);
-
-        gens.into_iter().map(|x| 
+        gens.map(move |x| 
             KRGen(h_coords, self.v_coords, x)
-        ).collect()
+        )
     }
 
-    pub fn gens(&self, i: usize) -> Vec<KRGen> {
+    pub fn gens(&self, i: usize) -> impl Iterator<Item = KRGen> + '_ {
         self.data.verts_of_weight(i).iter().flat_map(|&v| 
             self.vert_gens(v)
-        ).collect()
+        )
     }
 
     pub fn edge_poly(&self, i: usize) -> KRPoly<R> {
@@ -113,6 +108,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
     use num_traits::{One, Zero};
     use yui_homology::{RModStr, ChainComplexCommon};
     use yui::Ratio;
@@ -243,16 +239,29 @@ mod tests {
 
         let cube = make_cube(&l, v, q);
         let h = BitSeq::from([0, 0, 0]);
-        let gens = cube.vert_gens(h);
+        let gens = cube.vert_gens(h).collect_vec();
 
         assert_eq!(gens.len(), 1);
         assert!(gens.iter().all(|x| x.0 == h));
 
         let h = BitSeq::from([1, 0, 0]);
-        let gens = cube.vert_gens(h);
+        let gens = cube.vert_gens(h).collect_vec();
 
         assert_eq!(gens.len(), 3);
         assert!(gens.iter().all(|x| x.0 == h));
+    }
+
+    #[test]
+    fn vert_gens_empty() {
+        let l = Link::trefoil();
+        let v = BitSeq::from([0,0,0]);
+        let q = -4;
+
+        let cube = make_cube(&l, v, q);
+        let h = BitSeq::from([0, 0, 0]);
+        let gens = cube.vert_gens(h).collect_vec();
+
+        assert_eq!(gens.len(), 0);
     }
 
     #[test]
@@ -262,10 +271,10 @@ mod tests {
         let q = 0;
         let cube = make_cube(&l, v, q);
 
-        let gens = cube.gens(0);
+        let gens = cube.gens(0).collect_vec();
         assert_eq!(gens.len(), 1);
 
-        let gens = cube.gens(1);
+        let gens = cube.gens(1).collect_vec();
         assert_eq!(gens.len(), 9);
     }
 
