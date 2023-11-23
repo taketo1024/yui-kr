@@ -19,7 +19,7 @@ impl<R> KRTotCube<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self {
         let n = data.dim();
-        let verts = BitSeq::generate(n).into_iter().map(|v|
+        let verts = BitSeq::generate(n).map(|v|
             KRHorHomol::new(data.clone(), v, q_slice)
         ).collect();
 

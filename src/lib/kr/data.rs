@@ -58,7 +58,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let s = link.seifert_circles().len() as isize;
         let x_signs = link.crossing_signs();
         let x_polys = Self::collect_x_polys(link);
-        let verts = BitSeq::generate(n).into_iter().into_group_map_by(|b| b.weight());
+        let verts = BitSeq::generate(n).into_group_map_by(|b| b.weight());
         let excl = HashMap::new();
 
         Self {
@@ -74,7 +74,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     fn perform_excl(&mut self, excl_level: usize) {
         let n = self.n_cross;
-        self.excl = BitSeq::generate(n).into_iter().map(|v| {
+        self.excl = BitSeq::generate(n).map(|v| {
             let excl = Arc::new( KRHorExcl::from(&self, v, excl_level) );
             (v, excl)
         }).collect();
