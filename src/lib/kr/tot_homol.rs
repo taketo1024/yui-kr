@@ -21,10 +21,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         info!("compute tot-homol for q: {q_slice}.");
 
         let complex = KRTotComplex::new(data, q_slice);
-        info!("tot-complex, q: {q_slice}\n{}.", complex.display_table());
+        info!("tot-complex, q: {q_slice}\n{}", complex.display_table());
 
         let reduced = complex.reduced();
-        info!("reduced tot-complex, q: {q_slice}\n{}.", reduced.display_table());
+        info!("reduced tot-complex, q: {q_slice}\n{}", reduced.display_table());
         
         let homology = reduced.homology(false);
         info!("tot-homology, q: {q_slice} \n{}", homology.display_table());

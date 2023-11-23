@@ -1,9 +1,10 @@
 use std::ops::Index;
 use std::sync::Arc;
 
+use log::info;
 use num_traits::Zero;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{GridTrait, RModStr, XHomologySummand};
+use yui_homology::{GridTrait, RModStr, XHomologySummand, DisplaySeq};
 use yui_matrix::sparse::SpVec;
 use yui::bitseq::BitSeq;
 
@@ -26,7 +27,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
         let excl = data.excl(v_coords);
         let complex = KRHorComplex::new(data.clone(), v_coords, q_slice);
+
         let homol = complex.homology();
+        info!("hor-homology; q: {q_slice}, v: {v_coords}\n{}", homol.display_seq());
 
         // extract for fast access.
         let summands = homol.into_iter().map(|(_, e)| e).collect();
