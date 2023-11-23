@@ -7,7 +7,7 @@ use delegate::delegate;
 use itertools::Itertools;
 use log::info;
 use num_traits::Zero;
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui::bitseq::BitSeq;
 use yui::{EucRing, EucRingOps, Ring, RingOps};
 use yui_homology::{isize2, ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, ChainComplexCommon};
@@ -66,21 +66,35 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
         let cube = KRTotCube::new(data.clone(), q_slice);
 
+        info!("create tot-complex, q: {q_slice}.");
+
         let n = cube.dim() as isize;
         let range = cartesian!(0..=n, 0..=n).map(|(i, j)| isize2(i, j));
 
         let summands = Grid2::generate(range, |idx| { 
-            let (i, j) = (idx.0 as usize, idx.1 as usize);
-            let gens = data.verts_of_weight(j).iter().flat_map(|&v| {
-                cube.vert(v).gens(i)
-            }).collect_vec();
-
+            let gens = Self::collect_gens(&data, &cube, idx);
             info!("  C[{idx}] : {}", gens.len());
 
             KRTotComplexSummand::new(gens)
         });
 
         Self { data, cube, summands }
+    }
+
+    #[inline(never)] // for profilability
+    fn collect_gens(data: &KRCubeData<R>, cube: &KRTotCube<R>, idx: isize2) -> Vec<KRChain<R>> { 
+        let (i, j) = (idx.0 as usize, idx.1 as usize);
+        let verts = data.verts_of_weight(j);
+        
+        if crate::config::is_multithread_enabled() { 
+            verts.par_iter().flat_map(|&v| {
+                cube.vert(v).gens(i)
+            }).collect()
+        } else { 
+            verts.iter().flat_map(|&v| {
+                cube.vert(v).gens(i)
+            }).collect_vec()
+        }
     }
 
     #[inline(never)] // for profilability
