@@ -1,10 +1,9 @@
 use std::cell::UnsafeCell;
 use std::collections::HashMap;
-use std::ops::Index;
+use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
-use cartesian::{cartesian, TuplePrepend};
-use itertools::Itertools;
+use delegate::delegate;
 use log::info;
 use yui::{EucRing, EucRingOps};
 use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand};
@@ -25,7 +24,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRHomology<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(link: &Link) -> Self { 
-        info!("init KRHomology");
         let excl_level = 2;
         let data = Arc::new(KRCubeData::new(link, excl_level));
         let cache = UnsafeCell::new( HashMap::new() );
@@ -40,7 +38,23 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         })
     }
 
+    delegate! { 
+        to self.data { 
+            pub fn i_range(&self) -> RangeInclusive<isize>;
+            pub fn j_range(&self) -> RangeInclusive<isize>;
+            pub fn k_range(&self) -> RangeInclusive<isize>;
+            pub fn q_range(&self) -> RangeInclusive<isize>;
+        }
+    }
+
     pub fn structure(&self) -> KRHomologyStr { 
+        info!("compute KRHomology.");
+        
+        info!("i-range: {:?}", self.i_range());
+        info!("j-range: {:?}", self.j_range());
+        info!("k-range: {:?}", self.k_range());
+        info!("q-range: {:?}", self.q_range());
+
         self.support().filter_map(|idx| {
             let h = self.get(idx);
             let r = h.rank();
@@ -71,21 +85,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Itr = GridIter<isize3>;
     type Output = HomologySummand<R>;
 
-    fn support(&self) -> Self::Itr {
-        let i_range = self.data.i_range().step_by(2);
-        let j_range = self.data.j_range().step_by(2);
-        let k_range = self.data.k_range().step_by(2);
-        let range = cartesian!(i_range, j_range.clone(), k_range.clone());
-        
-        range.map(|idx| 
-            idx.into()
-        ).filter(|&idx| 
-            self.is_supported(idx)
-        ).collect_vec().into_iter()
-    }
-
-    fn is_supported(&self, idx: isize3) -> bool {
-        !self.data.is_triv(idx)
+    delegate! { 
+        to self.data { 
+            fn support(&self) -> Self::Itr;
+            fn is_supported(&self, idx: isize3) -> bool;
+        }
     }
 
     fn get(&self, idx: isize3) -> &Self::Output {
@@ -98,7 +102,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return &self.zero
         }
 
-        let isize3(h, v, q) = self.data.to_inner_grad(idx).unwrap();
+        let Some(isize3(h, v, q)) = self.data.to_inner_grad(idx) else { 
+            return &self.zero
+        };
 
         self.tot_hml(q).get(isize2(h, v))
     }

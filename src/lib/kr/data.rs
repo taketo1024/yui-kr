@@ -1,12 +1,13 @@
 use std::collections::{HashSet, HashMap};
 use std::ops::RangeInclusive;
 use std::sync::Arc;
+use cartesian::{cartesian, TuplePrepend};
 use itertools::{Itertools, izip};
 use num_integer::Integer;
 use num_traits::One;
 
 use yui::{Ring, RingOps, Sign};
-use yui_homology::isize3;
+use yui_homology::{isize3, GridIter};
 use yui_link::util::seifert_graph;
 use yui_link::{Link, CrossingType, Crossing, Edge};
 use yui::bitseq::{BitSeq, Bit};
@@ -37,6 +38,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     n_cross: usize,
     writhe: isize, 
     n_seif: isize,
+    root_grad: isize3,
     x_signs: Vec<Sign>,
     x_polys: Vec<KRCrossData<R>>,
     verts: HashMap<usize, Vec<BitSeq>>,
@@ -58,6 +60,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let s = link.seifert_circles().len() as isize;
         let x_signs = link.crossing_signs();
         let x_polys = Self::collect_x_polys(link);
+        let root_grad = Self::grad(n, w, s, &x_signs, BitSeq::zeros(n), BitSeq::zeros(n));
         let verts = BitSeq::generate(n).into_group_map_by(|b| b.weight());
         let excl = HashMap::new();
 
@@ -65,6 +68,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             n_cross: n,
             writhe: w,
             n_seif: s,
+            root_grad,
             x_signs,
             x_polys,
             verts,
@@ -82,6 +86,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     pub fn dim(&self) -> usize { 
         self.n_cross
+    }
+
+    pub fn root_grad(&self) -> isize3 { 
+        self.root_grad
     }
 
     pub fn x_sign(&self, i: usize) -> Sign { 
@@ -104,9 +112,23 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    fn l_grad_shift(&self) -> isize3 { 
-        let w = self.writhe;
-        let s = self.n_seif;
+    fn grad(n: usize, w: isize, s: isize, x_signs: &Vec<Sign>, h_coords: BitSeq, v_coords: BitSeq) -> isize3 { 
+        assert_eq!(h_coords.len(), n);
+        assert_eq!(v_coords.len(), n);
+
+        let init = Self::l_grad_shift(w, s);
+        let trip = izip!(
+            x_signs.iter(), 
+            h_coords.iter(), 
+            v_coords.iter()
+        );
+
+        trip.fold(init, |grad, (&e, h, v)| { 
+            grad + Self::x_grad_shift(e, h, v)
+        })
+    }
+
+    fn l_grad_shift(w: isize, s: isize) -> isize3 { 
         isize3(-w + s - 1, w + s - 1, w - s + 1)
     }
 
@@ -129,28 +151,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    pub fn root_grad(&self) -> isize3 { 
-        let n = self.n_cross;
-        let zero = BitSeq::zeros(n);
-        self.grad_at(zero, zero)
-    }
-
     pub fn grad_at(&self, h_coords: BitSeq, v_coords: BitSeq) -> isize3 { 
-        let n = self.n_cross;
-
-        assert_eq!(h_coords.len(), n);
-        assert_eq!(v_coords.len(), n);
-
-        let init = self.l_grad_shift();
-        let trip = izip!(
-            self.x_signs.iter(), 
-            h_coords.iter(), 
-            v_coords.iter()
-        );
-
-        trip.fold(init, |grad, (&e, h, v)| { 
-            grad + Self::x_grad_shift(e, h, v)
-        })
+        Self::grad(self.n_cross, self.writhe, self.n_seif, &self.x_signs, h_coords, v_coords)
     }
 
     // Morton bound (only for knots)
@@ -171,28 +173,53 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.i_range()
     }
 
-    pub fn is_triv(&self, grad: isize3) -> bool { 
+    pub fn q_range(&self) -> RangeInclusive<isize> { 
+        let q_all = self.support().filter_map(|isize3(i, j, k)| {
+            let idx = if i > 0 { 
+                isize3(-i, j, k + 2 * i)
+            } else { 
+                isize3(i, j, k)
+            };
+            self.to_inner_grad(idx).map(|g| g.2)
+        }).collect::<HashSet<_>>();
+        
+        let q0 = q_all.iter().min().cloned().unwrap_or(0);
+        let q1 = q_all.iter().max().cloned().unwrap_or(0);
+
+        q0..=q1
+    }
+
+    pub fn support(&self) -> GridIter<isize3> {
+        let i_range = self.i_range().step_by(2);
+        let j_range = self.j_range().step_by(2);
+        let k_range = self.k_range().step_by(2);
+        let range = cartesian!(i_range, j_range.clone(), k_range.clone());
+        
+        range.map(isize3::from).filter(|&idx| 
+            self.is_supported(idx)
+        ).collect_vec().into_iter()
+    }
+
+    pub fn is_supported(&self, grad: isize3) -> bool { 
         let isize3(i, j, k) = grad;
-        let isize3(i0, j0, k0) = self.root_grad();
+        let isize3(i0, j0, k0) = self.root_grad;
 
         let i_range = self.i_range();
         let j_range = self.j_range();
         let k_range = self.k_range();
 
-        let ok = (i - i0).is_even() 
+        (i - i0).is_even() 
             && (j - j0).is_even() 
             && (k - k0).is_even()
             && i_range.contains(&i)
             && j_range.contains(&j)
             && k_range.contains(&k)
-            && k_range.contains(&(k + 2 * i));
-
-        !ok
+            && k_range.contains(&(k + 2 * i))
     }
 
     pub fn to_inner_grad(&self, grad: isize3) -> Option<isize3> { 
         let isize3(i, j, k) = grad;
-        let isize3(i0, j0, k0) = self.root_grad();
+        let isize3(i0, j0, k0) = self.root_grad;
         
         if (i - i0).is_even() && (j - j0).is_even() && (k - k0).is_even() {
             let h = (j - j0) / 2;
@@ -349,8 +376,9 @@ mod tests {
     #[test]
     fn grad_shift() { 
         let l = Link::trefoil(); // (w, s) = (-3, 2)
-        let data = KRCubeData::<R>::new(&l, 0);
-        assert_eq!(data.l_grad_shift(), isize3(4,-2,-4));
+        let w = l.writhe() as isize;
+        let s = l.seifert_circles().len() as isize;
+        assert_eq!(KRCubeData::<i32>::l_grad_shift(w, s), isize3(4,-2,-4));
     }
 
     #[test]
