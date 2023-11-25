@@ -145,17 +145,17 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         info!("  d-matrix {idx}, size: {:?}.", (m, n));
 
-        let entries = if crate::config::is_multithread_enabled() { 
-            (0..n).into_par_iter().map(|j| { 
-                self.d_matrix_col(idx, n, j)
-            }).collect::<Vec<_>>()
+        if crate::config::is_multithread_enabled() { 
+            let entries = (0..n).into_par_iter().flat_map(|j| { 
+                self.d_matrix_col(idx, n, j).into_par_iter()
+            });
+            SpMat::from_par_entries((m, n), entries)
         } else { 
-            (0..n).into_iter().map(|j| { 
+            let entries = (0..n).flat_map(|j| { 
                 self.d_matrix_col(idx, n, j)
-            }).collect()
-        };
-
-        SpMat::from_entries((m, n), entries.into_iter().flatten())
+            });
+            SpMat::from_entries((m, n), entries)
+        }
     }
 
     #[inline(never)] // for profilability
