@@ -92,9 +92,17 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return vec![]
         }
 
+        info!("compute tot-complex, q: {q_slice}, h: {}, v: {}.", idx.0, idx.1);
+
         let (i, j) = (idx.0 as usize, idx.1 as usize);
         let verts = data.verts_of_weight(j);
+
+        // init verts.
+        verts.iter().for_each(|&v| {
+            cube.vert(v);
+        });
         
+        // collect gens
         let gens = if crate::config::is_multithread_enabled() { 
             verts.par_iter().flat_map(|&v| {
                 cube.vert(v).gens(i)
