@@ -16,17 +16,17 @@ use super::hor_excl::KRHorExcl;
 
 pub struct KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
-    v_coords: BitSeq,
     q_slice: isize,
+    v_coords: BitSeq,
     excl: Arc<KRHorExcl<R>>,
     inner: XChainComplex<KRGen, R>
 } 
 
 impl<R> KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
-    pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
+    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize, v_coords: BitSeq) -> Self { 
         let excl = data.excl(v_coords);
-        let cube = KRHorCube::new(data.clone(), v_coords, q_slice);
+        let cube = KRHorCube::new(data.clone(), q_slice, v_coords);
         
         let complex = Self::make_cpx(excl.clone(), cube);
         info!("hor-complex, q: {q_slice}, v: {v_coords}\n{}", complex.display_seq());
@@ -126,7 +126,7 @@ mod tests {
     fn make_cpx(link: &Link, v_coords: BitSeq, q_slice: isize, level: usize, red: bool) -> KRHorComplex<R> {
         let data = Arc::new( KRCubeData::<R>::new(link, level) );
         let excl = data.excl(v_coords);
-        let cube = KRHorCube::new(data.clone(), v_coords, q_slice);
+        let cube = KRHorCube::new(data.clone(), q_slice, v_coords);
         let inner = KRHorComplex::make_cpx(excl.clone(), cube);
         let inner = if red { 
             inner.reduced()

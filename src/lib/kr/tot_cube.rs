@@ -41,7 +41,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn vert(&self, v_coords: BitSeq) -> &KRHorHomol<R> {
         let i = v_coords.as_u64() as usize;
         self.verts[i].get_or_init(||
-            KRHorHomol::new(self.data.clone(), v_coords, self.q_slice)
+            KRHorHomol::new(self.data.clone(), self.q_slice, v_coords)
         )
     }
 

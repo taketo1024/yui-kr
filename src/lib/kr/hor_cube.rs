@@ -11,18 +11,18 @@ use super::data::KRCubeData;
 pub struct KRHorCube<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     data: Arc<KRCubeData<R>>,
-    v_coords: BitSeq,
     q_slice: isize,
+    v_coords: BitSeq,
 } 
 
 impl<R> KRHorCube<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self {
+    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize, v_coords: BitSeq) -> Self {
         assert_eq!(v_coords.len(), data.dim());
         Self {
             data,
+            q_slice,
             v_coords,
-            q_slice
         }
     }
 
@@ -119,11 +119,11 @@ mod tests {
     type R = Ratio<i64>;
     type P = KRPoly<R>;
 
-    fn make_cube(l: &Link, v: BitSeq, q: isize) -> KRHorCube<R> {
+    fn make_cube(l: &Link, q: isize, v: BitSeq) -> KRHorCube<R> {
         let data = KRCubeData::<R>::new_no_excl(l);
         let rc = Arc::new(data);
         
-        KRHorCube::new(rc, v, q)
+        KRHorCube::new(rc, q, v)
     }
 
     #[test]
@@ -134,7 +134,7 @@ mod tests {
         let h = BitSeq::from([0,0,0]);
         let q = 0;
 
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 0);
 
@@ -142,7 +142,7 @@ mod tests {
         let h = BitSeq::from([0,0,0]);
         let q = 1;
 
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 1);
 
@@ -150,7 +150,7 @@ mod tests {
         let h = BitSeq::from([0,0,0]);
         let q = 0;
 
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 0);
 
@@ -158,7 +158,7 @@ mod tests {
         let h = BitSeq::from([1,0,0]);
         let q = 0;
 
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 1);
 
@@ -166,7 +166,7 @@ mod tests {
         let h = BitSeq::from([1,0,0]);
         let q = 0;
 
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 2);
     }
@@ -179,7 +179,7 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let v = BitSeq::from([0,0,0]);
         let q = 0;
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
 
         let p = cube.edge_poly(0); // x_ac
         assert_eq!(p, -&x(1) - &x(2));
@@ -187,7 +187,7 @@ mod tests {
         // p: neg, v: 1, h: 0 -> 1
         let v = BitSeq::from([1,0,0]);
         let q = 0;
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
 
         let p = cube.edge_poly(0); // x_ac * x_bc
         assert_eq!(p, (-&x(1) - &x(2)) * &x(0));
@@ -201,7 +201,7 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let v = BitSeq::from([0,0,0]);
         let q = 0;
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
 
         let h = BitSeq::from([0,0,0]);
         let z = KRGen(h, v, one.clone());
@@ -237,7 +237,7 @@ mod tests {
         let v = BitSeq::from([0,0,0]);
         let q = 0;
 
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
         let h = BitSeq::from([0, 0, 0]);
         let gens = cube.vert_gens(h).collect_vec();
 
@@ -257,7 +257,7 @@ mod tests {
         let v = BitSeq::from([0,0,0]);
         let q = -4;
 
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
         let h = BitSeq::from([0, 0, 0]);
         let gens = cube.vert_gens(h).collect_vec();
 
@@ -269,7 +269,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([0,0,0]);
         let q = 0;
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
 
         let gens = cube.gens(0).collect_vec();
         assert_eq!(gens.len(), 1);
@@ -283,7 +283,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([1,0,0]);
         let q = 0;
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
         let c = cube.into_complex();
 
         assert_eq!(c[0].rank(), 1);
@@ -295,7 +295,7 @@ mod tests {
 
         let v = BitSeq::from([1,0,0]);
         let q = 1;
-        let cube = make_cube(&l.mirror(), v, q);
+        let cube = make_cube(&l.mirror(), q, v);
         let c = cube.into_complex();
         
         assert_eq!(c[0].rank(), 6);
@@ -311,7 +311,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([1,0,0]);
         let q = 0;
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
 
         let c = cube.into_complex();
         let h = c.homology(false);
@@ -324,7 +324,7 @@ mod tests {
         let l = Link::trefoil().mirror();
         let v = BitSeq::from([1,0,0]);
         let q = 1;
-        let cube = make_cube(&l, v, q);
+        let cube = make_cube(&l, q, v);
         let c = cube.into_complex();
         let h = c.homology(false);
         

@@ -24,9 +24,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    pub fn new(data: Arc<KRCubeData<R>>, v_coords: BitSeq, q_slice: isize) -> Self { 
+    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize, v_coords: BitSeq) -> Self { 
         let excl = data.excl(v_coords);
-        let complex = KRHorComplex::new(data.clone(), v_coords, q_slice);
+        let complex = KRHorComplex::new(data.clone(), q_slice, v_coords);
 
         info!("compute hor-homology, q: {q_slice}, v: {v_coords}.");
         let homol = complex.homology();
@@ -122,10 +122,10 @@ mod tests {
 
     type R = Ratio<i64>;
 
-    fn make_hml(l: &Link, v: BitSeq, q: isize) -> KRHorHomol<R> {
+    fn make_hml(l: &Link, q: isize, v: BitSeq) -> KRHorHomol<R> {
         let data = KRCubeData::<R>::new(l, 2);
         let rc = Arc::new(data);
-        KRHorHomol::new(rc, v, q)
+        KRHorHomol::new(rc, q, v)
     }
 
     #[test]
@@ -133,7 +133,7 @@ mod tests {
         let l = Link::trefoil();
         let v = BitSeq::from([1,0,0]);
         let q = 0;
-        let hml = make_hml(&l, v, q);
+        let hml = make_hml(&l, q, v);
 
         assert_eq!(hml[0].rank(), 0);
         assert_eq!(hml[1].rank(), 0);
@@ -147,7 +147,7 @@ mod tests {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let v = BitSeq::from([1,0,0]);
         let q = -4;
-        let hml = make_hml(&l, v, q);
+        let hml = make_hml(&l, q, v);
 
         assert_eq!(hml[0].rank(), 0);
         assert_eq!(hml[1].rank(), 0);
@@ -160,7 +160,7 @@ mod tests {
         let l = Link::trefoil().mirror();
         let v = BitSeq::from([1,0,0]);
         let q = 1;
-        let hml = make_hml(&l, v, q);
+        let hml = make_hml(&l, q, v);
 
         let zs = hml.gens(2);
         assert_eq!(zs.len(), 2);
