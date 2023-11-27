@@ -231,6 +231,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
+    pub fn to_outer_grad(&self, grad: isize3) -> isize3 { 
+        let isize3(h, v, q) = grad;
+        let isize3(i0, j0, k0) = self.root_grad;
+        let i = 2 * q + 2 * h + i0;
+        let j = 2 * h + j0;
+        let k = 2 * v + k0;
+        isize3(i, j, k)
+    }
+
     pub fn hor_edge_poly(&self, v_coords: BitSeq, i: usize) -> KRPoly<R> {
         use Bit::{Bit0, Bit1};
 
