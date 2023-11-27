@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use num_traits::One;
 use yui::{EucRing, EucRingOps};
@@ -12,15 +12,15 @@ pub struct KRTotCube<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     data: Arc<KRCubeData<R>>,
     q_slice: isize,
-    verts: Vec<KRHorHomol<R>> // serialized for fast access
+    verts: Vec<OnceLock<KRHorHomol<R>>> // serialized for fast access
 } 
 
 impl<R> KRTotCube<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self {
         let n = data.dim();
-        let verts = BitSeq::generate(n).map(|v|
-            KRHorHomol::new(data.clone(), v, q_slice)
+        let verts = BitSeq::generate(n).map(|_|
+            OnceLock::new()
         ).collect();
 
         Self {
@@ -40,7 +40,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     pub fn vert(&self, v_coords: BitSeq) -> &KRHorHomol<R> {
         let i = v_coords.as_u64() as usize;
-        &self.verts[i]
+        self.verts[i].get_or_init(||
+            KRHorHomol::new(self.data.clone(), v_coords, self.q_slice)
+        )
     }
 
     pub fn edge_poly(&self, h_coords: BitSeq, i: usize) -> KRPoly<R> {
