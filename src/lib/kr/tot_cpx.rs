@@ -80,9 +80,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn is_skippable(data: &KRCubeData<R>, q_slice: isize, idx: isize2) -> bool { 
-        data.is_triv_inner(isize3(idx.0, idx.1,     q_slice)) &&
-        data.is_triv_inner(isize3(idx.0, idx.1 + 1, q_slice)) && 
-        data.is_triv_inner(isize3(idx.0, idx.1 - 1, q_slice))
+        data.is_triv_inner(isize3(q_slice, idx.0, idx.1,   )) &&
+        data.is_triv_inner(isize3(q_slice, idx.0, idx.1 + 1)) && 
+        data.is_triv_inner(isize3(q_slice, idx.0, idx.1 - 1))
     }
 
     #[inline(never)] // for profilability

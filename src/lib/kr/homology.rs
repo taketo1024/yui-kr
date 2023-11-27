@@ -102,7 +102,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return &self.zero
         }
 
-        let Some(isize3(h, v, q)) = self.data.to_inner_grad(idx) else { 
+        let Some(isize3(q, h, v)) = self.data.to_inner_grad(idx) else { 
             return &self.zero
         };
 

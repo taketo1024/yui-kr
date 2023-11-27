@@ -29,7 +29,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let homology = Homology2::generate(
             reduced.support(),
             move |idx| { 
-                if data.is_triv_inner(isize3(idx.0, idx.1, q_slice)) { 
+                if data.is_triv_inner(isize3(q_slice, idx.0, idx.1)) { 
                     HomologySummand::zero()
                 } else { 
                     reduced.homology_at(idx, false)

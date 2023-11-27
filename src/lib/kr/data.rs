@@ -180,7 +180,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             } else { 
                 isize3(i, j, k)
             };
-            self.to_inner_grad(idx).map(|g| g.2)
+            self.to_inner_grad(idx).map(|g| g.0)
         }).collect::<HashSet<_>>();
         
         let q0 = q_all.iter().min().cloned().unwrap_or(0);
@@ -222,17 +222,17 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let isize3(i0, j0, k0) = self.root_grad;
         
         if (i - i0).is_even() && (j - j0).is_even() && (k - k0).is_even() {
+            let q = ((i - i0) - (j - j0)) / 2;
             let h = (j - j0) / 2;
             let v = (k - k0) / 2;
-            let q = ((i - i0) - (j - j0)) / 2;
-            Some(isize3(h, v, q))
+            Some(isize3(q, h, v))
         } else { 
             None
         }
     }
 
     pub fn to_outer_grad(&self, grad: isize3) -> isize3 { 
-        let isize3(h, v, q) = grad;
+        let isize3(q, h, v) = grad;
         let isize3(i0, j0, k0) = self.root_grad;
         let i = 2 * q + 2 * h + i0;
         let j = 2 * h + j0;
