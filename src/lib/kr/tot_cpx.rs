@@ -10,7 +10,7 @@ use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui::bitseq::BitSeq;
 use yui::{EucRing, EucRingOps, Ring, RingOps};
-use yui_homology::{isize2, ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, ChainComplexCommon};
+use yui_homology::{isize2, ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, ChainComplexCommon, isize3};
 use yui_matrix::sparse::{SpVec, SpMat};
 
 use super::base::KRChain;
@@ -56,6 +56,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 pub struct KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    q_slice: isize,
     data: Arc<KRCubeData<R>>,
     cube: KRTotCube<R>,
     summands: Grid2<KRTotComplexSummand<R>>
@@ -63,30 +64,38 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
-        let cube = KRTotCube::new(data.clone(), q_slice);
-
+    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize, skip_triv: bool) -> Self { 
         info!("create tot-complex, q: {q_slice}.");
 
-        let n = cube.dim() as isize;
+        let n = data.dim() as isize;
+        let cube = KRTotCube::new(data.clone(), q_slice);
         let range = cartesian!(0..=n, 0..=n).map(|(i, j)| isize2(i, j));
 
         let summands = Grid2::generate(range, |idx| { 
-            let gens = Self::collect_gens(&data, &cube, idx);
-            info!("  C[{idx}] : {}", gens.len());
-
+            let gens = Self::collect_gens(&data, &cube, q_slice, idx, skip_triv);
             KRTotComplexSummand::new(gens)
         });
 
-        Self { data, cube, summands }
+        Self { q_slice, data, cube, summands }
+    }
+
+    fn is_skippable(data: &KRCubeData<R>, q_slice: isize, idx: isize2) -> bool { 
+        data.is_triv_inner(isize3(idx.0, idx.1,     q_slice)) &&
+        data.is_triv_inner(isize3(idx.0, idx.1 + 1, q_slice)) && 
+        data.is_triv_inner(isize3(idx.0, idx.1 - 1, q_slice))
     }
 
     #[inline(never)] // for profilability
-    fn collect_gens(data: &KRCubeData<R>, cube: &KRTotCube<R>, idx: isize2) -> Vec<KRChain<R>> { 
+    fn collect_gens(data: &KRCubeData<R>, cube: &KRTotCube<R>, q_slice: isize, idx: isize2, skip_triv: bool) -> Vec<KRChain<R>> { 
+        if skip_triv && Self::is_skippable(data, q_slice, idx) { 
+            info!("tot-complex, q: {q_slice}, h: {}, v: {} -> skip", idx.0, idx.1);
+            return vec![]
+        }
+
         let (i, j) = (idx.0 as usize, idx.1 as usize);
         let verts = data.verts_of_weight(j);
         
-        if crate::config::is_multithread_enabled() { 
+        let gens = if crate::config::is_multithread_enabled() { 
             verts.par_iter().flat_map(|&v| {
                 cube.vert(v).gens(i)
             }).collect()
@@ -94,11 +103,23 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             verts.iter().flat_map(|&v| {
                 cube.vert(v).gens(i)
             }).collect_vec()
-        }
+        };
+
+        info!("tot-complex, q: {q_slice}, h: {}, v: {} -> {}", idx.0, idx.1, gens.len());
+
+        gens
+    }
+
+    pub fn q_slice(&self) -> isize { 
+        self.q_slice
     }
 
     #[inline(never)] // for profilability
     pub fn vectorize(&self, idx: isize2, z: &KRChain<R>) -> SpVec<R> {
+        if self.get(idx).rank() == 0 {
+            return SpVec::zero(0)
+        }
+
         let (i, j) = (idx.0 as usize, idx.1 as usize);
 
         debug_assert!(z.iter().all(|(x, _)| 
@@ -142,6 +163,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn d_matrix_for(&self, idx: isize2) -> SpMat<R> { 
         let m = self.rank(idx + self.d_deg());
         let n = self.rank(idx);
+
+        if m == 0 && n == 0 { 
+            return SpMat::zero((0, 0))
+        }
 
         info!("  d-matrix {idx}, size: {:?}.", (m, n));
 
@@ -246,7 +271,7 @@ mod tests {
 
     fn make_cpx(link: &Link, q_slice: isize) -> KRTotComplex<R> {
         let data = Arc::new( KRCubeData::<R>::new(link, 2) );
-        KRTotComplex::new(data, q_slice)
+        KRTotComplex::new(data, q_slice, false)
     }
     
     #[test]

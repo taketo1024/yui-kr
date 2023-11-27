@@ -4,7 +4,7 @@ use delegate::delegate;
 
 use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, Homology2, GridTrait, GridIter, HomologySummand, DisplayTable};
+use yui_homology::{isize2, Homology2, GridTrait, GridIter, HomologySummand, DisplayTable, isize3};
 
 use crate::kr::tot_cpx::KRTotComplex;
 use super::data::KRCubeData;
@@ -18,15 +18,24 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
-        info!("compute tot-homol for q: {q_slice}.");
-
-        let complex = KRTotComplex::new(data, q_slice);
+        info!("compute tot-homol, q: {q_slice}.");
+        let complex = KRTotComplex::new(data.clone(), q_slice, true); // skip triv
         info!("tot-complex, q: {q_slice}\n{}", complex.display_table());
 
+        info!("reduce tot-homol, q: {q_slice}.");
         let reduced = complex.reduced();
         info!("reduced tot-complex, q: {q_slice}\n{}", reduced.display_table());
         
-        let homology = reduced.homology(false);
+        let homology = Homology2::generate(
+            reduced.support(),
+            move |idx| { 
+                if data.is_triv_inner(isize3(idx.0, idx.1, q_slice)) { 
+                    HomologySummand::zero()
+                } else { 
+                    reduced.homology_at(idx, false)
+                }
+            }
+        );
         info!("tot-homology, q: {q_slice} \n{}", homology.display_table());
 
         Self { q_slice, homology }
