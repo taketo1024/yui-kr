@@ -18,14 +18,16 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
-        info!("compute tot-homol, q: {q_slice}.");
+        info!("start tot-homol, q: {q_slice}.");
+
         let complex = KRTotComplex::new(data.clone(), q_slice, true); // skip triv
         info!("tot-complex, q: {q_slice}\n{}", complex.display_table());
 
-        info!("reduce tot-homol, q: {q_slice}.");
+        info!("reduce tot-complex, q: {q_slice}.");
         let reduced = complex.reduced();
         info!("reduced tot-complex, q: {q_slice}\n{}", reduced.display_table());
         
+        info!("compute tot-homology, q: {q_slice}");
         let homology = Homology2::generate(
             reduced.support(),
             move |idx| { 
