@@ -30,7 +30,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         info!("compute H_hor (q: {q_slice}, v: {v_coords}).");
         let homol = complex.homology();
-        info!("H_hor (q: {q_slice}, v: {v_coords})\n{}", homol.display_seq());
+        info!("H_hor (q: {q_slice}, v: {v_coords})\n{}", homol.display_seq("h"));
 
         // extract for fast access.
         let summands = homol.into_iter().map(|(_, e)| e).collect();

@@ -45,11 +45,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             let cpx = ChainComplex::generate(0..=n, 1, |j|
                 self.complex.d_matrix(isize2(i, j))
             );
-            info!("C_tot/h (q: {}, h: {i})\n{}", self.q_slice, cpx.display_seq());
+            info!("C_tot/h (q: {}, h: {i})\n{}", self.q_slice, cpx.display_seq("v"));
             
             info!("reduce C_tot/h (q: {}, h: {i}).", self.q_slice);
             let red = cpx.reduced(false);
-            info!("reduced C_tot/h (q: {}, h: {i})\n{}", self.q_slice, red.display_seq());
+            info!("reduced C_tot/h (q: {}, h: {i})\n{}", self.q_slice, red.display_seq("v"));
 
             red
         })
