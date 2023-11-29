@@ -174,12 +174,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn q_range(&self) -> RangeInclusive<isize> { 
-        let q_all = self.support().filter_map(|isize3(i, j, k)| {
-            let idx = if i > 0 { 
-                isize3(-i, j, k + 2 * i)
-            } else { 
-                isize3(i, j, k)
-            };
+        let q_all = self.support().filter_map(|idx| {
             self.to_inner_grad(idx).map(|g| g.0)
         }).collect::<HashSet<_>>();
         
@@ -219,6 +214,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     pub fn to_inner_grad(&self, grad: isize3) -> Option<isize3> { 
         let isize3(i, j, k) = grad;
+        if i > 0 { 
+            return self.to_inner_grad(isize3(-i, j, k + 2 * i))
+        }
+
         let isize3(i0, j0, k0) = self.root_grad;
         
         if (i - i0).is_even() && (j - j0).is_even() && (k - k0).is_even() {
