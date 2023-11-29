@@ -70,7 +70,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize, skip_triv: bool) -> Self { 
-        info!("create C_tot, q: {q_slice}.");
+        info!("create C_tot (q: {q_slice}).");
 
         let n = data.dim() as isize;
         let cube = KRTotCube::new(data.clone(), q_slice);
@@ -186,7 +186,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return SpMat::zero((0, 0))
         }
 
-        info!("  d (q: {}, h: {}, v: {} -> {}), size: {:?}.", self.q_slice, idx.0, idx.1, idx1.1, (m, n));
+        info!("  d_tot (q: {}, h: {}, v: {} -> {}), size: {:?}.", self.q_slice, idx.0, idx.1, idx1.1, (m, n));
 
         if crate::config::is_multithread_enabled() { 
             let entries = (0..n).into_par_iter().flat_map(|j| { 
