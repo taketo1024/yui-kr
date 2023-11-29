@@ -94,11 +94,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn summand(&self, idx: isize2) -> &KRTotComplexSummand<R> { 
         self.summands[idx].get_or_init(|| {
             if self.skip_triv && self.is_skippable(idx) { 
-                info!("compute C_tot (q: {}, h: {}, v: {}) => skip", self.q_slice, idx.0, idx.1);
+                info!("C_tot (q: {}, h: {}, v: {}) => skip", self.q_slice, idx.0, idx.1);
                 return KRTotComplexSummand::zero()
             }
 
-            info!("compute C_tot (q: {}, h: {}, v: {}) ..", self.q_slice, idx.0, idx.1);
+            info!("C_tot (q: {}, h: {}, v: {}) ..", self.q_slice, idx.0, idx.1);
 
             let gens = self.collect_gens(idx);
             let s = KRTotComplexSummand::new(gens);

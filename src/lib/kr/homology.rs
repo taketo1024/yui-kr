@@ -47,11 +47,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn compute(&self, idx: isize3) -> &HomologySummand<R> {
-        let isize3(i, j, k) = idx;
-        if i > 0 { 
-            return self.compute(isize3(-i, j, k + 2 * i))
-        }
-        
         if !self.is_supported(idx) { 
             return &self.zero
         }
@@ -60,17 +55,37 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return &self.zero
         };
 
-        info!("compute H[{idx}] -> (q: {q}, h: {h}, v: {v}) ..");
+        self.slice(q).get(isize2(h, v))
+    }
 
-        let h = self.slice(q).get(isize2(h, v));
+    fn compute_all(&self) {
+        info!("compute KRHomology.");
         
-        info!("H[{idx}] => {}", h.math_symbol());
+        info!("i-range: {:?}", self.i_range());
+        info!("j-range: {:?}", self.j_range());
+        info!("k-range: {:?}", self.k_range());
+        info!("q-range: {:?}", self.q_range());
+        
+        info!("targets:");
+        self.support().enumerate().for_each(|(i, idx)| 
+            info!("  {}. {idx}", i + 1)
+        );
+
         info!("- - - - - - - - - - - - - - - -");
 
-        h
+        let total = self.support().count();
+        self.support().enumerate().for_each(|(i, idx)| {
+            info!("({}/{}) H[{}] ..", i + 1, total, idx);
+
+            let h = self.compute(idx);
+            
+            info!("H[{}] => {}", idx, h.math_symbol());
+            info!("- - - - - - - - - - - - - - - -");
+        });
     }
 
     pub fn structure(&self) -> KRHomologyStr { 
+        self.compute_all();
         self.support().filter_map(|idx| {
             let h = self.get(idx);
             let r = h.rank();
