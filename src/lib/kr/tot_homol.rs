@@ -1,13 +1,11 @@
 use std::cell::OnceCell;
-use std::collections::HashMap;
 use std::ops::Index;
 use std::sync::Arc;
-use cartesian::cartesian;
 use delegate::delegate;
 
 use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, isize3, ChainComplex, ChainComplexTrait, DisplaySeq, RModStr};
+use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, isize3, ChainComplex, ChainComplexTrait, DisplaySeq, RModStr, Grid2};
 
 use crate::kr::tot_cpx::KRTotComplex;
 use super::data::KRCubeData;
@@ -18,7 +16,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
     complex: KRTotComplex<R>,
     reduced: Vec<OnceCell<ChainComplex<R>>>, // vertical slices
-    homology: HashMap<isize2, OnceCell<HomologySummand<R>>>
+    homology: Grid2<OnceCell<HomologySummand<R>>>
 } 
 
 impl<R> KRTotHomol<R>
@@ -29,9 +27,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let n = data.dim() as isize;
         let complex = KRTotComplex::new(data.clone(), q_slice, true); // skip triv
         let reduced = (0..=n).map(|_| OnceCell::new() ).collect();    // lazy
-        let homology = cartesian!(0..=n, 0..=n).map( |(i, j)| 
-            (isize2(i, j), OnceCell::new()) 
-        ).collect();
+        let homology = Grid2::generate(
+            complex.support(), 
+            |_| OnceCell::new()
+        );
 
         Self { q_slice, data, complex, reduced, homology }
     }
@@ -57,7 +56,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn homology(&self, idx: isize2) -> &HomologySummand<R> { 
-        self.homology[&idx].get_or_init(|| {
+        self.homology[idx].get_or_init(|| {
             let isize2(i, j) = idx;
             let g = isize3(self.q_slice, i, j);
 
@@ -80,7 +79,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = HomologySummand<R>;
 
     delegate! { 
-        to self.complex {
+        to self.homology {
             fn support(&self) -> Self::Itr;
             fn is_supported(&self, i: isize2) -> bool;
         }
