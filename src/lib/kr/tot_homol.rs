@@ -7,7 +7,7 @@ use delegate::delegate;
 
 use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, DisplayTable, isize3, ChainComplex, ChainComplexTrait, DisplaySeq, RModStr};
+use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, isize3, ChainComplex, ChainComplexTrait, DisplaySeq, RModStr};
 
 use crate::kr::tot_cpx::KRTotComplex;
 use super::data::KRCubeData;
@@ -24,13 +24,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
-        info!("start tot-homol, q: {q_slice}.");
-
-        let complex = KRTotComplex::new(data.clone(), q_slice, true); // skip triv
-        info!("tot-complex, q: {q_slice}\n{}", complex.display_table());
+        info!("create tot-homol, q: {q_slice}.");
 
         let n = data.dim() as isize;
-        let reduced = (0..=n).map(|_| OnceCell::new() ).collect();
+        let complex = KRTotComplex::new(data.clone(), q_slice, true); // skip triv
+        let reduced = (0..=n).map(|_| OnceCell::new() ).collect();    // lazy
         let homology = cartesian!(0..=n, 0..=n).map( |(i, j)| 
             (isize2(i, j), OnceCell::new()) 
         ).collect();
@@ -45,12 +43,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn reduced(&self, i: isize) -> &ChainComplex<R> { 
         let n = self.data.dim() as isize;
         self.reduced[i as usize].get_or_init(|| { 
-            info!("reduce tot-complex, q: {}, i: {i}.", self.q_slice);
-
-            let red = ChainComplex::generate(0..=n, 1, |j|
+            let cpx = ChainComplex::generate(0..=n, 1, |j|
                 self.complex.d_matrix(isize2(i, j))
-            ).reduced(false);
-            info!("reduced tot-complex, q: {}, i: {i}\n{}", self.q_slice, red.display_seq());
+            );
+            info!("tot-complex, q: {}, h: {i}\n{}", self.q_slice, cpx.display_seq());
+            
+            info!("reduce tot-complex, q: {}, h: {i}.", self.q_slice);
+            let red = cpx.reduced(false);
+            info!("reduced tot-complex, q: {}, h: {i}\n{}", self.q_slice, red.display_seq());
 
             red
         })
@@ -64,9 +64,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             if self.data.is_triv_inner(g) { 
                 HomologySummand::zero()
             } else { 
-                info!("compute tot-homology, q: {}, {idx}.", self.q_slice);
+                info!("compute tot-homology, q: {}, h: {}, v: {}.", self.q_slice, idx.0, idx.1);
                 let h = self.reduced(i).homology_at(j, false);
-                info!("tot-homology, q: {}, {idx} -> ", h.math_symbol());
+                info!("tot-homology, q: {}, h: {}, v: {} => {}", self.q_slice, idx.0, idx.1, h.math_symbol());
 
                 h
             }
