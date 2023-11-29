@@ -17,7 +17,7 @@ pub type KRHomologyStr = HashMap<(isize, isize, isize), usize>;
 pub struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
-    cache: UnsafeCell<HashMap<isize, KRTotHomol<R>>>,
+    slices: UnsafeCell<HashMap<isize, KRTotHomol<R>>>,
     zero: HomologySummand<R>
 }
 
@@ -26,16 +26,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(link: &Link) -> Self { 
         let excl_level = 2;
         let data = Arc::new(KRCubeData::new(link, excl_level));
-        let cache = UnsafeCell::new( HashMap::new() );
+        let slices = UnsafeCell::new( HashMap::new() );
         let zero = HomologySummand::zero();
-        Self { data, cache, zero }
-    }
-
-    fn tot_hml(&self, q_slice: isize) -> &KRTotHomol<R> {
-        let cache = unsafe { &mut *self.cache.get() };
-        cache.entry(q_slice).or_insert_with(|| {
-            KRTotHomol::new(self.data.clone(), q_slice)
-        })
+        Self { data, slices, zero }
     }
 
     delegate! { 
@@ -47,20 +40,42 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }
     }
 
-    pub fn structure(&self) -> KRHomologyStr { 
-        info!("compute KRHomology.");
-        
-        info!("i-range: {:?}", self.i_range());
-        info!("j-range: {:?}", self.j_range());
-        info!("k-range: {:?}", self.k_range());
-        info!("q-range: {:?}", self.q_range());
+    fn slice(&self, q_slice: isize) -> &KRTotHomol<R> {
+        let cache = unsafe { &mut *self.slices.get() };
+        cache.entry(q_slice).or_insert_with(|| {
+            KRTotHomol::new(self.data.clone(), q_slice)
+        })
+    }
 
+    fn compute(&self, idx: isize3) -> &HomologySummand<R> {
+        let isize3(i, j, k) = idx;
+        if i > 0 { 
+            return self.compute(isize3(-i, j, k + 2 * i))
+        }
+        
+        if !self.is_supported(idx) { 
+            return &self.zero
+        }
+
+        let Some(isize3(q, h, v)) = self.data.to_inner_grad(idx) else { 
+            return &self.zero
+        };
+
+        info!("compute H[{idx}] -> q: {q}, h: {h}, v: {v}");
+
+        let h = self.slice(q).get(isize2(h, v));
+        
+        info!("H[{idx}] = {}", h.math_symbol());
+        info!("- - - - - - - - - - - - - - - -");
+
+        h
+    }
+
+    pub fn structure(&self) -> KRHomologyStr { 
         self.support().filter_map(|idx| {
             let h = self.get(idx);
             let r = h.rank();
 
-            info!("H[{idx}] = {}", h.math_symbol());
-            
             if r > 0 { 
                 Some(((idx.0, idx.1, idx.2), r))
             } else { 
@@ -93,20 +108,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn get(&self, idx: isize3) -> &Self::Output {
-        let isize3(i, j, k) = idx;
-        if i > 0 { 
-            return self.get(isize3(-i, j, k + 2 * i))
-        }
-        
-        if !self.is_supported(idx) { 
-            return &self.zero
-        }
-
-        let Some(isize3(q, h, v)) = self.data.to_inner_grad(idx) else { 
-            return &self.zero
-        };
-
-        self.tot_hml(q).get(isize2(h, v))
+        self.compute(idx)
     }
 }
 
