@@ -97,7 +97,12 @@ impl App {
     pub fn run(&self) -> Result<String, Box<dyn std::error::Error>> { 
         info!("args: {:?}", self.args);
 
+        let n_threads = std::thread::available_parallelism().map(|x| x.get()).unwrap_or(1);
+        info!("n-threads: {n_threads}");
+
         let target = &self.args.target;
+        info!("target: {target}");
+
         let (res, time) = measure(|| guard_panic(||
             self.dispatch()
         ));
