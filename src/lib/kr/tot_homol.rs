@@ -47,7 +47,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             );
             info!("C_tot/h (q: {}, h: {i})\n{}", self.q_slice, cpx.display_seq("v"));
             
-            info!("reduce C_tot/h (q: {}, h: {i}).", self.q_slice);
+            info!("reduce C_tot/h (q: {}, h: {i}) ..", self.q_slice);
             let red = cpx.reduced(false);
             info!("reduced C_tot/h (q: {}, h: {i})\n{}", self.q_slice, red.display_seq("v"));
 
@@ -63,7 +63,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             if self.data.is_triv_inner(g) { 
                 HomologySummand::zero()
             } else { 
-                info!("compute H_tot (q: {}, h: {}, v: {}).", self.q_slice, idx.0, idx.1);
+                info!("compute H_tot (q: {}, h: {}, v: {}) ..", self.q_slice, idx.0, idx.1);
                 let h = self.reduced(i).homology_at(j, false);
                 info!("H_tot (q: {}, h: {}, v: {}) => {}", self.q_slice, idx.0, idx.1, h.math_symbol());
 

@@ -60,7 +60,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return &self.zero
         };
 
-        info!("compute H[{idx}] -> (q: {q}, h: {h}, v: {v})");
+        info!("compute H[{idx}] -> (q: {q}, h: {h}, v: {v}) ..");
 
         let h = self.slice(q).get(isize2(h, v));
         

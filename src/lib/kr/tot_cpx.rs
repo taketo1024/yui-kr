@@ -98,7 +98,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
                 return KRTotComplexSummand::zero()
             }
 
-            info!("compute C_tot (q: {}, h: {}, v: {}).", self.q_slice, idx.0, idx.1);
+            info!("compute C_tot (q: {}, h: {}, v: {}) ..", self.q_slice, idx.0, idx.1);
 
             let gens = self.collect_gens(idx);
             let s = KRTotComplexSummand::new(gens);
