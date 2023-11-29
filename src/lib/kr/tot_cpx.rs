@@ -70,7 +70,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize, skip_triv: bool) -> Self { 
-        info!("create tot-complex, q: {q_slice}.");
+        info!("create C_tot, q: {q_slice}.");
 
         let n = data.dim() as isize;
         let cube = KRTotCube::new(data.clone(), q_slice);
@@ -94,16 +94,16 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn summand(&self, idx: isize2) -> &KRTotComplexSummand<R> { 
         self.summands[idx].get_or_init(|| {
             if self.skip_triv && self.is_skippable(idx) { 
-                info!("compute tot-complex, q: {}, h: {}, v: {} => skip", self.q_slice, idx.0, idx.1);
+                info!("compute C_tot (q: {}, h: {}, v: {}) => skip", self.q_slice, idx.0, idx.1);
                 return KRTotComplexSummand::zero()
             }
 
-            info!("compute tot-complex, q: {}, h: {}, v: {}.", self.q_slice, idx.0, idx.1);
+            info!("compute C_tot (q: {}, h: {}, v: {}).", self.q_slice, idx.0, idx.1);
 
             let gens = self.collect_gens(idx);
             let s = KRTotComplexSummand::new(gens);
 
-            info!("tot-complex, q: {}, h: {}, v: {} => {}", self.q_slice, idx.0, idx.1, s.math_symbol());
+            info!("C_tot (q: {}, h: {}, v: {}) => {}", self.q_slice, idx.0, idx.1, s.math_symbol());
 
             s
         })
@@ -186,7 +186,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return SpMat::zero((0, 0))
         }
 
-        info!("  d-matrix q: {}, h: {}, v: {} -> {}, size: {:?}.", self.q_slice, idx.0, idx.1, idx1.1, (m, n));
+        info!("  d (q: {}, h: {}, v: {} -> {}), size: {:?}.", self.q_slice, idx.0, idx.1, idx1.1, (m, n));
 
         if crate::config::is_multithread_enabled() { 
             let entries = (0..n).into_par_iter().flat_map(|j| { 

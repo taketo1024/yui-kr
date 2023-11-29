@@ -29,11 +29,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let cube = KRHorCube::new(data.clone(), q_slice, v_coords);
         
         let complex = Self::make_cpx(excl.clone(), cube);
-        info!("hor-complex, q: {q_slice}, v: {v_coords}\n{}", complex.display_seq());
+        info!("C_hor (q: {q_slice}, v: {v_coords})\n{}", complex.display_seq());
 
-        info!("reduce hor-complex, q: {q_slice}, v: {v_coords}.");
+        info!("reduce C_hor (q: {q_slice}, v: {v_coords}).");
         let reduced = complex.reduced();
-        info!("reduced hor-complex, q: {q_slice}, v: {v_coords}\n{}", reduced.display_seq());
+        info!("reduced C_hor (q: {q_slice}, v: {v_coords})\n{}", reduced.display_seq());
 
         Self { v_coords, q_slice, excl, inner: reduced }
     }

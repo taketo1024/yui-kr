@@ -22,7 +22,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
-        info!("create tot-homol, q: {q_slice}.");
+        info!("create H_tot (q: {q_slice}).");
 
         let n = data.dim() as isize;
         let complex = KRTotComplex::new(data.clone(), q_slice, true); // skip triv
@@ -45,11 +45,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             let cpx = ChainComplex::generate(0..=n, 1, |j|
                 self.complex.d_matrix(isize2(i, j))
             );
-            info!("tot-complex, q: {}, h: {i}\n{}", self.q_slice, cpx.display_seq());
+            info!("C_tot/h (q: {}, h: {i})\n{}", self.q_slice, cpx.display_seq());
             
-            info!("reduce tot-complex, q: {}, h: {i}.", self.q_slice);
+            info!("reduce C_tot/h (q: {}, h: {i}).", self.q_slice);
             let red = cpx.reduced(false);
-            info!("reduced tot-complex, q: {}, h: {i}\n{}", self.q_slice, red.display_seq());
+            info!("reduced C_tot/h (q: {}, h: {i})\n{}", self.q_slice, red.display_seq());
 
             red
         })
@@ -63,9 +63,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             if self.data.is_triv_inner(g) { 
                 HomologySummand::zero()
             } else { 
-                info!("compute tot-homology, q: {}, h: {}, v: {}.", self.q_slice, idx.0, idx.1);
+                info!("compute H_tot (q: {}, h: {}, v: {}).", self.q_slice, idx.0, idx.1);
                 let h = self.reduced(i).homology_at(j, false);
-                info!("tot-homology, q: {}, h: {}, v: {} => {}", self.q_slice, idx.0, idx.1, h.math_symbol());
+                info!("H_tot (q: {}, h: {}, v: {}) => {}", self.q_slice, idx.0, idx.1, h.math_symbol());
 
                 h
             }

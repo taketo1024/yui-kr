@@ -28,9 +28,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let excl = data.excl(v_coords);
         let complex = KRHorComplex::new(data.clone(), q_slice, v_coords);
 
-        info!("compute hor-homology, q: {q_slice}, v: {v_coords}.");
+        info!("compute H_hor (q: {q_slice}, v: {v_coords}).");
         let homol = complex.homology();
-        info!("hor-homology, q: {q_slice}, v: {v_coords}\n{}", homol.display_seq());
+        info!("H_hor (q: {q_slice}, v: {v_coords})\n{}", homol.display_seq());
 
         // extract for fast access.
         let summands = homol.into_iter().map(|(_, e)| e).collect();
