@@ -1,4 +1,4 @@
-use std::cell::UnsafeCell;
+use std::cell::OnceCell;
 use std::collections::HashMap;
 use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
@@ -6,7 +6,7 @@ use std::sync::Arc;
 use delegate::delegate;
 use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand};
+use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand, Grid1};
 use yui_link::Link;
 
 use super::data::KRCubeData;
@@ -17,7 +17,7 @@ pub type KRHomologyStr = HashMap<(isize, isize, isize), usize>;
 pub struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
-    slices: UnsafeCell<HashMap<isize, KRTotHomol<R>>>,
+    slices: Grid1<OnceCell<KRTotHomol<R>>>,
     zero: HomologySummand<R>
 }
 
@@ -26,7 +26,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(link: &Link) -> Self { 
         let excl_level = 2;
         let data = Arc::new(KRCubeData::new(link, excl_level));
-        let slices = UnsafeCell::new( HashMap::new() );
+        let slices = Grid1::generate(data.q_range(), |_| OnceCell::new());
         let zero = HomologySummand::zero();
         Self { data, slices, zero }
     }
@@ -41,10 +41,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn slice(&self, q_slice: isize) -> &KRTotHomol<R> {
-        let cache = unsafe { &mut *self.slices.get() };
-        cache.entry(q_slice).or_insert_with(|| {
+        self.slices[q_slice].get_or_init(||
             KRTotHomol::new(self.data.clone(), q_slice)
-        })
+        )
     }
 
     fn compute(&self, idx: isize3) -> &HomologySummand<R> {
