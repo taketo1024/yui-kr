@@ -9,7 +9,7 @@ use log::info;
 use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui::bitseq::BitSeq;
-use yui::{EucRing, EucRingOps, Ring, RingOps};
+use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
 use yui_homology::{isize2, ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, ChainComplexCommon, isize3};
 use yui_matrix::sparse::{SpVec, SpMat};
 
@@ -163,9 +163,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     #[inline(never)] // for profilability
     pub fn as_chain(&self, idx: isize2, v: &SpVec<R>) -> KRChain<R> { 
         let gens = self.get(idx).gens();
-        v.iter().map(|(i, a)| 
+        KRChain::sum(v.iter().map(|(i, a)| 
             &gens[i] * a
-        ).sum()
+        ))
     }
 
     fn d_matrix_for(&self, idx: isize2) -> SpMat<R> { 

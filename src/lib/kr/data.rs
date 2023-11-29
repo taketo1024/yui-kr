@@ -6,7 +6,7 @@ use itertools::{Itertools, izip};
 use num_integer::Integer;
 use num_traits::One;
 
-use yui::{Ring, RingOps, Sign};
+use yui::{Ring, RingOps, Sign, AddMon};
 use yui_homology::{isize3, GridIter};
 use yui_link::util::seifert_graph;
 use yui_link::{Link, CrossingType, Crossing, Edge};
@@ -314,7 +314,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             } else { 
                 m + j - i
             };
-            (i .. i + l).map(|k| &mons[k % m]).sum()
+            KRPoly::sum(
+                (i .. i + l).map(|k| &mons[k % m])
+            )
         };
 
         (0 .. n).map(|i| {
