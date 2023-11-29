@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::ops::Index;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use cartesian::cartesian;
 use delegate::delegate;
@@ -27,6 +27,10 @@ impl<R> KRTotComplexSummand<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     fn new(gens: Vec<KRChain<R>>) -> Self { 
         Self { gens }
+    }
+
+    fn zero() -> Self { 
+        Self::new(vec![])
     }
 
     pub fn gens(&self) -> &Vec<KRChain<R>> { 
@@ -59,7 +63,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     q_slice: isize,
     data: Arc<KRCubeData<R>>,
     cube: KRTotCube<R>,
-    summands: Grid2<KRTotComplexSummand<R>>
+    summands: Grid2<OnceLock<KRTotComplexSummand<R>>>,
+    skip_triv: bool
 }
 
 impl<R> KRTotComplex<R>
@@ -69,57 +74,61 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let n = data.dim() as isize;
         let cube = KRTotCube::new(data.clone(), q_slice);
-        let range = cartesian!(0..=n, 0..=n).map(|(i, j)| isize2(i, j));
 
-        let summands = Grid2::generate(range, |idx| { 
-            let gens = Self::collect_gens(&data, &cube, q_slice, idx, skip_triv);
-            KRTotComplexSummand::new(gens)
-        });
-
-        Self { q_slice, data, cube, summands }
-    }
-
-    fn is_skippable(data: &KRCubeData<R>, q_slice: isize, idx: isize2) -> bool { 
-        data.is_triv_inner(isize3(q_slice, idx.0, idx.1,   )) &&
-        data.is_triv_inner(isize3(q_slice, idx.0, idx.1 + 1)) && 
-        data.is_triv_inner(isize3(q_slice, idx.0, idx.1 - 1))
-    }
-
-    #[inline(never)] // for profilability
-    fn collect_gens(data: &KRCubeData<R>, cube: &KRTotCube<R>, q_slice: isize, idx: isize2, skip_triv: bool) -> Vec<KRChain<R>> { 
-        if skip_triv && Self::is_skippable(data, q_slice, idx) { 
-            info!("tot-complex, q: {q_slice}, h: {}, v: {} -> skip", idx.0, idx.1);
-            return vec![]
-        }
-
-        info!("compute tot-complex, q: {q_slice}, h: {}, v: {}.", idx.0, idx.1);
-
-        let (i, j) = (idx.0 as usize, idx.1 as usize);
-        let verts = data.verts_of_weight(j);
-
-        // init verts.
-        verts.iter().for_each(|&v| {
-            cube.vert(v);
-        });
+        let support = cartesian!(0..=n, 0..=n).map(isize2::from);
+        let summands = Grid2::generate(support, |_| OnceLock::new());
         
-        // collect gens
-        let gens = if crate::config::is_multithread_enabled() { 
-            verts.par_iter().flat_map(|&v| {
-                cube.vert(v).gens(i)
-            }).collect()
-        } else { 
-            verts.iter().flat_map(|&v| {
-                cube.vert(v).gens(i)
-            }).collect_vec()
-        };
-
-        info!("tot-complex, q: {q_slice}, h: {}, v: {} -> {}", idx.0, idx.1, gens.len());
-
-        gens
+        Self { q_slice, data, cube, summands, skip_triv }
     }
 
     pub fn q_slice(&self) -> isize { 
         self.q_slice
+    }
+
+    fn is_skippable(&self, idx: isize2) -> bool { 
+        self.data.is_triv_inner(isize3(self.q_slice, idx.0, idx.1,   )) &&
+        self.data.is_triv_inner(isize3(self.q_slice, idx.0, idx.1 + 1)) && 
+        self.data.is_triv_inner(isize3(self.q_slice, idx.0, idx.1 - 1))
+    }
+
+    fn summand(&self, idx: isize2) -> &KRTotComplexSummand<R> { 
+        self.summands[idx].get_or_init(|| {
+            if self.skip_triv && self.is_skippable(idx) { 
+                info!("compute tot-complex, q: {}, h: {}, v: {} => skip", self.q_slice, idx.0, idx.1);
+                return KRTotComplexSummand::zero()
+            }
+
+            info!("compute tot-complex, q: {}, h: {}, v: {}.", self.q_slice, idx.0, idx.1);
+
+            let gens = self.collect_gens(idx);
+            let s = KRTotComplexSummand::new(gens);
+
+            info!("tot-complex, q: {}, h: {}, v: {} => {}", self.q_slice, idx.0, idx.1, s.math_symbol());
+
+            s
+        })
+    }
+
+    #[inline(never)] // for profilability
+    fn collect_gens(&self, idx: isize2) -> Vec<KRChain<R>> { 
+        let (i, j) = (idx.0 as usize, idx.1 as usize);
+        let verts = self.data.verts_of_weight(j);
+
+        // init verts (multithread)
+        verts.iter().for_each(|&v| {
+            self.cube.vert(v);
+        });
+        
+        // collect gens
+        if crate::config::is_multithread_enabled() { 
+            verts.par_iter().flat_map(|&v| {
+                self.cube.vert(v).gens(i)
+            }).collect()
+        } else { 
+            verts.iter().flat_map(|&v| {
+                self.cube.vert(v).gens(i)
+            }).collect()
+        }
     }
 
     #[inline(never)] // for profilability
@@ -169,14 +178,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn d_matrix_for(&self, idx: isize2) -> SpMat<R> { 
-        let m = self.rank(idx + self.d_deg());
+        let idx1 = idx + self.d_deg();
+        let m = self.rank(idx1);
         let n = self.rank(idx);
 
         if m == 0 && n == 0 { 
             return SpMat::zero((0, 0))
         }
 
-        info!("  d-matrix {idx}, size: {:?}.", (m, n));
+        info!("  d-matrix q: {}, h: {}, v: {} -> {}, size: {:?}.", self.q_slice, idx.0, idx.1, idx1.1, (m, n));
 
         if crate::config::is_multithread_enabled() { 
             let entries = (0..n).into_par_iter().flat_map(|j| { 
@@ -230,8 +240,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         to self.summands { 
             fn support(&self) -> Self::Itr;
             fn is_supported(&self, i: isize2) -> bool;
-            fn get(&self, i: isize2) -> &Self::Output;
         }
+    }
+
+    fn get(&self, i: isize2) -> &Self::Output { 
+        self.summand(i)
     }
 }
 
@@ -250,7 +263,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Element = KRChain<R>;
 
     fn rank(&self, i: isize2) -> usize {
-        self.summands[i].rank()
+        self.get(i).rank()
     }
 
     fn d_deg(&self) -> isize2 {
