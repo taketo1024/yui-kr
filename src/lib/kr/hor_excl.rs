@@ -445,7 +445,7 @@ mod tests {
 
     use itertools::Itertools;
     use yui_link::Link;
-    use yui_matrix::sparse::MatType;
+    use yui_matrix::MatTrait;
     use yui::poly::MultiVar;
     use yui::Ratio;
     use yui::util::macros::hashmap;
