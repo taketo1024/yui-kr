@@ -1,0 +1,28 @@
+running yui-kr...
+    Updating crates.io index
+    Updating git repository `https://github.com/taketo1024/yui`
+   Compiling yui-kr v0.1.0 (/lustre1/home/taketo.sano/yui-kr)
+    Finished release [optimized + debuginfo] target(s) in 16.56s
+     Running tests/k3-7.rs (target/release/deps/k3_7-e231b7acdc44a9aa)
+
+running 17 tests
+test common::app::app::tests::data_exists ... ok
+test common::app::app::tests::check_result_ok ... ok
+test common::app::app::tests::check_result_ng ... ok
+test k3_1 ... ok
+test k4_1 ... ok
+test k5_1 ... ok
+test k5_2 ... ok
+test k6_2 ... ok
+test k6_3 ... ok
+test k7_1 ... ok
+test k7_6 ... ok
+test k7_7 ... ok
+test k6_1 ... ok
+test k7_5 ... ok
+test k7_3 ... ok
+test k7_2 ... ok
+test k7_4 ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.80s
+

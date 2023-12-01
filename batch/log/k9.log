@@ -1,0 +1,58 @@
+$ cargo test -r --features batch_test --test k9 -- --test-threads=1 --show-output
+
+running 49 tests
+test k9_1 ... ok
+test k9_10 ... ok
+test k9_11 ... ok
+test k9_12 ... ok
+test k9_13 ... ok
+test k9_14 ... ok
+test k9_15 ... ok
+test k9_16 ... ok
+test k9_17 ... ok
+test k9_18 ... ok
+test k9_19 ... ok
+test k9_2 ... ok
+test k9_20 ... ok
+test k9_21 ... ok
+test k9_22 ... ok
+test k9_23 ... ok
+test k9_24 ... ok
+test k9_25 ... ok
+test k9_26 ... ok
+test k9_27 ... ok
+test k9_28 ... ok
+test k9_29 ... ok
+test k9_3 ... ok
+test k9_30 ... ok
+test k9_31 ... ok
+test k9_32 ... ok
+test k9_33 ... ok
+test k9_34 ... ok
+test k9_35 ... memory allocation of 32939028800 bytes failed
+
+# skip 9_35 and retry.
+
+running 20 tests
+test k9_36 ... ok
+test k9_37 ... ok
+test k9_38 ... ok
+test k9_39 ... ok
+test k9_4 ... ok
+test k9_40 ... ok
+test k9_41 ... ok
+test k9_42 ... ok
+test k9_43 ... ok
+test k9_44 ... ok
+test k9_45 ... ok
+test k9_46 ... ok
+test k9_47 ... ok
+test k9_48 ... ok
+test k9_49 ... ok
+test k9_5 ... ok
+test k9_6 ... ok
+test k9_7 ... ok
+test k9_8 ... ok
+test k9_9 ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 27120.07s

@@ -1,0 +1,38 @@
+running yui-kr...
+    Updating crates.io index
+    Updating git repository `https://github.com/taketo1024/yui`
+    Blocking waiting for file lock on build directory
+   Compiling yui-kr v0.1.0 (/lustre1/home/taketo.sano/yui-kr)
+    Finished release [optimized + debuginfo] target(s) in 28.57s
+     Running tests/k8.rs (target/release/deps/k8-a0b7dd71e9af37d0)
+
+running 24 tests
+test common::app::app::tests::data_exists ... ok
+test common::app::app::tests::check_result_ok ... ok
+test common::app::app::tests::check_result_ng ... ok
+test k8_19 ... ok
+test k8_21 ... ok
+test k8_2 ... ok
+test k8_5 ... ok
+test k8_20 ... ok
+test k8_7 ... ok
+test k8_16 ... ok
+test k8_10 ... ok
+test k8_9 ... ok
+test k8_17 ... ok
+test k8_18 ... ok
+test k8_15 ... ok
+test k8_12 ... ok
+test k8_14 ... ok
+test k8_11 ... ok
+test k8_6 ... ok
+test k8_8 ... ok
+test k8_13 ... ok
+test k8_4 ... ok
+test k8_1 has been running for over 60 seconds
+test k8_3 has been running for over 60 seconds
+test k8_1 ... ok
+test k8_3 ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 92.54s
+
