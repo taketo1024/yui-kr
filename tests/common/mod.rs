@@ -3,7 +3,8 @@
 pub mod app;
 
 macro_rules! test {
-    ($test:ident, $name:literal) => {
+    ($(#[$m:meta])* $test:ident, $name:literal) => {
+        $(#[$m])* 
         #[test]
         fn $test() { 
             use common::app::*;
