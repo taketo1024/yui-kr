@@ -1,0 +1,67 @@
+running yui-kr...
+    Blocking waiting for file lock on package cache
+    Updating crates.io index
+    Updating git repository `https://github.com/taketo1024/yui`
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling yui-kr v0.1.0 (/lustre1/home/taketo.sano/yui-kr)
+    Finished release [optimized + debuginfo] target(s) in 35.86s
+     Running tests/k11n.rs (target/release/deps/k11n-9ea43a88ec48db4d)
+
+running 188 tests
+test common::app::app::tests::check_result_ng ... ok
+test common::app::app::tests::check_result_ok ... ok
+test common::app::app::tests::data_exists ... ok
+test k11n_1 ... ok
+test k11n_10 ... ok
+test k11n_100 ... ok
+test k11n_101 ... ok
+test k11n_102 ... ok
+test k11n_103 ... ok
+test k11n_104 ... ok
+test k11n_105 ... ok
+test k11n_106 ... ok
+test k11n_107 ... ok
+test k11n_108 ... ok
+test k11n_109 ... ok
+test k11n_11 ... ok
+test k11n_110 ... ok
+test k11n_111 ... ok
+test k11n_112 ... ok
+test k11n_113 ... ok
+test k11n_114 ... ok
+test k11n_115 ... ok
+test k11n_116 ... ok
+test k11n_117 ... ok
+test k11n_118 ... ok
+test k11n_119 ... ok
+test k11n_12 ... ok
+test k11n_120 ... ok
+test k11n_121 ... ok
+test k11n_122 ... ok
+test k11n_123 ... ok
+test k11n_124 ... ok
+test k11n_125 ... ok
+test k11n_126 ... ok
+test k11n_127 ... ok
+test k11n_128 ... ok
+test k11n_129 ... ok
+test k11n_13 ... ok
+test k11n_130 ... ok
+test k11n_131 ... ok
+test k11n_132 ... ok
+test k11n_133 ... ok
+test k11n_134 ... ok
+test k11n_135 ... ok
+test k11n_136 ... ok
+test k11n_137 ... ok
+test k11n_138 ... ok
+test k11n_139 ... ok
+test k11n_14 ... ok
+test k11n_140 ... ignored
+test k11n_141 ... ignored
+test k11n_142 ... ok
+test k11n_143 ... ok
+test k11n_144 ... =>> PBS: job killed: walltime 43216 exceeded limit 43200

@@ -1,0 +1,77 @@
+running yui-kr...
+    Updating crates.io index
+    Updating git repository `https://github.com/taketo1024/yui`
+   Compiling yui-kr v0.1.0 (/lustre1/home/taketo.sano/yui-kr)
+    Finished release [optimized + debuginfo] target(s) in 27.38s
+     Running tests/k10.rs (target/release/deps/k10-3edc9df25f05c7c9)
+
+running 80 tests
+test common::app::app::tests::check_result_ng ... ok
+test common::app::app::tests::check_result_ok ... ok
+test common::app::app::tests::data_exists ... ok
+test k10_3 ... ok
+test k10_30 ... ok
+test k10_31 ... ok
+test k10_32 ... ok
+test k10_33 ... ok
+test k10_34 ... ok
+test k10_35 ... ok
+test k10_36 ... ok
+test k10_37 ... ok
+test k10_38 ... ok
+test k10_39 ... ok
+test k10_4 ... ok
+test k10_40 ... ok
+test k10_41 ... ok
+test k10_42 ... ok
+test k10_43 ... ok
+test k10_44 ... ok
+test k10_45 ... ok
+test k10_46 ... ok
+test k10_47 ... ok
+test k10_48 ... ok
+test k10_49 ... ok
+test k10_5 ... ok
+test k10_50 ... ok
+test k10_51 ... ok
+test k10_52 ... ok
+test k10_53 ... ok
+test k10_54 ... ok
+test k10_55 ... ok
+test k10_56 ... ok
+test k10_57 ... ok
+test k10_58 ... ok
+test k10_59 ... ok
+test k10_6 ... ok
+test k10_60 ... ok
+test k10_61 ... ok
+test k10_62 ... ok
+test k10_63 ... ok
+test k10_64 ... ok
+test k10_65 ... ok
+test k10_66 ... ok
+test k10_67 ... ignored
+test k10_68 ... ignored
+test k10_69 ... ok
+test k10_7 ... ok
+test k10_70 ... ok
+test k10_71 ... ok
+test k10_72 ... ok
+test k10_73 ... ok
+test k10_74 ... ignored
+test k10_75 ... ok
+test k10_76 ... ok
+test k10_77 ... ok
+test k10_78 ... ok
+test k10_79 ... ok
+test k10_8 ... ok
+test k10_80 ... ok
+test k10_81 ... ok
+test k10_82 ... ok
+test k10_83 ... ok
+test k10_84 ... ok
+test k10_85 ... ok
+test k10_86 ... ok
+test k10_87 ... ok
+test k10_88 ... ok
+test k10_89 ... =>> PBS: job killed: walltime 43299 exceeded limit 43200

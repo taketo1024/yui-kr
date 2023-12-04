@@ -1,0 +1,48 @@
+running yui-kr...
+    Updating crates.io index
+    Updating git repository `https://github.com/taketo1024/yui`
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling yui-kr v0.1.0 (/lustre1/home/taketo.sano/yui-kr)
+    Finished release [optimized + debuginfo] target(s) in 21.64s
+     Running tests/k11a.rs (target/release/deps/k11a-486eefb31940fc99)
+
+running 370 tests
+test common::app::app::tests::check_result_ng ... ok
+test common::app::app::tests::check_result_ok ... ok
+test common::app::app::tests::data_exists ... ok
+test k11a_1 ... ignored
+test k11a_10 ... ignored
+test k11a_100 ... ok
+test k11a_101 ... ignored
+test k11a_102 ... ignored
+test k11a_103 ... ignored
+test k11a_104 ... ignored
+test k11a_105 ... ok
+test k11a_106 ... ok
+test k11a_107 ... ignored
+test k11a_108 ... ok
+test k11a_109 ... ok
+test k11a_11 ... ok
+test k11a_110 ... ok
+test k11a_111 ... ok
+test k11a_112 ... ok
+test k11a_113 ... ok
+test k11a_114 ... ignored
+test k11a_115 ... ignored
+test k11a_116 ... ignored
+test k11a_117 ... ok
+test k11a_118 ... ok
+test k11a_119 ... ok
+test k11a_12 ... ok
+test k11a_120 ... ok
+test k11a_121 ... ok
+test k11a_122 ... ok
+test k11a_123 ... ignored
+test k11a_124 ... ok
+test k11a_125 ... ok
+test k11a_126 ... ok
+test k11a_127 ... ok
+test k11a_128 ... =>> PBS: job killed: walltime 43202 exceeded limit 43200

@@ -1,6 +1,40 @@
-$ cargo test -r --features batch_test --test k9 -- --test-threads=1 --show-output
+running yui-kr...
+    Updating crates.io index
+    Updating git repository `https://github.com/taketo1024/yui`
+    Updating linux-raw-sys v0.4.11 -> v0.4.12
+    Updating rustix v0.38.25 -> v0.38.26
+      Adding yui v0.2.0 (https://github.com/taketo1024/yui?branch=develop#10921fd0)
+    Removing yui v0.2.0 (https://github.com/taketo1024/yui?branch=trans#af9db2d9)
+      Adding yui-homology v0.2.0 (https://github.com/taketo1024/yui?branch=develop#10921fd0)
+    Removing yui-homology v0.2.0 (https://github.com/taketo1024/yui?branch=trans#af9db2d9)
+      Adding yui-link v0.2.0 (https://github.com/taketo1024/yui?branch=develop#10921fd0)
+    Removing yui-link v0.2.0 (https://github.com/taketo1024/yui?branch=trans#af9db2d9)
+      Adding yui-matrix v0.2.0 (https://github.com/taketo1024/yui?branch=develop#10921fd0)
+    Removing yui-matrix v0.2.0 (https://github.com/taketo1024/yui?branch=trans#af9db2d9)
+    Updating zerocopy v0.7.26 -> v0.7.27
+    Updating zerocopy-derive v0.7.26 -> v0.7.27
+ Downloading crates ...
+  Downloaded zerocopy v0.7.27
+  Downloaded rustix v0.38.26
+  Downloaded linux-raw-sys v0.4.12
+   Compiling rustix v0.38.26
+   Compiling linux-raw-sys v0.4.12
+   Compiling zerocopy v0.7.27
+   Compiling ahash v0.8.6
+   Compiling is-terminal v0.4.9
+   Compiling prettytable v0.10.0
+   Compiling yui v0.2.0 (https://github.com/taketo1024/yui?branch=develop#10921fd0)
+   Compiling yui-matrix v0.2.0 (https://github.com/taketo1024/yui?branch=develop#10921fd0)
+   Compiling yui-link v0.2.0 (https://github.com/taketo1024/yui?branch=develop#10921fd0)
+   Compiling yui-homology v0.2.0 (https://github.com/taketo1024/yui?branch=develop#10921fd0)
+   Compiling yui-kr v0.1.0 (/lustre1/home/taketo.sano/yui-kr)
+    Finished release [optimized + debuginfo] target(s) in 37.40s
+     Running tests/k9.rs (target/release/deps/k9-b65d66e149f9762e)
 
-running 49 tests
+running 52 tests
+test common::app::app::tests::check_result_ng ... ok
+test common::app::app::tests::check_result_ok ... ok
+test common::app::app::tests::data_exists ... ok
 test k9_1 ... ok
 test k9_10 ... ok
 test k9_11 ... ok
@@ -29,11 +63,7 @@ test k9_31 ... ok
 test k9_32 ... ok
 test k9_33 ... ok
 test k9_34 ... ok
-test k9_35 ... memory allocation of 32939028800 bytes failed
-
-# skip 9_35 and retry.
-
-running 20 tests
+test k9_35 ... ignored
 test k9_36 ... ok
 test k9_37 ... ok
 test k9_38 ... ok
@@ -55,4 +85,60 @@ test k9_7 ... ok
 test k9_8 ... ok
 test k9_9 ... ok
 
-test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 27120.07s
+successes:
+
+successes:
+    common::app::app::tests::check_result_ng
+    common::app::app::tests::check_result_ok
+    common::app::app::tests::data_exists
+    k9_1
+    k9_10
+    k9_11
+    k9_12
+    k9_13
+    k9_14
+    k9_15
+    k9_16
+    k9_17
+    k9_18
+    k9_19
+    k9_2
+    k9_20
+    k9_21
+    k9_22
+    k9_23
+    k9_24
+    k9_25
+    k9_26
+    k9_27
+    k9_28
+    k9_29
+    k9_3
+    k9_30
+    k9_31
+    k9_32
+    k9_33
+    k9_34
+    k9_36
+    k9_37
+    k9_38
+    k9_39
+    k9_4
+    k9_40
+    k9_41
+    k9_42
+    k9_43
+    k9_44
+    k9_45
+    k9_46
+    k9_47
+    k9_48
+    k9_49
+    k9_5
+    k9_6
+    k9_7
+    k9_8
+    k9_9
+
+test result: ok. 51 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 6625.04s
+

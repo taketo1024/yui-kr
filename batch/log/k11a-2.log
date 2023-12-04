@@ -1,0 +1,14 @@
+running yui-kr...
+    Updating crates.io index
+    Updating git repository `https://github.com/taketo1024/yui`
+   Compiling yui-kr v0.1.0 (/lustre1/home/taketo.sano/yui-kr)
+    Finished release [optimized + debuginfo] target(s) in 16.89s
+     Running tests/k11a.rs (target/release/deps/k11a-486eefb31940fc99)
+
+running 338 tests
+test common::app::app::tests::check_result_ng ... ok
+test common::app::app::tests::check_result_ok ... ok
+test common::app::app::tests::data_exists ... ok
+test k11a_128 ... ok
+test k11a_129 ... ok
+test k11a_13 ... =>> PBS: job killed: walltime 43226 exceeded limit 43200

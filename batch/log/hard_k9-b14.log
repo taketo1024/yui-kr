@@ -1,0 +1,33 @@
+running yui-kr...
+    Updating crates.io index
+    Updating git repository `https://github.com/taketo1024/yui`
+    Updating zerocopy v0.7.27 -> v0.7.28
+    Updating zerocopy-derive v0.7.27 -> v0.7.28
+ Downloading crates ...
+  Downloaded zerocopy v0.7.28
+   Compiling zerocopy v0.7.28
+   Compiling ahash v0.8.6
+   Compiling yui v0.2.0 (https://github.com/taketo1024/yui?branch=develop#50abf8ee)
+   Compiling yui-matrix v0.2.0 (https://github.com/taketo1024/yui?branch=develop#50abf8ee)
+   Compiling yui-link v0.2.0 (https://github.com/taketo1024/yui?branch=develop#50abf8ee)
+   Compiling yui-homology v0.2.0 (https://github.com/taketo1024/yui?branch=develop#50abf8ee)
+   Compiling yui-kr v0.1.0 (/lustre1/home/taketo.sano/yui-kr)
+    Finished release [optimized + debuginfo] target(s) in 32.87s
+     Running tests/hard_k9-b14.rs (target/release/deps/hard_k9_b14-0629dde0705c2503)
+
+running 4 tests
+test common::app::app::tests::check_result_ng ... ok
+test common::app::app::tests::check_result_ok ... ok
+test common::app::app::tests::data_exists ... ok
+test k9_35 ... ok
+
+successes:
+
+successes:
+    common::app::app::tests::check_result_ng
+    common::app::app::tests::check_result_ok
+    common::app::app::tests::data_exists
+    k9_35
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 34814.07s
+

@@ -1,0 +1,47 @@
+running yui-kr...
+    Updating crates.io index
+    Updating git repository `https://github.com/taketo1024/yui`
+   Compiling yui-kr v0.1.0 (/lustre1/home/taketo.sano/yui-kr)
+    Finished release [optimized + debuginfo] target(s) in 15.35s
+     Running tests/k11n.rs (target/release/deps/k11n-9ea43a88ec48db4d)
+
+running 133 tests
+test common::app::app::tests::check_result_ng ... ok
+test common::app::app::tests::check_result_ok ... ok
+test common::app::app::tests::data_exists ... ok
+test k11n_144 ... ok
+test k11n_145 ... ok
+test k11n_146 ... ok
+test k11n_147 ... ok
+test k11n_148 ... ok
+test k11n_149 ... ok
+test k11n_150 ... ok
+test k11n_151 ... ok
+test k11n_152 ... ok
+test k11n_153 ... ok
+test k11n_154 ... ok
+test k11n_155 ... ok
+test k11n_156 ... ok
+test k11n_157 ... ok
+test k11n_158 ... ok
+test k11n_159 ... ok
+test k11n_160 ... ok
+test k11n_161 ... ignored
+test k11n_162 ... ignored
+test k11n_163 ... ok
+test k11n_164 ... ok
+test k11n_165 ... ok
+test k11n_166 ... ok
+test k11n_167 ... ok
+test k11n_168 ... ok
+test k11n_169 ... ok
+test k11n_170 ... ignored
+test k11n_171 ... ignored
+test k11n_172 ... ok
+test k11n_173 ... ok
+test k11n_174 ... ok
+test k11n_175 ... ignored
+test k11n_176 ... ok
+test k11n_177 ... ok
+test k11n_178 ... ok
+test k11n_179 ... =>> PBS: job killed: walltime 43312 exceeded limit 43200
