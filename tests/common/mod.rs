@@ -11,6 +11,7 @@ macro_rules! test {
             let args = CliArgs { 
                 target: $name.to_string(), 
                 int_type: IntType::BigInt,
+                force_compute: true,
                 check_result: true,
                 save_result: true,
                 ..Default::default()

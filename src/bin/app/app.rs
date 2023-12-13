@@ -4,6 +4,7 @@ use derive_more::Display;
 use num_bigint::BigInt;
 use yui::{Ratio, EucRing, EucRingOps};
 use yui_homology::{GridTrait, RModStr};
+use yui_kr::kr::data::KRCubeData;
 use yui_kr::{KRHomology, KRHomologyStr};
 use yui_kr::util::{make_qpoly_table, mirror};
 use yui_link::{Braid, Link};
@@ -22,6 +23,9 @@ pub struct CliArgs {
 
     #[arg(short, long)]
     pub mirror: bool,
+
+    #[arg(short, long)]
+    pub force_compute: bool,
 
     #[arg(short, long)]
     pub check_result: bool,
@@ -101,11 +105,8 @@ impl App {
         let n_threads = std::thread::available_parallelism().map(|x| x.get()).unwrap_or(1);
         info!("n-threads: {n_threads}");
 
-        let target = &self.args.target;
-        info!("target: {target}");
-
         let (res, time) = measure(|| guard_panic(||
-            self.dispatch()
+            self.compute()
         ));
 
         if let Some(e) = res.as_ref().err() { 
@@ -113,15 +114,6 @@ impl App {
         }
 
         let res = res?;
-
-        if self.args.check_result { 
-            Self::check_result(target, &res)?;
-        }
-        
-        if self.args.save_result { 
-            Self::save_data(target, &res)?;
-        }
-
         let output = make_qpoly_table(&res);
 
         info!("time: {:?}", time);
@@ -129,45 +121,47 @@ impl App {
         Ok(output)
     }
 
-    fn dispatch(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> { 
-        match self.args.int_type { 
-            IntType::I64    => self.compute::<Ratio<i64>>(),
-            IntType::I128   => self.compute::<Ratio<i128>>(),
-            IntType::BigInt => self.compute::<Ratio<BigInt>>(),
+    fn compute(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> { 
+        if !self.args.force_compute && Self::data_exists(&self.args.target) { 
+            info!("result exists: {}", self.args.target);
+            let res = Self::load_data(&self.args.target)?;
+            let res = if self.args.mirror { mirror(&res) } else { res };
+            return Ok(res)
         }
-    }
-
-    fn compute<R>(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>>
-    where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-        let target = &self.args.target;
-        let braid = Braid::load(target)?;
-
-        if braid.len() > MAX_BRAID_LEN { 
-            err!("braid-length {} of '{target}' exceeds limit: {MAX_BRAID_LEN}", braid.len())?;
-        }
-
-        info!("braid: {}", braid);
-
-        let link = braid.closure();
-        let link = if self.args.mirror { link.mirror() } else { link };
-
-        info!("n: {}, w: {}", link.crossing_num(), link.writhe());
+        
+        let link = self.make_link()?;
 
         let res = if link.writhe() > 0 { 
             info!("compute from mirror.");
             let link = link.mirror();
-            let res = self.compute_kr(&link);
+            let res = self.compute_kr_dispatch(&link);
             mirror(&res)
         } else { 
-            self.compute_kr(&link)
+            self.compute_kr_dispatch(&link)
         };
+
+        if self.args.check_result { 
+            Self::check_result(&self.args.target, &res)?;
+        }
+        
+        if self.args.save_result { 
+            Self::save_data(&self.args.target, &res)?;
+        }
 
         Ok(res)
     }
 
+    fn compute_kr_dispatch(&self, link: &Link) -> KRHomologyStr { 
+        match self.args.int_type { 
+            IntType::I64    => self.compute_kr::<Ratio<i64>>(link),
+            IntType::I128   => self.compute_kr::<Ratio<i128>>(link),
+            IntType::BigInt => self.compute_kr::<Ratio<BigInt>>(link),
+        }
+    }
+
     fn compute_kr<R>(&self, link: &Link) -> KRHomologyStr
     where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-        let kr = KRHomology::<R>::new(&link);
+        let kr = self.init_kr(link);
 
         info!("compute KRHomology.");
         
@@ -199,6 +193,29 @@ impl App {
                 None
             }
         }).collect()
+    }
+
+    fn make_link(&self) -> Result<Link, Box<dyn std::error::Error>> { 
+        let target = &self.args.target;
+        let braid = Braid::load(target)?;
+
+        if braid.len() > MAX_BRAID_LEN { 
+            err!("braid-length {} of '{target}' exceeds limit: {MAX_BRAID_LEN}", braid.len())?;
+        }
+
+        info!("braid: {}", braid);
+
+        let link = braid.closure();
+        let link = if self.args.mirror { link.mirror() } else { link };
+
+        Ok(link)
+    }
+
+    fn init_kr<R>(&self, link: &Link) -> KRHomology<R>
+    where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
+        // TODO support saving. 
+        let data = KRCubeData::<R>::new(&link, 2);
+        KRHomology::<R>::from_data(data)
     }
 
     pub fn path_for(name: &str) -> String { 
