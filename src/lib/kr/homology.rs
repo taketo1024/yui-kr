@@ -24,7 +24,12 @@ impl<R> KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(link: &Link) -> Self { 
         let excl_level = 2;
-        let data = Arc::new(KRCubeData::new(link, excl_level));
+        let data = KRCubeData::new(link, excl_level);
+        Self::from_data(data)
+    }
+
+    pub fn from_data(data: KRCubeData<R>) -> Self { 
+        let data = Arc::new(data);
         let slices = Grid1::generate(data.q_range(), |_| OnceCell::new());
         let zero = HomologySummand::zero();
         Self { data, slices, zero }
