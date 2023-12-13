@@ -2,7 +2,7 @@ use log::{info, error};
 use clap::{Parser, ValueEnum};
 use derive_more::Display;
 use num_bigint::BigInt;
-use yui::{Ratio, Integer, IntOps};
+use yui::{Ratio, EucRing, EucRingOps};
 use yui_homology::{GridTrait, RModStr};
 use yui_kr::{KRHomology, KRHomologyStr};
 use yui_kr::util::{make_qpoly_table, mirror};
@@ -131,14 +131,14 @@ impl App {
 
     fn dispatch(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> { 
         match self.args.int_type { 
-            IntType::I64    => self.compute::<i64>(),
-            IntType::I128   => self.compute::<i128>(),
-            IntType::BigInt => self.compute::<BigInt>(),
+            IntType::I64    => self.compute::<Ratio<i64>>(),
+            IntType::I128   => self.compute::<Ratio<i128>>(),
+            IntType::BigInt => self.compute::<Ratio<BigInt>>(),
         }
     }
 
-    fn compute<I>(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>>
-    where I: Integer, for<'x> &'x I: IntOps<I> { 
+    fn compute<R>(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>>
+    where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
         let target = &self.args.target;
         let braid = Braid::load(target)?;
 
@@ -156,18 +156,18 @@ impl App {
         let res = if link.writhe() > 0 { 
             info!("compute from mirror.");
             let link = link.mirror();
-            let res = Self::compute_kr(&link);
+            let res = self.compute_kr(&link);
             mirror(&res)
         } else { 
-            Self::compute_kr(&link)
+            self.compute_kr(&link)
         };
 
         Ok(res)
     }
 
-    fn compute_kr<I>(link: &Link) -> KRHomologyStr
-    where I: Integer, for<'x> &'x I: IntOps<I> { 
-        let kr = KRHomology::<Ratio<I>>::new(&link);
+    fn compute_kr<R>(&self, link: &Link) -> KRHomologyStr
+    where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
+        let kr = KRHomology::<R>::new(&link);
 
         info!("compute KRHomology.");
         
