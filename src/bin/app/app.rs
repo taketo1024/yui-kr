@@ -10,7 +10,7 @@ use yui_kr::util::{make_qpoly_table, mirror};
 use yui_link::{Braid, Link};
 use super::utils::*;
 
-const RESULT_DIR: &str = "results/raw";
+const RESULT_DIR: &str = "results";
 const TMP_DIR: &str = "tmp";
 
 const MAX_BRAID_LEN: usize = 14;
