@@ -4,7 +4,6 @@ use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
 use delegate::delegate;
-use log::info;
 use yui::{EucRing, EucRingOps};
 use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand, Grid1};
 use yui_link::Link;
@@ -46,46 +45,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         )
     }
 
-    fn compute(&self, idx: isize3) -> &HomologySummand<R> {
-        if !self.is_supported(idx) { 
-            return &self.zero
-        }
-
-        let Some(isize3(q, h, v)) = self.data.to_inner_grad(idx) else { 
-            return &self.zero
-        };
-
-        self.slice(q).get(isize2(h, v))
-    }
-
-    fn compute_all(&self) {
-        info!("compute KRHomology.");
-        
-        info!("i-range: {:?}", self.i_range());
-        info!("j-range: {:?}", self.j_range());
-        info!("k-range: {:?}", self.k_range());
-        info!("q-range: {:?}", self.q_range());
-        
-        info!("targets:");
-        self.support().enumerate().for_each(|(i, idx)| 
-            info!("  {}. {idx}", i + 1)
-        );
-
-        info!("- - - - - - - - - - - - - - - -");
-
-        let total = self.support().count();
-        self.support().enumerate().for_each(|(i, idx)| {
-            info!("({}/{}) H[{}] ..", i + 1, total, idx);
-
-            let h = self.compute(idx);
-            
-            info!("H[{}] => {}", idx, h.math_symbol());
-            info!("- - - - - - - - - - - - - - - -");
-        });
-    }
-
     pub fn structure(&self) -> KRHomologyStr { 
-        self.compute_all();
         self.support().filter_map(|idx| {
             let h = self.get(idx);
             let r = h.rank();
@@ -122,7 +82,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn get(&self, idx: isize3) -> &Self::Output {
-        self.compute(idx)
+        if !self.is_supported(idx) { 
+            return &self.zero
+        }
+
+        let Some(isize3(q, h, v)) = self.data.to_inner_grad(idx) else { 
+            return &self.zero
+        };
+
+        self.slice(q).get(isize2(h, v))
     }
 }
 

@@ -3,6 +3,7 @@ use clap::{Parser, ValueEnum};
 use derive_more::Display;
 use num_bigint::BigInt;
 use yui::{Ratio, Integer, IntOps};
+use yui_homology::{GridTrait, RModStr};
 use yui_kr::{KRHomology, KRHomologyStr};
 use yui_kr::util::{make_qpoly_table, mirror};
 use yui_link::{Braid, Link};
@@ -167,7 +168,37 @@ impl App {
     fn compute_kr<I>(link: &Link) -> KRHomologyStr
     where I: Integer, for<'x> &'x I: IntOps<I> { 
         let kr = KRHomology::<Ratio<I>>::new(&link);
-        kr.structure()
+
+        info!("compute KRHomology.");
+        
+        info!("i-range: {:?}", kr.i_range());
+        info!("j-range: {:?}", kr.j_range());
+        info!("k-range: {:?}", kr.k_range());
+        info!("q-range: {:?}", kr.q_range());
+        
+        info!("targets:");
+        kr.support().enumerate().for_each(|(i, idx)| 
+            info!("  {}. {idx}", i + 1)
+        );
+
+        info!("- - - - - - - - - - - - - - - -");
+
+        let total = kr.support().count();
+        
+        kr.support().enumerate().filter_map(|(i, idx)| {
+            info!("({}/{}) H[{}] ..", i + 1, total, idx);
+
+            let h = kr.get(idx);
+            
+            info!("H[{}] => {}", idx, h.math_symbol());
+            info!("- - - - - - - - - - - - - - - -");
+
+            if h.rank() > 0 { 
+                Some(((idx.0, idx.1, idx.2), h.rank()))
+            } else { 
+                None
+            }
+        }).collect()
     }
 
     pub fn path_for(name: &str) -> String { 
