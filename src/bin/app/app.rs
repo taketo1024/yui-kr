@@ -6,7 +6,7 @@ use yui::{Ratio, EucRing, EucRingOps};
 use yui_homology::{GridTrait, RModStr};
 use yui_kr::kr::data::KRCubeData;
 use yui_kr::{KRHomology, KRHomologyStr};
-use yui_kr::util::{make_qpoly_table, mirror};
+use yui_kr::util::{mirror, qpoly_table, poincare_poly, homfly_poly};
 use yui_link::{Braid, Link};
 use super::utils::*;
 
@@ -28,6 +28,9 @@ pub struct CliArgs {
     pub mirror: bool,
 
     #[arg(short, long)]
+    pub format: Output,
+
+    #[arg(short = 'F', long)]
     pub force_compute: bool,
 
     #[arg(short, long)]
@@ -50,6 +53,14 @@ pub enum IntType {
     I64, 
     I128, 
     BigInt
+}
+
+#[derive(ValueEnum, Clone, Copy, Default, Debug)]
+pub enum Output { 
+    #[default]
+    Table, 
+    Poly,
+    Homfly
 }
 
 #[derive(Debug, Display)]
@@ -117,7 +128,7 @@ impl App {
         }
 
         let res = res?;
-        let output = make_qpoly_table(&res);
+        let output = self.format(&res);
 
         info!("time: {:?}", time);
 
@@ -196,6 +207,14 @@ impl App {
                 None
             }
         }).collect()
+    }
+
+    fn format(&self, res: &KRHomologyStr) -> String { 
+        match &self.args.format {
+            Output::Table =>  qpoly_table(&res),
+            Output::Poly =>   poincare_poly(&res).to_string(),
+            Output::Homfly => homfly_poly(&res).to_string(),
+        }
     }
 
     fn make_link(&self) -> Result<Link, Box<dyn std::error::Error>> { 
@@ -283,8 +302,10 @@ impl App {
     }
 }
 
+#[allow(unused)]
 enum File<'a> { 
-    Result(&'a str), Tmp(&'a str)
+    Result(&'a str), 
+    Tmp(&'a str)
 }
 
 impl<'a> File<'a> { 

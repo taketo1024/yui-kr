@@ -68,9 +68,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn display_table(&self) -> String {
-        use crate::util::make_qpoly_table;
+        use crate::util::qpoly_table;
         let str = self.structure();
-        make_qpoly_table(&str)
+        qpoly_table(&str)
     }
 }
 
