@@ -1,4 +1,4 @@
-#[allow(unused)]
+#![allow(unused)]
 #[path = "../../src/bin/app/mod.rs"]
 pub mod app;
 

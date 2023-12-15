@@ -1,4 +1,4 @@
 mod app;
-mod utils;
-
 pub use app::*;
+
+pub mod utils;
