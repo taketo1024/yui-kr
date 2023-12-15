@@ -130,6 +130,7 @@ impl<'a> File<'a> {
 }
 
 #[cfg(test)]
+#[cfg(not(feature = "batch_test"))]
 mod tests { 
     use yui::hashmap;
     use super::*;
