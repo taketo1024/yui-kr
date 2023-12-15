@@ -125,6 +125,14 @@ pub fn parse_homfly(s: &str) -> QAPoly {
     }))
 }
 
+pub fn serialize(str: &KRHomologyStr) -> Vec<(isize, isize, isize, usize)> { 
+    str.iter().map(|((i, j, k), r)| (*i, *j, *k, *r)).collect()
+}
+
+pub fn deserialize(str: &Vec<(isize, isize, isize, usize)>) -> KRHomologyStr { 
+    str.iter().map(|(i, j, k, r)| ((*i, *j, *k), *r)).collect()
+}
+
 fn range<Itr>(itr: Itr) -> RangeInclusive<isize>
 where Itr: Iterator<Item = isize> {
     if let Some((l, r)) = itr.fold(None, |res, i| { 

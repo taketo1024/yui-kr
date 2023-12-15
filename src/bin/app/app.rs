@@ -6,7 +6,7 @@ use yui::{Ratio, EucRing, EucRingOps};
 use yui_homology::{GridTrait, RModStr};
 use yui_kr::kr::data::KRCubeData;
 use yui_kr::{KRHomology, KRHomologyStr};
-use yui_kr::util::{mirror, qpoly_table, poincare_poly, homfly_poly};
+use yui_kr::util::*;
 use yui_link::{Braid, Link};
 use super::utils::*;
 
@@ -247,8 +247,8 @@ impl App {
 
     fn load_result(&self, name: &str) -> Result<KRHomologyStr, Box<dyn std::error::Error>> {
         let file = File::Result(name);
-        let data: Vec<(isize, isize, isize, usize)> = self.read_json(&file)?;
-        let data = data.into_iter().map(|(i, j, k, r)| ((i, j, k), r)).collect();
+        let data = self.read_json(&file)?;
+        let data = deserialize(&data);
         Ok(data)
     }
 
@@ -260,7 +260,7 @@ impl App {
             info!("save: {}", file.path());
         }
 
-        let data = data.iter().map(|((i, j, k), r)| (i, j, k, r)).collect::<Vec<_>>();
+        let data = serialize(&data);
         self.write_json(&file, data)?;
         Ok(())
     }
