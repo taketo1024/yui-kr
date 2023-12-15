@@ -247,8 +247,8 @@ impl App {
 
     fn load_result(&self, name: &str) -> Result<KRHomologyStr, Box<dyn std::error::Error>> {
         let file = File::Result(name);
-        let data: Vec<((isize, isize, isize), usize)> = self.read_json(&file)?;
-        let data = data.into_iter().collect();
+        let data: Vec<(isize, isize, isize, usize)> = self.read_json(&file)?;
+        let data = data.into_iter().map(|(i, j, k, r)| ((i, j, k), r)).collect();
         Ok(data)
     }
 
@@ -260,7 +260,7 @@ impl App {
             info!("save: {}", file.path());
         }
 
-        let data = data.iter().collect::<Vec<_>>();
+        let data = data.iter().map(|((i, j, k), r)| (i, j, k, r)).collect::<Vec<_>>();
         self.write_json(&file, data)?;
         Ok(())
     }
