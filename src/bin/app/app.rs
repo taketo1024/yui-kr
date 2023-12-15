@@ -10,9 +10,6 @@ use yui_kr::util::*;
 use yui_link::{Braid, Link};
 use super::utils::*;
 
-const RESULT_DIR: &str = "results";
-const TMP_DIR: &str = "tmp";
-
 const MAX_BRAID_LEN: usize = 14;
 
 #[derive(Parser, Debug, Default)]
@@ -136,9 +133,9 @@ impl App {
     }
 
     fn compute(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> { 
-        if !self.args.force_compute && self.result_exists(&self.args.target) { 
+        if !self.args.force_compute && result_exists(&self.args.target) { 
             info!("result exists: {}", self.args.target);
-            let res = self.load_result(&self.args.target)?;
+            let res = load_result(&self.args.target)?;
             let res = if self.args.mirror { mirror(&res) } else { res };
             return Ok(res)
         }
@@ -155,11 +152,11 @@ impl App {
         };
 
         if self.args.check_result { 
-            self.check_result(&self.args.target, &res)?;
+            check_result(&self.args.target, &res)?;
         }
         
         if self.args.save_result { 
-            self.save_result(&self.args.target, &res)?;
+            save_result(&self.args.target, &res)?;
         }
 
         Ok(res)
@@ -238,136 +235,5 @@ impl App {
         // TODO support saving. 
         let data = KRCubeData::<R>::new(&link, 2);
         KRHomology::<R>::from_data(data)
-    }
-
-    fn result_exists(&self, name: &str) -> bool {
-        let file = File::Result(name);
-        self.file_exists(&file)
-    }
-
-    fn load_result(&self, name: &str) -> Result<KRHomologyStr, Box<dyn std::error::Error>> {
-        let file = File::Result(name);
-        let data = self.read_json(&file)?;
-        let data = deserialize(&data);
-        Ok(data)
-    }
-
-    fn save_result(&self, name: &str, data: &KRHomologyStr) -> Result<(), Box<dyn std::error::Error>> { 
-        let file = File::Result(name);
-        if self.file_exists(&file) { 
-            info!("overwrite existing result: {}", file.path());
-        } else { 
-            info!("save: {}", file.path());
-        }
-
-        let data = serialize(&data);
-        self.write_json(&file, data)?;
-        Ok(())
-    }
-
-    fn check_result(&self, name: &str, data: &KRHomologyStr) -> Result<(), Box<dyn std::error::Error>> {
-        if self.result_exists(name) { 
-            let expected = self.load_result(name)?;
-            if data != &expected { 
-                err!("Incorrect result for {name}.\nComputed: {data:#?},\nExpected: {expected:#?}")?;
-            }
-        }
-        Ok(())
-    }
-
-    fn file_exists(&self, file: &File) -> bool { 
-        std::path::Path::new(&file.path()).exists()
-    }
-
-    fn read_string(&self, file: &File) -> std::io::Result<String> { 
-        std::fs::read_to_string(file.path())
-    }
-
-    fn write_string(&self, file: &File, str: &str) -> std::io::Result<()> { 
-        std::fs::write(file.path(), str)
-    }
-
-    fn read_json<D>(&self, file: &File) -> Result<D, Box<dyn std::error::Error>>
-    where for<'de> D: serde::Deserialize<'de> { 
-        let str = self.read_string(file)?;
-        let data = serde_json::from_str::<D>(&str)?;
-        Ok(data)
-    }
-
-    fn write_json<D>(&self, file: &File, data: D) -> std::io::Result<()>
-    where D: serde::Serialize {
-        let json = serde_json::to_string(&data)?;
-        self.write_string(file, &json)?;
-        Ok(())
-    }
-}
-
-#[allow(unused)]
-enum File<'a> { 
-    Result(&'a str), 
-    Tmp(&'a str)
-}
-
-impl<'a> File<'a> { 
-    fn dir(&self) -> String { 
-        let proj_dir = std::env!("CARGO_MANIFEST_DIR");
-        let dir = match self {
-            File::Result(_) => RESULT_DIR,
-            File::Tmp(_) => TMP_DIR,
-        };
-        format!("{proj_dir}/{dir}")
-    }
-
-    fn path(&self) -> String { 
-        let dir = self.dir();
-        let name = match self {
-            File::Result(name) | File::Tmp(name) => name,
-        };
-        let ext = "json";
-        format!("{dir}/{name}.{ext}")
-    }
-}
-
-#[cfg(test)]
-mod tests { 
-    use yui::hashmap;
-    use super::*;
-
-    fn make_app() -> App { 
-        let args = CliArgs { 
-            ..Default::default()
-        };
-        App::new_with(args)
-    }
-
-    #[test]
-    fn data_exists() { 
-        let app = make_app();
-        assert!( app.result_exists("3_1"));
-        assert!(!app.result_exists("3_2"));
-    }
-
-    #[test]
-    fn check_result_ok() { 
-        let app = make_app();
-        let data = hashmap!{ 
-            (0,4,-2) => 1,
-            (-2,2,2) => 1,
-            (2,2,-2) => 1
-        };
-        let res = app.check_result("3_1", &data);
-        assert!(res.is_ok());
-    }
-
-    #[test]
-    fn check_result_ng() { 
-        let app = make_app();
-        let data = hashmap!{ 
-            (0,4,-2) => 1,
-            (-2,2,2) => 2,
-            (2,2,-2) => 1
-        };
-        let res = app.check_result("3_1", &data);
-        assert!(res.is_err());
     }
 }

@@ -71,7 +71,7 @@ pub fn mirror(res: &KRHomologyStr) -> KRHomologyStr {
 //   = (2*v^2 + -1*v^4) * z^0 + (1*v^2) * z^2
 //
 //  with v ↦ a, z ↦ q - q^{-1}.
-pub fn parse_homfly(s: &str) -> QAPoly {
+pub fn parse_homfly(s: &str) -> Result<QAPoly, Box<dyn std::error::Error>> {
     use regex::Regex;
     type P = QAPoly;
 
@@ -86,7 +86,7 @@ pub fn parse_homfly(s: &str) -> QAPoly {
     let r2 = Regex::new(p2).unwrap();
     let r3 = Regex::new(p3).unwrap();
 
-    P::sum(r1.captures_iter(s).map(|c1| { 
+    let p = P::sum(r1.captures_iter(s).map(|c1| { 
         // dbg!(&c1);
         let d0 = isize::from_str(&c1[1]).unwrap(); // (lowest degree of z) / 2.
         let d1 = isize::from_str(&c1[2]).unwrap(); // (highest degree of z) / 2.
@@ -106,8 +106,8 @@ pub fn parse_homfly(s: &str) -> QAPoly {
             );
             
             P::sum(pairs.map(|(e, c)| {
+                // dbg!(c);
                 let v = m(0, e * 2);
-                dbg!(c);
                 let c = i32::from_str(c).unwrap();
                 P::from((v, c))
             }))
@@ -122,15 +122,9 @@ pub fn parse_homfly(s: &str) -> QAPoly {
             assert!(d >= 0);
             v * z.pow(d * 2)
         }))
-    }))
-}
+    }));
 
-pub fn serialize(str: &KRHomologyStr) -> Vec<(isize, isize, isize, usize)> { 
-    str.iter().map(|((i, j, k), r)| (*i, *j, *k, *r)).collect()
-}
-
-pub fn deserialize(str: &Vec<(isize, isize, isize, usize)>) -> KRHomologyStr { 
-    str.iter().map(|(i, j, k, r)| ((*i, *j, *k), *r)).collect()
+    Ok(p)
 }
 
 fn range<Itr>(itr: Itr) -> RangeInclusive<isize>
