@@ -27,12 +27,14 @@ use super::hor_excl::KRHorExcl;
  */
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KRCrossData<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
     pub x_ac: KRPoly<R>,
     pub x_bc: KRPoly<R>
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KRCubeData<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     n_cross: usize,
@@ -429,5 +431,16 @@ mod tests {
         assert_eq!(g[1].x_bc, &x[0] + &x[2]);
         assert_eq!(g[2].x_ac, x[2]);
         assert_eq!(g[2].x_bc, &x[0] - &x[1]);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn serialize() { 
+        let l = Link::trefoil();
+        let data = KRCubeData::<R>::new(&l, 2);
+        let ser = serde_json::to_string_pretty(&data).unwrap();
+        let des: KRCubeData<R> = serde_json::from_str(&ser).unwrap();
+
+        assert_eq!(des.n_cross, 3);
     }
 }
