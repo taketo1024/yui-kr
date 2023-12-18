@@ -34,6 +34,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub x_bc: KRPoly<R>
 }
 
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KRCubeData<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
