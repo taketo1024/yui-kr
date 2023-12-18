@@ -49,6 +49,12 @@ where
         }
     }
 
+    pub fn clear(name: &str) -> Result<(), Box<dyn std::error::Error>> { 
+        File::Data(name).delete()?;
+        File::Result(name).delete()?;
+        Ok(())
+    }
+
     pub fn result(&self) -> &KRHomologyStr { 
         &self.result
     }
@@ -159,5 +165,9 @@ impl<'a> File<'a> {
         let json = serde_json::to_string(&data)?;
         std::fs::write(self.path(), &json)?;
         Ok(())
+    }
+
+    fn delete(&self) -> std::io::Result<()> { 
+        std::fs::remove_file(&self.path())
     }
 }

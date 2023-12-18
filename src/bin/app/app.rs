@@ -176,6 +176,9 @@ impl App {
         R: serde::Serialize + for<'de> serde::Deserialize<'de> 
     { 
         let mut calc = if self.args.save_progress { 
+            if self.args.force_compute { 
+                KRCalc::clear(&self.args.target)?;
+            }
             KRCalc::load_or_init(&self.args.target, link)?
         } else { 
             KRCalc::init(&self.args.target, link)
