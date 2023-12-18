@@ -23,7 +23,7 @@ pub struct CliArgs {
     #[arg(short, long)]
     pub mirror: bool,
 
-    #[arg(short, long)]
+    #[arg(short, long, default_value = "table")]
     pub format: Output,
 
     #[arg(short = 'F', long)]

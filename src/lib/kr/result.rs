@@ -3,6 +3,7 @@ use std::ops::RangeInclusive;
 
 use itertools::Itertools;
 use num_integer::Integer;
+use serde::ser::SerializeSeq;
 use yui::poly::{LPoly, LPoly2, LPoly3, Var3, Var2, Mono};
 
 pub type QPoly = LPoly<'q', i32>;
@@ -95,6 +96,27 @@ impl KRHomologyStr {
                 ".".to_string()
             }
         })
+    }
+}
+
+impl serde::Serialize for KRHomologyStr {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where S: serde::Serializer {
+        let mut seq = serializer.serialize_seq(None)?;
+        for ((i, j, k), r) in self.iter() { 
+            let e = (*i, *j, *k, *r);
+            seq.serialize_element(&e)?;
+        }
+        seq.end()
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for KRHomologyStr {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where D: serde::Deserializer<'de> {
+        let seq = Vec::deserialize(deserializer)?;
+        let str = seq.into_iter().map(|(i, j, k, r)| ((i, j, k), r)).collect();
+        Ok(str)
     }
 }
 

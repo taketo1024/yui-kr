@@ -42,7 +42,6 @@ pub fn result_exists(name: &str) -> bool {
 pub fn load_result(name: &str) -> Result<KRHomologyStr, Box<dyn std::error::Error>> {
     let file = File::Result(name);
     let data = read_json(&file)?;
-    let data = deserialize(&data);
     Ok(data)
 }
 
@@ -54,7 +53,6 @@ pub fn save_result(name: &str, data: &KRHomologyStr) -> Result<(), Box<dyn std::
         info!("save: {}", file.path());
     }
 
-    let data = serialize(&data);
     write_json(&file, data)?;
     Ok(())
 }
@@ -93,14 +91,6 @@ where D: serde::Serialize {
     let json = serde_json::to_string(&data)?;
     write_string(file, &json)?;
     Ok(())
-}
-
-fn serialize(str: &KRHomologyStr) -> Vec<(isize, isize, isize, usize)> { 
-    str.iter().map(|((i, j, k), r)| (*i, *j, *k, *r)).collect()
-}
-
-fn deserialize(str: &Vec<(isize, isize, isize, usize)>) -> KRHomologyStr { 
-    str.iter().map(|(i, j, k, r)| ((*i, *j, *k), *r)).collect()
 }
 
 #[allow(unused)]
