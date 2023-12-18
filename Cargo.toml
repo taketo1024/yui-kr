@@ -14,6 +14,7 @@ path = "src/bin/main.rs"
 path = "src/lib/lib.rs"
 
 [features]
+default = ["serde"]
 batch_test = []
 serde = ["yui/serde", "yui-matrix/serde", "yui-homology/serde"]
 
