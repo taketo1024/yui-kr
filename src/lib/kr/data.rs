@@ -442,7 +442,7 @@ mod tests {
     #[test]
     fn serialize() { 
         let l = Link::trefoil();
-        let data = KRCubeData::<R>::new(&l, 2);
+        let data = KRCubeData::<R>::new(&l);
         let ser = serde_json::to_string_pretty(&data).unwrap();
         let des: KRCubeData<R> = serde_json::from_str(&ser).unwrap();
 
