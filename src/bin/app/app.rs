@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use log::{info, error};
 use clap::{Parser, ValueEnum};
 use derive_more::Display;
@@ -23,7 +24,7 @@ pub struct CliArgs {
     #[arg(short, long)]
     pub mirror: bool,
 
-    #[arg(short, long, default_value = "table")]
+    #[arg(short, long, default_value = "poly-table")]
     pub format: Output,
 
     #[arg(short = 'F', long)]
@@ -54,8 +55,9 @@ pub enum IntType {
 #[derive(ValueEnum, Clone, Copy, Default, Debug)]
 pub enum Output { 
     #[default]
-    Table, 
-    Poly,
+    PolyTable, 
+    Delta,
+    Poincare,
     Homfly
 }
 
@@ -204,10 +206,18 @@ impl App {
     }
 
     fn format(&self, res: &KRHomologyStr) -> String { 
-        match &self.args.format {
-            Output::Table =>  res.qpoly_table(),
-            Output::Poly =>   res.poincare_poly().to_string(),
-            Output::Homfly => res.homfly_poly().to_string(),
+        let str = match &self.args.format {
+            Output::Delta     => res.delta_table(),
+            Output::PolyTable => res.qpoly_table(),
+            Output::Poincare  => res.poincare_poly().to_string(),
+            Output::Homfly    => res.homfly_poly().to_string(),
+        };
+
+        if res.is_determined() { 
+            str
+        } else { 
+            let non_det = res.non_determined().map(|idx| format!("{idx:?}")).join(", ");
+            str + &format!("\nNon-determined: {non_det}")
         }
     }
 

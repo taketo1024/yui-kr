@@ -48,6 +48,10 @@ impl KRHomologyStr {
         )
     }
 
+    pub fn indices(&self) -> impl Iterator<Item = &(isize, isize, isize)> { 
+        self.0.keys()
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = (&(isize, isize, isize), &Option<usize>)> { 
         self.0.iter()
     }
@@ -62,6 +66,14 @@ impl KRHomologyStr {
     
     pub fn total_rank(&self) -> usize { 
         self.iter_determined().map(|(_, r)| r).sum()
+    }
+
+    pub fn delta(&self) -> Vec<isize> { 
+        self.indices().map(|(i, j, k)| i + j + k).unique().sorted().collect_vec()
+    }
+
+    pub fn is_thin(&self) -> bool { 
+        self.delta().len() <= 1
     }
 
     pub fn poincare_poly(&self) -> QATPoly { 
@@ -82,8 +94,8 @@ impl KRHomologyStr {
         }).collect::<QAPoly>()
     }
     
-    fn qpoly_map(&self) -> HashMap<(isize, isize), QPoly> { 
-        self.iter_determined().into_group_map_by(|(idx, _)|
+    pub fn qpoly_table(&self) -> String {
+        let polys = self.iter_determined().into_group_map_by(|(idx, _)|
             (idx.1, idx.2) // (j, k)
         ).into_iter().map(|(jk, list)| { 
             let q = QPoly::mono;
@@ -94,11 +106,8 @@ impl KRHomologyStr {
             });
             let p = QPoly::from_iter(elems);
             (jk, p)
-        }).collect()
-    }
-    
-    pub fn qpoly_table(&self) -> String {
-        let polys = self.qpoly_map();   
+        }).collect::<HashMap<(isize, isize), QPoly>>();
+
         let j_range = range(polys.keys().map(|idx| idx.0)).step_by(2);
         let k_range = range(polys.keys().map(|idx| idx.1)).rev().step_by(2);
     
@@ -109,6 +118,24 @@ impl KRHomologyStr {
                 ".".to_string()
             }
         })
+    }
+
+    pub fn delta_table(&self) -> String {
+        range(self.delta()).step_by(2).map(|d| { 
+            let indices = self.indices().filter(|(i, j, k)| i + j + k == d).collect_vec();
+            let i_range = range(indices.iter().map(|idx| idx.0)).step_by(2);
+            let j_range = range(indices.iter().map(|idx| idx.1)).rev().step_by(2);
+        
+            format!("Δ: {d}\n") + 
+            &yui::util::format::table("j\\i", j_range, i_range, |&j, &i| { 
+                let k = d - (i + j);
+                if let Some(p) = self.0.get(&(i, j, k)) { 
+                    if let Some(r) = p { r.to_string() } else { "?".to_string() }
+                } else { 
+                    ".".to_string()
+                }
+            })
+        }).join("\n")
     }
 }
 
@@ -134,8 +161,8 @@ impl<'de> serde::Deserialize<'de> for KRHomologyStr {
 }
 
 fn range<Itr>(itr: Itr) -> RangeInclusive<isize>
-where Itr: Iterator<Item = isize> {
-    if let Some((l, r)) = itr.fold(None, |res, i| { 
+where Itr: IntoIterator<Item = isize> {
+    if let Some((l, r)) = itr.into_iter().fold(None, |res, i| { 
         if let Some((mut l, mut r)) = res { 
             if i < l { l = i }
             if r < i { r = i }
