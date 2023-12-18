@@ -11,48 +11,61 @@ pub type QAPoly = LPoly2<'q', 'a', i32>;
 pub type QATPoly = LPoly3<'q', 'a', 't', i32>;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct KRHomologyStr(HashMap<(isize, isize, isize), usize>);
+pub struct KRHomologyStr(HashMap<(isize, isize, isize), Option<usize>>);
 
 impl From<HashMap<(isize, isize, isize), usize>> for KRHomologyStr {
     fn from(value: HashMap<(isize, isize, isize), usize>) -> Self {
-        Self(value)
+        Self(value.into_iter().map(|(k, v)| (k, Some(v))).collect())
+    }
+}
+
+impl From<HashMap<(isize, isize, isize), Option<usize>>> for KRHomologyStr {
+    fn from(value: HashMap<(isize, isize, isize), Option<usize>>) -> Self {
+        Self(value.into_iter().collect())
     }
 }
 
 impl FromIterator<((isize, isize, isize), usize)> for KRHomologyStr {
     fn from_iter<T: IntoIterator<Item = ((isize, isize, isize), usize)>>(iter: T) -> Self {
-        Self(iter.into_iter().collect())
+        Self::from(iter.into_iter().collect::<HashMap<_, _>>())
     }
 }
 
-impl IntoIterator for KRHomologyStr {
-    type Item = ((isize, isize, isize), usize);
-    type IntoIter = <HashMap<(isize, isize, isize), usize> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
+impl FromIterator<((isize, isize, isize), Option<usize>)> for KRHomologyStr {
+    fn from_iter<T: IntoIterator<Item = ((isize, isize, isize), Option<usize>)>>(iter: T) -> Self {
+        Self::from(iter.into_iter().collect::<HashMap<_, _>>())
     }
 }
 
 impl KRHomologyStr { 
-    pub fn inner(&self) -> &HashMap<(isize, isize, isize), usize> { 
-        &self.0
+    pub fn is_determined(&self) -> bool { 
+        self.0.values().all(Option::is_some)
     }
 
-    pub fn total_rank(&self) -> usize { 
-        self.0.values().sum()
+    pub fn non_determined(&self) -> impl Iterator<Item = &(isize, isize, isize)> { 
+        self.0.iter().filter_map(|(idx, r)| 
+            if r.is_some() { None } else { Some(idx) }
+        )
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&(isize, isize, isize), &usize)> { 
+    pub fn iter(&self) -> impl Iterator<Item = (&(isize, isize, isize), &Option<usize>)> { 
         self.0.iter()
+    }
+
+    pub fn iter_determined(&self) -> impl Iterator<Item = (&(isize, isize, isize), &usize)> { 
+        self.0.iter().filter_map(|(idx, r)| r.as_ref().map(|r| (idx, r)))
     }
 
     pub fn mirror(&self) -> KRHomologyStr { 
         self.iter().map(|(idx, &v)| ((-idx.0, -idx.1, -idx.2), v)).collect()
     }
     
+    pub fn total_rank(&self) -> usize { 
+        self.iter_determined().map(|(_, r)| r).sum()
+    }
+
     pub fn poincare_poly(&self) -> QATPoly { 
-        self.iter().map(|(idx, &r)| { 
+        self.iter_determined().map(|(idx, &r)| { 
             let &(i, j, k) = idx;
             let x = Var3::from((i, j, (k - j)/2));
             let r = r as i32;
@@ -61,16 +74,16 @@ impl KRHomologyStr {
     }
     
     pub fn homfly_poly(&self) -> QAPoly { 
-        self.poincare_poly().iter().map(|(x, r)|{
+        self.poincare_poly().into_iter().map(|(x, r)|{
             let (i, j, k) = x.deg();
             let x = Var2::from((i, j)); // q^i a^j
-            let r = if k.is_even() { *r } else { -r }; // t ↦ -1
+            let r = if k.is_even() { r } else { -r }; // t ↦ -1
             (x, r)
         }).collect::<QAPoly>()
     }
     
-    pub fn qpoly_map(&self) -> HashMap<(isize, isize), QPoly> { 
-        self.iter().into_group_map_by(|(idx, _)|
+    fn qpoly_map(&self) -> HashMap<(isize, isize), QPoly> { 
+        self.iter_determined().into_group_map_by(|(idx, _)|
             (idx.1, idx.2) // (j, k)
         ).into_iter().map(|(jk, list)| { 
             let q = QPoly::mono;
@@ -104,7 +117,7 @@ impl serde::Serialize for KRHomologyStr {
     where S: serde::Serializer {
         let mut seq = serializer.serialize_seq(None)?;
         for ((i, j, k), r) in self.iter() { 
-            let e = (*i, *j, *k, *r);
+            let e = (i, j, k, r);
             seq.serialize_element(&e)?;
         }
         seq.end()
@@ -114,7 +127,7 @@ impl serde::Serialize for KRHomologyStr {
 impl<'de> serde::Deserialize<'de> for KRHomologyStr {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: serde::Deserializer<'de> {
-        let seq = Vec::deserialize(deserializer)?;
+        let seq: Vec<(isize, isize, isize, Option<usize>)> = Vec::deserialize(deserializer)?;
         let str = seq.into_iter().map(|(i, j, k, r)| ((i, j, k), r)).collect();
         Ok(str)
     }
@@ -134,5 +147,41 @@ where Itr: Iterator<Item = isize> {
         l..=r
     } else { 
         0..=0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use yui::hashmap;
+    use super::*;
+ 
+    #[test]
+    fn non_determined() { 
+        let s = KRHomologyStr::from(hashmap!{             
+            (0,4,0)  => Some(1),
+            (-2,6,0) => Some(1),
+            (-4,4,4) => Some(1),
+            (4,4,-4) => Some(1),
+            (2,6,-4) => None
+        });
+
+        assert!(!s.is_determined());
+        assert_eq!(s.total_rank(), 4);
+        assert_eq!(s.non_determined().collect_vec(), vec![&(2,6,-4)]);
+    }
+
+    #[test]
+    fn serialize_non_determined() { 
+        let s = KRHomologyStr::from(hashmap!{             
+            (0,4,0)  => Some(1),
+            (-2,6,0) => Some(1),
+            (-4,4,4) => Some(1),
+            (4,4,-4) => Some(1),
+            (2,6,-4) => None
+        });
+
+        let ser = serde_json::to_string(&s).unwrap();
+        let des: KRHomologyStr = serde_json::from_str(&ser).unwrap();
+        assert_eq!(s, des);
     }
 }
