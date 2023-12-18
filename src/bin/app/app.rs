@@ -175,14 +175,16 @@ impl App {
         R: EucRing, for<'x> &'x R: EucRingOps<R>, 
         R: serde::Serialize + for<'de> serde::Deserialize<'de> 
     { 
-        let mut calc = if self.args.save_progress { 
+        let mut calc = KRCalc::init(&self.args.target, link);
+        
+        if self.args.save_progress { 
             if self.args.force_compute { 
-                KRCalc::clear(&self.args.target)?;
+                calc.clear()?;
+            } else { 
+                calc.load_if_exists()?;
             }
-            KRCalc::load_or_init(&self.args.target, link)?
-        } else { 
-            KRCalc::init(&self.args.target, link)
-        };
+            calc.save_progress = true;
+        }
 
         calc.compute()?;
 
