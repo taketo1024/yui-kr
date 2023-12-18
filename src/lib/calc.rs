@@ -63,10 +63,6 @@ where
     }
 
     pub fn compute(&mut self) -> Result<(), Box<dyn std::error::Error>> { 
-        if self.result.is_determined() { 
-            return Ok(())
-        }
-
         if self.save_progress { 
             self.prepare_dir();
             File::Result(&self.name).write(&self.result);
@@ -85,27 +81,34 @@ where
 
         let mut c = 0;
         for (q_slice, list) in targets { 
-            info!("q_slice: {q_slice} ..");
-            let tot = KRTotHomol::new(self.data.clone(), q_slice);
+            self.compute_in(q_slice, &list, total, &mut c);
+        }
 
-            for idx in list { 
-                info!("({}/{}) H[{}] ..", c + 1, total, idx);
+        Ok(())
+    }
 
-                let inner = self.data.to_inner_grad(idx).unwrap();
-                let h = tot.get(isize2(inner.1, inner.2));
-    
-                info!("H[{}] => {}", idx, h.math_symbol());
-    
-                self.result.set((idx.0, idx.1, idx.2), h.rank());
-    
-                if self.save_progress { 
-                    File::Result(&self.name).write(&self.result)?;
-                }
-    
-                info!("- - - - - - - - - - - - - - - -");
+    fn compute_in(&mut self, q_slice: isize, targets: &Vec<isize3>, total: usize, c: &mut usize) -> Result<(), Box<dyn std::error::Error>> { 
+        info!("q_slice: {q_slice} ..");
 
-                c += 1;
+        let tot = KRTotHomol::new(self.data.clone(), q_slice);
+
+        for &idx in targets { 
+            info!("({}/{}) H[{}] ..", *c + 1, total, idx);
+
+            let inner = self.data.to_inner_grad(idx).unwrap();
+            let h = tot.get(isize2(inner.1, inner.2));
+
+            info!("H[{}] => {}", idx, h.math_symbol());
+
+            self.result.set((idx.0, idx.1, idx.2), h.rank());
+
+            if self.save_progress { 
+                File::Result(&self.name).write(&self.result)?;
             }
+
+            info!("- - - - - - - - - - - - - - - -");
+
+            *c += 1;
         }
 
         Ok(())
@@ -115,6 +118,7 @@ where
         self.result.non_determined().map(|idx| isize3::from(*idx)).into_group_map_by(|&idx|
             self.data.to_inner_grad(idx).unwrap().0
         ).into_iter().map(|(q_slice, list)| 
+            // TODO sort list.
             (q_slice, list)
         ).sorted_by_key(|(q_slice, _)| *q_slice).collect()
     }
