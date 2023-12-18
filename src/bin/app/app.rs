@@ -6,7 +6,6 @@ use yui::{Ratio, EucRing, EucRingOps};
 use yui_homology::{GridTrait, RModStr};
 use yui_kr::kr::data::KRCubeData;
 use yui_kr::{KRHomology, KRHomologyStr};
-use yui_kr::util::*;
 use yui_link::{Braid, Link};
 use super::utils::*;
 
@@ -136,7 +135,7 @@ impl App {
         if !self.args.force_compute && result_exists(&self.args.target) { 
             info!("result exists: {}", self.args.target);
             let res = load_result(&self.args.target)?;
-            let res = if self.args.mirror { mirror(&res) } else { res };
+            let res = if self.args.mirror { res.mirror() } else { res };
             return Ok(res)
         }
         
@@ -144,9 +143,7 @@ impl App {
 
         let res = if link.writhe() > 0 { 
             info!("compute from mirror.");
-            let link = link.mirror();
-            let res = self.compute_kr_dispatch(&link);
-            mirror(&res)
+            self.compute_kr_dispatch(&link.mirror()).mirror()
         } else { 
             self.compute_kr_dispatch(&link)
         };
@@ -208,9 +205,9 @@ impl App {
 
     fn format(&self, res: &KRHomologyStr) -> String { 
         match &self.args.format {
-            Output::Table =>  qpoly_table(&res),
-            Output::Poly =>   poincare_poly(&res).to_string(),
-            Output::Homfly => homfly_poly(&res).to_string(),
+            Output::Table =>  res.qpoly_table(),
+            Output::Poly =>   res.poincare_poly().to_string(),
+            Output::Homfly => res.homfly_poly().to_string(),
         }
     }
 

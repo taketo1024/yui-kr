@@ -143,22 +143,22 @@ mod tests {
 
     #[test]
     fn check_result_ok() { 
-        let data = hashmap!{ 
+        let data = KRHomologyStr::from(hashmap!{ 
             (0,4,-2) => 1,
             (-2,2,2) => 1,
             (2,2,-2) => 1
-        };
+        });
         let res = check_result("3_1", &data);
         assert!(res.is_ok());
     }
 
     #[test]
     fn check_result_ng() { 
-        let data = hashmap!{ 
+        let data = KRHomologyStr::from(hashmap!{ 
             (0,4,-2) => 1,
             (-2,2,2) => 2,
             (2,2,-2) => 1
-        };
+        });
         let res = check_result("3_1", &data);
         assert!(res.is_err());
     }

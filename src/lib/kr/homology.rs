@@ -1,5 +1,4 @@
 use std::cell::OnceCell;
-use std::collections::HashMap;
 use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
@@ -9,9 +8,8 @@ use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand
 use yui_link::Link;
 
 use super::data::KRCubeData;
+use super::result::KRHomologyStr;
 use super::tot_homol::KRTotHomol;
-
-pub type KRHomologyStr = HashMap<(isize, isize, isize), usize>;
 
 pub struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
@@ -62,16 +60,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             }
         }).collect()
     }
-
-    pub fn tot_rank(&self) -> usize { 
-        self.structure().values().sum()
-    }
-
-    pub fn display_table(&self) -> String {
-        use crate::util::qpoly_table;
-        let str = self.structure();
-        qpoly_table(&str)
-    }
 }
 
 impl<R> GridTrait<isize3> for KRHomology<R> 
@@ -121,9 +109,10 @@ mod tests {
         let b = Braid::from([1,1,1]);
         let l = b.closure();
         let h = KRHomology::<R>::new(&l);
+        let s = h.structure();
 
-        assert_eq!(h.tot_rank(), 3);
-        assert_eq!(h.structure(), hashmap!{ 
+        assert_eq!(s.total_rank(), 3);
+        assert_eq!(s.inner(), &hashmap!{ 
             (0,4,-2) => 1,
             (-2,2,2) => 1,
             (2,2,-2) => 1
@@ -135,9 +124,10 @@ mod tests {
         let b = Braid::from([1,-2,1,-2]);
         let l = b.closure();
         let h = KRHomology::<R>::new(&l);
+        let s = h.structure();
 
-        assert_eq!(h.tot_rank(), 5);
-        assert_eq!(h.structure(), hashmap!{ 
+        assert_eq!(s.total_rank(), 5);
+        assert_eq!(s.inner(), &hashmap!{ 
             (0,-2,2) => 1,
             (-2,0,2) => 1,
             (0,2,-2) => 1,
@@ -151,9 +141,10 @@ mod tests {
         let b = Braid::from([1,1,1,1,1]);
         let l = b.closure();
         let h = KRHomology::<R>::new(&l);
+        let s = h.structure();
 
-        assert_eq!(h.tot_rank(), 5);
-        assert_eq!(h.structure(), hashmap!{             
+        assert_eq!(s.total_rank(), 5);
+        assert_eq!(s.inner(), &hashmap!{             
             (0,4,0)  => 1,
             (-2,6,0) => 1,
             (-4,4,4) => 1,
@@ -167,9 +158,10 @@ mod tests {
         let b = Braid::from([1,1,1,2,-1,2]);
         let l = b.closure();
         let h = KRHomology::<R>::new(&l);
+        let s = h.structure();
 
-        assert_eq!(h.tot_rank(), 7);
-        assert_eq!(h.structure(), hashmap!{ 
+        assert_eq!(s.total_rank(), 7);
+        assert_eq!(s.inner(), &hashmap!{ 
             (2,4,-4) => 1,
             (2,2,-2) => 1,
             (0,4,-2) => 1,
@@ -185,9 +177,10 @@ mod tests {
         let b = Braid::from([1,1,2,-1,-3,2,-3]);
         let l = b.closure();
         let h = KRHomology::<R>::new(&l);
+        let s = h.structure();
 
-        assert_eq!(h.tot_rank(), 9);
-        assert_eq!(h.structure(), hashmap!{ 
+        assert_eq!(s.total_rank(), 9);
+        assert_eq!(s.inner(), &hashmap!{ 
             (0,-2,2) => 1,
             (0,0,0)  => 2,
             (2,0,-2) => 1,
@@ -204,9 +197,10 @@ mod tests {
         let b = Braid::from([1,1,1,-2,1,-2]);
         let l = b.closure();
         let h = KRHomology::<R>::new(&l);
+        let s = h.structure();
 
-        assert_eq!(h.tot_rank(), 11);
-        assert_eq!(h.structure(), hashmap!{ 
+        assert_eq!(s.total_rank(), 11);
+        assert_eq!(s.inner(), &hashmap!{ 
             (0,4,-2) => 1,
             (2,4,-4) => 1,
             (-2,4,0) => 1,
@@ -225,9 +219,10 @@ mod tests {
         let b = Braid::from([1,1,-2,1,-2,-2]);
         let l = b.closure();
         let h = KRHomology::<R>::new(&l);
+        let s = h.structure();
 
-        assert_eq!(h.tot_rank(), 13);
-        assert_eq!(h.structure(), hashmap!{ 
+        assert_eq!(s.total_rank(), 13);
+        assert_eq!(s.inner(), &hashmap!{ 
             (4,0,-4)  => 1,
             (2,-2,0)  => 1,
             (0,0,0)   => 3,

@@ -8,3 +8,4 @@ pub mod tot_cube;
 pub mod tot_cpx;
 pub mod tot_homol;
 pub mod homology;
+pub mod result;
