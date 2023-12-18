@@ -112,11 +112,11 @@ mod tests {
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 3);
-        assert_eq!(s.inner(), &hashmap!{ 
+        assert_eq!(s, KRHomologyStr::from(hashmap!{ 
             (0,4,-2) => 1,
             (-2,2,2) => 1,
             (2,2,-2) => 1
-        });
+        }));
     }
     
     #[test]
@@ -127,13 +127,13 @@ mod tests {
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 5);
-        assert_eq!(s.inner(), &hashmap!{ 
+        assert_eq!(s, KRHomologyStr::from(hashmap!{ 
             (0,-2,2) => 1,
             (-2,0,2) => 1,
             (0,2,-2) => 1,
             (0,0,0)  => 1,
             (2,0,-2) => 1
-        });
+        }));
     }
 
     #[test]
@@ -144,13 +144,13 @@ mod tests {
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 5);
-        assert_eq!(s.inner(), &hashmap!{             
+        assert_eq!(s, KRHomologyStr::from(hashmap!{             
             (0,4,0)  => 1,
             (-2,6,0) => 1,
             (-4,4,4) => 1,
             (4,4,-4) => 1,
             (2,6,-4) => 1
-        });
+        }));
     }
 
     #[test]
@@ -161,7 +161,7 @@ mod tests {
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 7);
-        assert_eq!(s.inner(), &hashmap!{ 
+        assert_eq!(s, KRHomologyStr::from(hashmap!{ 
             (2,4,-4) => 1,
             (2,2,-2) => 1,
             (0,4,-2) => 1,
@@ -169,7 +169,7 @@ mod tests {
             (0,2,0)  => 1,
             (0,6,-4) => 1,
             (-2,2,2) => 1
-        });
+        }));
     }
 
     #[test]
@@ -180,7 +180,7 @@ mod tests {
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 9);
-        assert_eq!(s.inner(), &hashmap!{ 
+        assert_eq!(s, KRHomologyStr::from(hashmap!{ 
             (0,-2,2) => 1,
             (0,0,0)  => 2,
             (2,0,-2) => 1,
@@ -189,7 +189,7 @@ mod tests {
             (0,2,-2) => 1,
             (-2,2,0) => 1,
             (-2,0,2) => 1    
-        })
+        }));
     }
 
     #[test]
@@ -200,7 +200,7 @@ mod tests {
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 11);
-        assert_eq!(s.inner(), &hashmap!{ 
+        assert_eq!(s, KRHomologyStr::from(hashmap!{ 
             (0,4,-2) => 1,
             (2,4,-4) => 1,
             (-2,4,0) => 1,
@@ -211,7 +211,7 @@ mod tests {
             (-2,0,4) => 1,
             (4,2,-4) => 1,
             (-4,2,4) => 1
-        });
+        }));
     }
 
     #[test]
@@ -222,7 +222,7 @@ mod tests {
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 13);
-        assert_eq!(s.inner(), &hashmap!{ 
+        assert_eq!(s, KRHomologyStr::from(hashmap!{ 
             (4,0,-4)  => 1,
             (2,-2,0)  => 1,
             (0,0,0)   => 3,
@@ -234,6 +234,6 @@ mod tests {
             (-4,0,4)  => 1,
             (2,0,-2)  => 1,
             (-2,-2,4) => 1
-        });
+        }));
     }
 }
