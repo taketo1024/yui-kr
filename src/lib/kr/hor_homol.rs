@@ -123,7 +123,7 @@ mod tests {
     type R = Ratio<i64>;
 
     fn make_hml(l: &Link, q: isize, v: BitSeq) -> KRHorHomol<R> {
-        let data = KRCubeData::<R>::new(l, 2);
+        let data = KRCubeData::<R>::new(l);
         let rc = Arc::new(data);
         KRHorHomol::new(rc, q, v)
     }

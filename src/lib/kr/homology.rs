@@ -21,8 +21,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRHomology<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(link: &Link) -> Self { 
-        let excl_level = 2;
-        let data = KRCubeData::new(link, excl_level);
+        let data = KRCubeData::new(link);
         Self::from_data(data)
     }
 

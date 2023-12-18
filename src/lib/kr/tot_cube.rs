@@ -81,7 +81,7 @@ mod tests {
     type P = KRPoly<R>;
 
     fn make_cube(l: &Link, q: isize) -> KRTotCube<R> {
-        let data = Arc::new( KRCubeData::<R>::new(l, 2) );
+        let data = Arc::new( KRCubeData::<R>::new(l) );
         KRTotCube::new(data, q)
     }
 

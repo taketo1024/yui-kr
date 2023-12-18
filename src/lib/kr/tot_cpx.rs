@@ -291,7 +291,7 @@ mod tests {
     type R = Ratio<i64>;
 
     fn make_cpx(link: &Link, q_slice: isize) -> KRTotComplex<R> {
-        let data = Arc::new( KRCubeData::<R>::new(link, 2) );
+        let data = Arc::new( KRCubeData::<R>::new(link) );
         KRTotComplex::new(data, q_slice, false)
     }
     

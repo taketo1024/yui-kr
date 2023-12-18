@@ -240,7 +240,7 @@ impl App {
     fn init_kr<R>(&self, link: &Link) -> KRHomology<R>
     where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
         // TODO support saving. 
-        let data = KRCubeData::<R>::new(&link, 2);
+        let data = KRCubeData::<R>::new(&link);
         KRHomology::<R>::from_data(data)
     }
 }

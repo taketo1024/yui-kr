@@ -49,7 +49,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> KRCubeData<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    pub fn new(link: &Link, excl_level: usize) -> Self {
+    pub fn new(link: &Link) -> Self {
+        Self::new_excl(link, 2)
+    }
+
+    pub(crate) fn new_excl(link: &Link, excl_level: usize) -> Self {
         assert!(excl_level <= 2);
         let mut data = Self::new_no_excl(link);
         data.perform_excl(excl_level);
@@ -401,7 +405,7 @@ mod tests {
     #[test]
     fn grad_at() { 
         let l = Link::trefoil();
-        let data = KRCubeData::<R>::new(&l, 0);
+        let data = KRCubeData::<R>::new_excl(&l, 0);
         let grad0 = data.root_grad();
         assert_eq!(grad0, isize3(4,-8,-4));
 

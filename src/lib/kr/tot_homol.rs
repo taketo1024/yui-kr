@@ -111,7 +111,7 @@ mod tests {
     fn rank() { 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
-        let data = Arc::new( KRCubeData::<R>::new(&l, 2) );
+        let data = Arc::new( KRCubeData::<R>::new(&l) );
         let h = KRTotHomol::new(data, q);
 
         assert_eq!(h[(0, 0)].rank(), 0);
