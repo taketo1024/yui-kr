@@ -28,6 +28,9 @@ pub struct CliArgs {
     #[arg(short = 'F', long)]
     pub force_compute: bool,
 
+    #[arg(short = 'p', long)]
+    pub save_progress: bool,
+
     #[arg(short, long)]
     pub check_result: bool,
 
@@ -143,9 +146,9 @@ impl App {
 
         let res = if link.writhe() > 0 { 
             info!("compute from mirror.");
-            self.compute_kr_dispatch(&link.mirror()).mirror()
+            self.compute_kr_dispatch(&link.mirror())?.mirror()
         } else { 
-            self.compute_kr_dispatch(&link)
+            self.compute_kr_dispatch(&link)?
         };
 
         if self.args.check_result { 
@@ -159,7 +162,7 @@ impl App {
         Ok(res)
     }
 
-    fn compute_kr_dispatch(&self, link: &Link) -> KRHomologyStr { 
+    fn compute_kr_dispatch(&self, link: &Link) -> Result<KRHomologyStr, Box<dyn std::error::Error>> { 
         match self.args.int_type { 
             IntType::I64    => self.compute_kr::<Ratio<i64>>(link),
             IntType::I128   => self.compute_kr::<Ratio<i128>>(link),
@@ -167,11 +170,20 @@ impl App {
         }
     }
 
-    fn compute_kr<R>(&self, link: &Link) -> KRHomologyStr
-    where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-        let mut calc = KRCalc::init(link);
-        calc.compute();
-        calc.into_result()
+    fn compute_kr<R>(&self, link: &Link) -> Result<KRHomologyStr, Box<dyn std::error::Error>>
+    where 
+        R: EucRing, for<'x> &'x R: EucRingOps<R>, 
+        R: serde::Serialize + for<'de> serde::Deserialize<'de> 
+    { 
+        let mut calc = if self.args.save_progress { 
+            KRCalc::load_or_init(&self.args.target, link)?
+        } else { 
+            KRCalc::init(&self.args.target, link)
+        };
+
+        calc.compute()?;
+
+        Ok(calc.into_result())
     }
 
     fn format(&self, res: &KRHomologyStr) -> String { 

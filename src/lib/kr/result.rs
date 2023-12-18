@@ -38,16 +38,6 @@ impl FromIterator<((isize, isize, isize), Option<usize>)> for KRHomologyStr {
 }
 
 impl KRHomologyStr { 
-    pub fn is_determined(&self) -> bool { 
-        self.0.values().all(Option::is_some)
-    }
-
-    pub fn non_determined(&self) -> impl Iterator<Item = &(isize, isize, isize)> { 
-        self.0.iter().filter_map(|(idx, r)| 
-            if r.is_some() { None } else { Some(idx) }
-        )
-    }
-
     pub fn indices(&self) -> impl Iterator<Item = &(isize, isize, isize)> { 
         self.0.keys()
     }
@@ -56,8 +46,37 @@ impl KRHomologyStr {
         self.0.iter()
     }
 
+    pub fn is_determined(&self) -> bool { 
+        self.0.values().all(Option::is_some)
+    }
+
     pub fn iter_determined(&self) -> impl Iterator<Item = (&(isize, isize, isize), &usize)> { 
         self.0.iter().filter_map(|(idx, r)| r.as_ref().map(|r| (idx, r)))
+    }
+
+    pub fn non_determined(&self) -> impl Iterator<Item = &(isize, isize, isize)> { 
+        self.0.iter().filter_map(|(idx, r)| 
+            if r.is_some() { None } else { Some(idx) }
+        )
+    }
+
+    pub fn get(&self, idx: (isize, isize, isize)) -> Option<usize> {
+        // Some(Some(r)) -> Some(r) // determined
+        // Some(None)    -> None    // non-determined
+        // None          -> Some(0) // determined
+        if let Some(e) = self.0.get(&idx) { 
+            e.to_owned()
+        } else { 
+            Some(0)
+        }
+    }
+
+    pub fn set(&mut self, idx: (isize, isize, isize), value: usize) {
+        if value > 0 { 
+            self.0.insert(idx, Some(value));
+        } else { 
+            self.0.remove(&idx);
+        }
     }
 
     pub fn mirror(&self) -> KRHomologyStr { 
