@@ -1,17 +1,20 @@
-#![allow(unused)] use itertools::Itertools;
+#![allow(unused)] use std::sync::Arc;
+
+use itertools::Itertools;
 // remove later
 use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{GridTrait, RModStr, isize3};
+use yui_homology::{GridTrait, RModStr, isize3, isize2};
 use yui_link::Link;
 
+use crate::kr::tot_homol::KRTotHomol;
 use crate::{KRHomologyStr, KRHomology};
 use crate::kr::data::KRCubeData;
 
 pub struct KRCalc<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     name: String,
-    data: KRCubeData<R>,
+    data: Arc<KRCubeData<R>>,
     result: KRHomologyStr,
     pub save_progress: bool
 }
@@ -23,7 +26,7 @@ where
 {
     pub fn init(name: &str, l: &Link) -> Self { 
         let name = name.to_owned();
-        let data = KRCubeData::new(&l);
+        let data = Arc::new(KRCubeData::new(&l));
         let result = data.support().map(|idx| ((idx.0, idx.1, idx.2), None)).collect();
         let save_progress = false;
         Self { name, data, result, save_progress }
@@ -54,54 +57,66 @@ where
         let dir = File::working_dir();
         let path = std::path::Path::new(&dir);
         if !path.exists() { 
-            std::fs::create_dir_all(&path)?;
+            std::fs::create_dir(&path);
         }
         Ok(())
     }
 
     pub fn compute(&mut self) -> Result<(), Box<dyn std::error::Error>> { 
+        if self.result.is_determined() { 
+            return Ok(())
+        }
+
         if self.save_progress { 
             self.prepare_dir();
             File::Result(&self.name).write(&self.result);
         }
 
-        let kr = KRHomology::from_data(self.data.clone());
+        let total = self.result.non_determined().count();
 
         info!("compute KRHomology.");
+        info!("targets: {total}");
         
-        info!("i-range: {:?}", kr.i_range());
-        info!("j-range: {:?}", kr.j_range());
-        info!("k-range: {:?}", kr.k_range());
-        info!("q-range: {:?}", kr.q_range());
-        
-        info!("targets:");
-        
-        let targets = self.result.non_determined().cloned().collect_vec();
-        let total = targets.len();
+        let targets = self.organize_targets();
 
-        targets.iter().enumerate().for_each(|(i, idx)| 
-            info!("  {}. {idx:?}", i + 1)
-        );
+        dbg!(&targets);
 
         info!("- - - - - - - - - - - - - - - -");
 
-        for (i, idx) in targets.iter().enumerate() {
-            let idx = isize3(idx.0, idx.1, idx.2);
-            info!("({}/{}) H[{}] ..", i + 1, total, idx);
+        let mut c = 0;
+        for (q_slice, list) in targets { 
+            info!("q_slice: {q_slice} ..");
+            let tot = KRTotHomol::new(self.data.clone(), q_slice);
 
-            let h = kr.get(idx);
+            for idx in list { 
+                info!("({}/{}) H[{}] ..", c + 1, total, idx);
 
-            info!("H[{}] => {}", idx, h.math_symbol());
-            info!("- - - - - - - - - - - - - - - -");
+                let inner = self.data.to_inner_grad(idx).unwrap();
+                let h = tot.get(isize2(inner.1, inner.2));
+    
+                info!("H[{}] => {}", idx, h.math_symbol());
+    
+                self.result.set((idx.0, idx.1, idx.2), h.rank());
+    
+                if self.save_progress { 
+                    File::Result(&self.name).write(&self.result)?;
+                }
+    
+                info!("- - - - - - - - - - - - - - - -");
 
-            self.result.set((idx.0, idx.1, idx.2), h.rank());
-
-            if self.save_progress { 
-                File::Result(&self.name).write(&self.result)?;
+                c += 1;
             }
         }
 
         Ok(())
+    }
+
+    fn organize_targets(&self) -> Vec<(isize, Vec<isize3>)> {
+        self.result.non_determined().map(|idx| isize3::from(*idx)).into_group_map_by(|&idx|
+            self.data.to_inner_grad(idx).unwrap().0
+        ).into_iter().map(|(q_slice, list)| 
+            (q_slice, list)
+        ).sorted_by_key(|(q_slice, _)| *q_slice).collect()
     }
 }
 
@@ -117,7 +132,7 @@ impl<'a> File<'a> {
 
     fn suffix(&self) -> &str { 
         match self { 
-            File::Result(_) => "",
+            File::Result(_) => "result",
         }
     }
 
@@ -137,6 +152,7 @@ impl<'a> File<'a> {
 
     fn read<D>(&self) -> Result<D, Box<dyn std::error::Error>>
     where for<'de> D: serde::Deserialize<'de> { 
+        info!("load: {}", self.path());
         let str = std::fs::read_to_string(self.path())?;
         let data = serde_json::from_str::<D>(&str)?;
         Ok(data)
@@ -144,12 +160,17 @@ impl<'a> File<'a> {
 
     fn write<D>(&self, data: D) -> std::io::Result<()>
     where D: serde::Serialize {
+        info!("save: {}", self.path());
         let json = serde_json::to_string(&data)?;
         std::fs::write(self.path(), &json)?;
         Ok(())
     }
 
     fn delete(&self) -> std::io::Result<()> { 
-        std::fs::remove_file(&self.path())
+        if self.exists() { 
+            info!("delete: {}", self.path());
+            std::fs::remove_file(&self.path())?;
+        }
+        Ok(())
     }
 }
