@@ -1,9 +1,10 @@
-use std::ops::Index;
+use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
+use delegate::delegate;
 use num_traits::Zero;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{GridTrait, RModStr, XHomologySummand};
+use yui_homology::{GridTrait, RModStr, XHomologySummand, Grid1};
 use yui_matrix::sparse::SpVec;
 use yui::bitseq::BitSeq;
 
@@ -17,22 +18,28 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     v_coords: BitSeq,
     q_slice: isize,
     excl: Arc<KRHorExcl<R>>,
-    summands: Vec<XHomologySummand<KRGen, R>>,
-    _zero: XHomologySummand<KRGen, R>
+    inner: Grid1<XHomologySummand<KRGen, R>>
 } 
 
 impl<R> KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize, v_coords: BitSeq) -> Self { 
-        let excl = data.excl(v_coords);
-        let complex = KRHorComplex::new(data.clone(), q_slice, v_coords);
-        let homol = complex.homology();
+        let n = data.dim() as isize;
+        Self::new_restr(data, q_slice, v_coords, 0..=n)
+    }
 
-        // extract for fast access.
-        let summands = homol.into_iter().map(|(_, e)| e).collect();
-        let _zero = XHomologySummand::zero();
+    pub fn new_restr(data: Arc<KRCubeData<R>>, q_slice: isize, v_coords: BitSeq, h_range: RangeInclusive<isize>) -> Self { 
+        let h_range = {
+            let n = data.dim() as isize;
+            let start = *h_range.start();
+            let end = isize::min(h_range.end() + 1, n);
+            start..=end
+        };
+        let excl = data.excl(v_coords);
+        let complex = KRHorComplex::new_restr(data.clone(), q_slice, v_coords, h_range);
+        let inner = complex.homology();
         
-        Self { v_coords, q_slice, excl, summands, _zero }
+        Self { v_coords, q_slice, excl, inner }
     }
 
     pub fn v_coords(&self) -> BitSeq { 
@@ -43,11 +50,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.q_slice
     }
 
-    pub fn rank(&self, i: usize) -> usize {
-        self.summands[i].rank()
+    pub fn rank(&self, i: isize) -> usize {
+        self.inner[i].rank()
     }
 
-    pub fn gens(&self, i: usize) -> Vec<KRChain<R>> { 
+    pub fn gens(&self, i: isize) -> Vec<KRChain<R>> { 
         let r = self.rank(i);
         (0..r).map(|k| { 
             let v = SpVec::unit(r, k);
@@ -56,9 +63,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     #[inline(never)] // for profilability
-    pub fn vectorize(&self, i: usize, z: &KRChain<R>) -> SpVec<R> {
+    pub fn vectorize(&self, i: isize, z: &KRChain<R>) -> SpVec<R> {
         debug_assert!(z.iter().all(|(x, _)| 
-            x.0.weight() == i && 
+            x.0.weight() as isize == i && 
             x.1 == self.v_coords()
         ));
 
@@ -67,12 +74,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }
 
         let z_exc = self.excl.forward(z);
-        let h = &self.summands[i];
+        let h = &self.inner[i];
         h.vectorize(&z_exc)
     }
 
-    pub fn as_chain(&self, i: usize, v_hml: &SpVec<R>) -> KRChain<R> {
-        let h = &self.summands[i];
+    pub fn as_chain(&self, i: isize, v_hml: &SpVec<R>) -> KRChain<R> {
+        let h = &self.inner[i];
         let z_exc = h.as_chain(v_hml);
         self.excl.backward(&z_exc, true)
     }
@@ -80,24 +87,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> GridTrait<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Itr = std::ops::Range<isize>;
+    type Itr = std::vec::IntoIter<isize>;
     type Output = XHomologySummand<KRGen, R>;
 
-    fn support(&self) -> Self::Itr { 
-        0..self.summands.len() as isize
-    }
-
-    fn is_supported(&self, i: isize) -> bool {
-        0 <= i && i < self.summands.len() as isize
-    }
-
-    fn get(&self, i: isize) -> &Self::Output { 
-        if self.is_supported(i) {
-            &self.summands[i as usize]
-        } else { 
-            &self._zero
+    delegate! { 
+        to self.inner { 
+            fn support(&self) -> Self::Itr;
+            fn is_supported(&self, i: isize) -> bool;
+            fn get(&self, i: isize) -> &Self::Output;
         }
-
     }
 }
 

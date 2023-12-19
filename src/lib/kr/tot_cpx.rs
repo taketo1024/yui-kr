@@ -85,10 +85,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     #[inline(never)] // for profilability
     fn collect_gens(&self, idx: isize2) -> Vec<KRChain<R>> { 
-        let (i, j) = (idx.0 as usize, idx.1 as usize);
-        let verts = self.data.verts_of_weight(j);
+        let (i, j) = idx.into();
+        let verts = self.data.verts_of_weight(j as usize);
 
-        // collect gens
         if crate::config::is_multithread_enabled() { 
             verts.par_iter().flat_map(|&v| {
                 self.cube.vert(v).gens(i)
@@ -106,16 +105,16 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return SpVec::zero(0)
         }
 
-        let (i, j) = (idx.0 as usize, idx.1 as usize);
+        let (i, j) = idx.into();
 
         debug_assert!(z.iter().all(|(x, _)| 
-            x.0.weight() == i && 
-            x.1.weight() == j
+            x.0.weight() as isize == i && 
+            x.1.weight() as isize == j
         ));
 
         let z_decomp = decomp(z);
 
-        let (r, entries) = self.data.verts_of_weight(j).iter().fold((0, vec![]), |acc, &v| { 
+        let (r, entries) = self.data.verts_of_weight(j as usize).iter().fold((0, vec![]), |acc, &v| { 
             let (r0, mut entries) = acc;
             let (r, vec) = self.vectorize_v(i, v, z_decomp.get(&v));
 
@@ -130,13 +129,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     #[inline(never)] // for profilability
-    pub fn vectorize_v(&self, i: usize, v: BitSeq, z_v: Option<&KRChain<R>>) -> (usize, Option<SpVec<R>>) {
+    pub fn vectorize_v(&self, i: isize, v: BitSeq, z_v: Option<&KRChain<R>>) -> (usize, Option<SpVec<R>>) {
         let h_v = self.cube.vert(v);
         let r = h_v.rank(i);
         let vec = z_v.map(|z_v| h_v.vectorize(i, &z_v));
         (r, vec)
     }
-
 
     #[inline(never)] // for profilability
     pub fn as_chain(&self, idx: isize2, v: &SpVec<R>) -> KRChain<R> { 
