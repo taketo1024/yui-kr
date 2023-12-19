@@ -16,7 +16,7 @@ use super::hor_excl::KRHorExcl;
 
 pub struct KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
-    q_slice: isize,
+    q: isize,
     v_coords: BitSeq,
     excl: Arc<KRHorExcl<R>>,
     inner: XChainComplex<KRGen, R>
@@ -24,17 +24,17 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
-    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize, v_coords: BitSeq) -> Self { 
+    pub fn new(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq) -> Self { 
         let n = data.dim() as isize;
-        Self::new_restr(data, q_slice, v_coords, 0..=n)
+        Self::new_restr(data, q, v_coords, 0..=n)
     }
 
-    pub fn new_restr(data: Arc<KRCubeData<R>>, q_slice: isize, v_coords: BitSeq, h_range: RangeInclusive<isize>) -> Self { 
+    pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq, h_range: RangeInclusive<isize>) -> Self { 
         let excl = data.excl(v_coords);
-        let cube = KRHorCube::new(data.clone(), q_slice, v_coords);
+        let cube = KRHorCube::new(data.clone(), q, v_coords);
         let inner = Self::make_cpx(excl.clone(), cube, h_range);
 
-        Self { v_coords, q_slice, excl, inner }
+        Self { v_coords, q, excl, inner }
     }
 
     fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>, h_range: RangeInclusive<isize>) -> XChainComplex<KRGen, R> { 
@@ -54,12 +54,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         })
     }
 
-    pub fn v_coords(&self) -> BitSeq { 
-        self.v_coords
+    pub fn q_deg(&self) -> isize { 
+        self.q
     }
 
-    pub fn q_slice(&self) -> isize { 
-        self.q_slice
+    pub fn v_coords(&self) -> BitSeq { 
+        self.v_coords
     }
 }
 
@@ -125,11 +125,11 @@ mod tests {
 
     type R = Ratio<i64>;
 
-    fn make_cpx(link: &Link, v_coords: BitSeq, q_slice: isize, level: usize, red: bool) -> KRHorComplex<R> {
+    fn make_cpx(link: &Link, v_coords: BitSeq, q: isize, level: usize, red: bool) -> KRHorComplex<R> {
         let n = link.crossing_num() as isize;
         let data = Arc::new( KRCubeData::<R>::new_excl(link, level) );
         let excl = data.excl(v_coords);
-        let cube = KRHorCube::new(data.clone(), q_slice, v_coords);
+        let cube = KRHorCube::new(data.clone(), q, v_coords);
         let inner = KRHorComplex::make_cpx(excl.clone(), cube, 0..=n);
         let inner = if red { 
             inner.reduced()
@@ -137,7 +137,7 @@ mod tests {
             inner
         };
 
-        KRHorComplex { v_coords, q_slice, excl, inner }
+        KRHorComplex { v_coords, q, excl, inner }
     }
 
     #[test]

@@ -11,23 +11,27 @@ use super::data::KRCubeData;
 pub struct KRHorCube<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     data: Arc<KRCubeData<R>>,
-    q_slice: isize,
+    q: isize,
     v_coords: BitSeq,
 } 
 
 impl<R> KRHorCube<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize, v_coords: BitSeq) -> Self {
+    pub fn new(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq) -> Self {
         assert_eq!(v_coords.len(), data.dim());
         Self {
             data,
-            q_slice,
+            q,
             v_coords,
         }
     }
 
     pub fn dim(&self) -> usize { 
         self.data.dim()
+    }
+
+    pub fn q_deg(&self) -> isize { 
+        self.q
     }
 
     pub fn data(&self) -> &KRCubeData<R> { 
@@ -39,7 +43,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let i  = self.data.grad_at(h_coords, self.v_coords).0; // <= i0
         let h = h_coords.weight() as isize;
 
-        self.q_slice + h + (i0 - i) / 2
+        self.q + h + (i0 - i) / 2
     }
 
     pub fn vert_gens(&self, h_coords: BitSeq) -> impl Iterator<Item = KRGen> + '_ {

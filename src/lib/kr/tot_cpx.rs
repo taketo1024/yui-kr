@@ -58,7 +58,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 pub struct KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    q_slice: isize,
+    q: isize,
     range: (RangeInclusive<isize>, RangeInclusive<isize>),
     data: Arc<KRCubeData<R>>,
     cube: KRTotCube<R>,
@@ -67,15 +67,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
+    pub fn new(data: Arc<KRCubeData<R>>, q: isize) -> Self { 
         let n = data.dim() as isize;
-        Self::new_restr(data, q_slice, (0..=n, 0..=n))
+        Self::new_restr(data, q, (0..=n, 0..=n))
     }
 
-    pub fn new_restr(data: Arc<KRCubeData<R>>, q_slice: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
+    pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
         let cube = KRTotCube::new_restr(
             data.clone(), 
-            q_slice, 
+            q, 
             range.0.clone()
         );
         let support = cartesian!(range.0.clone(), range.1.clone()).map(isize2::from);
@@ -84,11 +84,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             |_| OnceLock::new()
         );
         let _ = summands.get_default().set(KRTotComplexSummand::zero());
-        Self { q_slice, range, data, cube, summands }
+        Self { q, range, data, cube, summands }
     }
 
-    pub fn q_slice(&self) -> isize { 
-        self.q_slice
+    pub fn q_deg(&self) -> isize { 
+        self.q
     }
 
     fn summand(&self, idx: isize2) -> &KRTotComplexSummand<R> { 
@@ -265,9 +265,9 @@ mod tests {
 
     type R = Ratio<i64>;
 
-    fn make_cpx(link: &Link, q_slice: isize) -> KRTotComplex<R> {
+    fn make_cpx(link: &Link, q: isize) -> KRTotComplex<R> {
         let data = Arc::new( KRCubeData::<R>::new(link) );
-        KRTotComplex::new(data, q_slice)
+        KRTotComplex::new(data, q)
     }
     
     #[test]

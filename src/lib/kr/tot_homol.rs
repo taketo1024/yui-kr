@@ -12,7 +12,7 @@ use super::data::KRCubeData;
 
 pub struct KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    q_slice: isize,
+    q: isize,
     data: Arc<KRCubeData<R>>,
     complex: KRTotComplex<R>,
     reduced: Grid1<OnceCell<ChainComplex<R>>>, // vertical slices
@@ -21,17 +21,17 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
+    pub fn new(data: Arc<KRCubeData<R>>, q: isize) -> Self { 
         let n = data.dim() as isize;
-        Self::new_restr(data, q_slice, (0..=n, 0..=n))
+        Self::new_restr(data, q, (0..=n, 0..=n))
     }
 
-    pub fn new_restr(data: Arc<KRCubeData<R>>, q_slice: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
+    pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
         let n = data.dim() as isize;
         let range = (range.0, extend_ends_bounded(range.1, 1, 0..=n));
         let complex = KRTotComplex::new_restr(
             data.clone(), 
-            q_slice, 
+            q, 
             range.clone()
         );
         let reduced = Grid1::generate(
@@ -43,11 +43,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             |_| OnceCell::new()
         );
 
-        Self { q_slice, data, complex, reduced, homology }
+        Self { q, data, complex, reduced, homology }
     }
 
-    pub fn q_slice(&self) -> isize { 
-        self.q_slice
+    pub fn q_deg(&self) -> isize { 
+        self.q
     }
 
     fn reduced(&self, i: isize) -> &ChainComplex<R> { 
@@ -59,7 +59,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn homology(&self, idx: isize2) -> &HomologySummand<R> { 
         self.homology[idx].get_or_init(|| {
             let (i, j) = idx.into();
-            let g = isize3(self.q_slice, i, j);
+            let g = isize3(self.q, i, j);
 
             if self.data.is_triv_inner(g) { 
                 HomologySummand::zero()

@@ -14,7 +14,7 @@ use super::tot_homol::KRTotHomol;
 pub struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
-    slices: Grid1<OnceCell<KRTotHomol<R>>>,
+    q_slices: Grid1<OnceCell<KRTotHomol<R>>>,
     zero: HomologySummand<R>
 }
 
@@ -26,9 +26,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn from_data(data: Arc<KRCubeData<R>>) -> Self { 
-        let slices = Grid1::generate(data.q_range(), |_| OnceCell::new());
+        let q_slices = Grid1::generate(data.q_range(), |_| OnceCell::new());
         let zero = HomologySummand::zero();
-        Self { data, slices, zero }
+        Self { data, q_slices, zero }
     }
 
     delegate! { 
@@ -40,18 +40,18 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }
     }
 
-    pub fn q_slice(&self, q_slice: isize) -> &KRTotHomol<R> {
-        self.slices[q_slice].get_or_init(|| {
-            let range = self.range_for(q_slice);
-            KRTotHomol::new_restr(self.data.clone(), q_slice, range)
+    pub fn q_slice(&self, q: isize) -> &KRTotHomol<R> {
+        self.q_slices[q].get_or_init(|| {
+            let range = self.range_for(q);
+            KRTotHomol::new_restr(self.data.clone(), q, range)
         })
     }
 
-    pub fn range_for(&self, q_slice: isize) -> (RangeInclusive<isize>, RangeInclusive<isize>) { 
+    pub fn range_for(&self, q: isize) -> (RangeInclusive<isize>, RangeInclusive<isize>) { 
         let n = self.data.dim() as isize;
         let (h0, h1, v0, v1) = self.support().filter_map(|idx| {
             let inner = self.data.to_inner_grad(idx).unwrap();
-            if inner.0 == q_slice { 
+            if inner.0 == q { 
                 Some((inner.1, inner.2))
             } else { 
                 None

@@ -12,19 +12,19 @@ use super::hor_homol::KRHorHomol;
 pub struct KRTotCube<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     data: Arc<KRCubeData<R>>,
-    q_slice: isize,
+    q: isize,
     h_range: RangeInclusive<isize>,
     verts: Vec<OnceLock<KRHorHomol<R>>> // serialized for fast access
 } 
 
 impl<R> KRTotCube<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self {
+    pub fn new(data: Arc<KRCubeData<R>>, q: isize) -> Self {
         let n = data.dim() as isize;
-        Self::new_restr(data, q_slice, 0..=n)
+        Self::new_restr(data, q, 0..=n)
     }
 
-    pub fn new_restr(data: Arc<KRCubeData<R>>, q_slice: isize, h_range: RangeInclusive<isize>) -> Self {
+    pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, h_range: RangeInclusive<isize>) -> Self {
         let n = data.dim();
         let verts = BitSeq::generate(n).map(|_|
             OnceLock::new()
@@ -32,7 +32,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         Self {
             data,
-            q_slice,
+            q,
             h_range,
             verts
         }
@@ -42,8 +42,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.data.dim()
     }
 
-    pub fn q_slice(&self) -> isize { 
-        self.q_slice
+    pub fn q_deg(&self) -> isize { 
+        self.q
     }
 
     pub fn vert(&self, v_coords: BitSeq) -> &KRHorHomol<R> {
@@ -51,7 +51,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.verts[i].get_or_init(||
             KRHorHomol::new_restr(
                 self.data.clone(), 
-                self.q_slice, 
+                self.q, 
                 v_coords, 
                 self.h_range.clone()
             )
