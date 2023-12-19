@@ -113,27 +113,20 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         ));
 
         let z_decomp = decomp(z);
+        let zero = KRChain::zero();
 
-        let (r, entries) = self.data.verts_of_weight(j as usize).iter().fold((0, vec![]), |acc, &v| { 
-            let (r0, mut entries) = acc;
-            let (r, vec) = self.vectorize_v(i, v, z_decomp.get(&v));
+        let vs = self.data.verts_of_weight(j as usize).par_iter().map(|&v| {
+            let z_v = z_decomp.get(&v).unwrap_or(&zero);
+            self.vectorize_v(i, v, z_v)
+        }).collect::<Vec<_>>();
 
-            if let Some(vec) = vec { 
-                entries.extend(vec.iter().map(|(k, a)| (r0 + k, a.clone())));
-            }
-
-            (r0 + r, entries)
-        });
-
-        SpVec::from_entries(r, entries)
+        SpVec::stack_vecs(vs)
     }
 
     #[inline(never)] // for profilability
-    pub fn vectorize_v(&self, i: isize, v: BitSeq, z_v: Option<&KRChain<R>>) -> (usize, Option<SpVec<R>>) {
+    pub fn vectorize_v(&self, i: isize, v: BitSeq, z_v: &KRChain<R>) -> SpVec<R> {
         let h_v = self.cube.vert(v);
-        let r = h_v.rank(i);
-        let vec = z_v.map(|z_v| h_v.vectorize(i, &z_v));
-        (r, vec)
+        h_v.vectorize(i, &z_v)
     }
 
     #[inline(never)] // for profilability
