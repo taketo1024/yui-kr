@@ -4,7 +4,6 @@ use std::sync::{Arc, OnceLock};
 
 use cartesian::cartesian;
 use delegate::delegate;
-use itertools::Itertools;
 use log::info;
 use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
@@ -189,28 +188,24 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         info!("  d_tot (q: {}, h: {}, v: {} -> {}), size: {:?}.", self.q_slice, idx.0, idx.1, idx1.1, (m, n));
 
         if crate::config::is_multithread_enabled() { 
-            let entries = (0..n).into_par_iter().flat_map(|j| { 
-                self.d_matrix_col(idx, n, j).into_par_iter()
-            });
-            SpMat::from_par_entries((m, n), entries)
+            let cols = (0..n).into_par_iter().map(|j| { 
+                self.d_matrix_col(idx, n, j)
+            }).collect::<Vec<_>>();
+            SpMat::from_col_vecs(m, cols)
         } else { 
-            let entries = (0..n).flat_map(|j| { 
+            let cols = (0..n).map(|j| { 
                 self.d_matrix_col(idx, n, j)
             });
-            SpMat::from_entries((m, n), entries)
+            SpMat::from_col_vecs(m, cols)
         }
     }
 
     #[inline(never)] // for profilability
-    fn d_matrix_col(&self, idx: isize2, n: usize, j: usize) -> Vec<(usize, usize, R)> {
+    fn d_matrix_col(&self, idx: isize2, n: usize, j: usize) -> SpVec<R> {
         let ej = SpVec::unit(n, j);
         let z = self.as_chain(idx, &ej);        
         let w = self.d(idx, &z);
-        let dj = self.vectorize(idx + self.d_deg(), &w);
-
-        dj.iter().map(|(i, a)| 
-            (i, j, a.clone())
-        ).collect_vec()
+        self.vectorize(idx + self.d_deg(), &w)
     }
 
     pub fn reduced(self) -> ChainComplex2<R> {
