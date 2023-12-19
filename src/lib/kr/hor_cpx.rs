@@ -2,9 +2,8 @@ use std::ops::Index;
 use std::sync::Arc;
 use delegate::delegate;
 
-use log::info;
 use yui::{Ring, RingOps, EucRing, EucRingOps};
-use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, XHomology, Grid1, XModStr, DisplaySeq};
+use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, XHomology, Grid1, XModStr};
 use yui_matrix::sparse::SpMat;
 use yui::bitseq::BitSeq;
 
@@ -27,15 +26,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize, v_coords: BitSeq) -> Self { 
         let excl = data.excl(v_coords);
         let cube = KRHorCube::new(data.clone(), q_slice, v_coords);
-        
-        let complex = Self::make_cpx(excl.clone(), cube);
-        info!("C_hor (q: {q_slice}, v: {v_coords})\n{}", complex.display_seq("h"));
+        let inner = Self::make_cpx(excl.clone(), cube);
 
-        info!("red C_hor (q: {q_slice}, v: {v_coords}) ..");
-        let reduced = complex.reduced();
-        info!("red C_hor (q: {q_slice}, v: {v_coords})\n{}", reduced.display_seq("h"));
-
-        Self { v_coords, q_slice, excl, inner: reduced }
+        Self { v_coords, q_slice, excl, inner }
     }
 
     fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>) -> XChainComplex<KRGen, R> { 
@@ -109,7 +102,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> KRHorComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn homology(&self) -> XHomology<KRGen, R> { 
-        self.inner.homology(true)
+        self.inner.reduced().homology(true)
     }
 }
 
