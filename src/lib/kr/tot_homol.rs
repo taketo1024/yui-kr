@@ -34,13 +34,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             q, 
             range.clone()
         );
-        let reduced = Grid1::generate(
+        let reduced = Grid1::generate_with_default(
             range.0.clone(), 
-            |_| OnceCell::new()
+            |_| OnceCell::new(),
+            OnceCell::from(ChainComplex::zero())
         );
-        let homology = Grid2::generate(
+        let homology = Grid2::generate_with_default(
             complex.support(), 
-            |_| OnceCell::new()
+            |_| OnceCell::new(),
+            OnceCell::from(HomologySummand::zero())
         );
 
         Self { q, data, complex, reduced, homology }

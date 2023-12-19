@@ -79,11 +79,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             range.0.clone()
         );
         let support = cartesian!(range.0.clone(), range.1.clone()).map(isize2::from);
-        let summands = Grid2::generate(
+        let summands = Grid2::generate_with_default(
             support, 
-            |_| OnceLock::new()
+            |_| OnceLock::new(),
+            OnceLock::from(KRTotComplexSummand::zero())
         );
-        let _ = summands.get_default().set(KRTotComplexSummand::zero());
         Self { q, range, data, cube, summands }
     }
 
