@@ -2,6 +2,7 @@ use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 use delegate::delegate;
 
+use num_traits::Zero;
 use yui::{Ring, RingOps, EucRing, EucRingOps};
 use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, XHomology, Grid1, XModStr};
 use yui_matrix::sparse::SpMat;
@@ -37,15 +38,19 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>, h_range: RangeInclusive<isize>) -> XChainComplex<KRGen, R> { 
-        let summands = Grid1::generate(h_range, |i| { 
+        let summands = Grid1::generate(h_range.clone(), |i| { 
             let gens = cube.gens(i as usize).filter(|v| 
                 excl.should_remain(v)
             );
             XModStr::free(gens)
         });
         
-        XChainComplex::new(summands, 1, move |_, e| {
-            excl.d(e)
+        XChainComplex::new(summands, 1, move |i, e| {
+            if i + 1 <= *h_range.end() { 
+                excl.d(e)
+            } else { 
+                KRChain::zero()
+            }
         })
     }
 

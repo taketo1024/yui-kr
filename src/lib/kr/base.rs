@@ -1,4 +1,5 @@
 use std::iter::zip;
+use std::ops::RangeInclusive;
 
 use derive_more::{Display, DebugCustom};
 use itertools::{Itertools, FoldWhile};
@@ -68,6 +69,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             (v, a)
         })
     }).collect()
+}
+
+pub(crate) fn extend_ends_bounded(r: RangeInclusive<isize>, d: isize, bound: RangeInclusive<isize>) -> RangeInclusive<isize> { 
+    let start = isize::max(r.start() - d, *bound.start());
+    let end   = isize::min(r.end()   + d, *bound.end());
+    start..=end
 }
 
 #[cfg(test)]

@@ -1,3 +1,4 @@
+use std::ops::RangeInclusive;
 use std::sync::{Arc, OnceLock};
 
 use num_traits::One;
@@ -12,12 +13,18 @@ pub struct KRTotCube<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     data: Arc<KRCubeData<R>>,
     q_slice: isize,
+    h_range: RangeInclusive<isize>,
     verts: Vec<OnceLock<KRHorHomol<R>>> // serialized for fast access
 } 
 
 impl<R> KRTotCube<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self {
+        let n = data.dim() as isize;
+        Self::new_restr(data, q_slice, 0..=n)
+    }
+
+    pub fn new_restr(data: Arc<KRCubeData<R>>, q_slice: isize, h_range: RangeInclusive<isize>) -> Self {
         let n = data.dim();
         let verts = BitSeq::generate(n).map(|_|
             OnceLock::new()
@@ -26,6 +33,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self {
             data,
             q_slice,
+            h_range,
             verts
         }
     }
@@ -41,7 +49,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn vert(&self, v_coords: BitSeq) -> &KRHorHomol<R> {
         let i = v_coords.as_u64() as usize;
         self.verts[i].get_or_init(||
-            KRHorHomol::new(self.data.clone(), self.q_slice, v_coords)
+            KRHorHomol::new_restr(
+                self.data.clone(), 
+                self.q_slice, 
+                v_coords, 
+                self.h_range.clone()
+            )
         )
     }
 

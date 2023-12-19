@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::ops::Index;
+use std::ops::{Index, RangeInclusive};
 use std::sync::{Arc, OnceLock};
 
 use cartesian::cartesian;
@@ -8,7 +8,7 @@ use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui::bitseq::BitSeq;
 use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, ChainComplexCommon};
+use yui_homology::{isize2, GridTrait, GridIter, Grid2, ChainComplexTrait, ChainComplex, RModStr, DisplayForGrid, rmod_str_symbol};
 use yui_matrix::sparse::{SpVec, SpMat};
 
 use super::base::KRChain;
@@ -25,6 +25,10 @@ impl<R> KRTotComplexSummand<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     fn new(gens: Vec<KRChain<R>>) -> Self { 
         Self { gens }
+    }
+
+    fn zero() -> Self { 
+        Self::new(vec![])
     }
 
     pub fn gens(&self) -> &Vec<KRChain<R>> { 
@@ -55,6 +59,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 pub struct KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     q_slice: isize,
+    range: (RangeInclusive<isize>, RangeInclusive<isize>),
     data: Arc<KRCubeData<R>>,
     cube: KRTotCube<R>,
     summands: Grid2<OnceLock<KRTotComplexSummand<R>>>
@@ -64,12 +69,22 @@ impl<R> KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
         let n = data.dim() as isize;
-        let cube = KRTotCube::new(data.clone(), q_slice);
+        Self::new_restr(data, q_slice, (0..=n, 0..=n))
+    }
 
-        let support = cartesian!(0..=n, 0..=n).map(isize2::from);
-        let summands = Grid2::generate(support, |_| OnceLock::new());
-        
-        Self { q_slice, data, cube, summands }
+    pub fn new_restr(data: Arc<KRCubeData<R>>, q_slice: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
+        let cube = KRTotCube::new_restr(
+            data.clone(), 
+            q_slice, 
+            range.0.clone()
+        );
+        let support = cartesian!(range.0.clone(), range.1.clone()).map(isize2::from);
+        let summands = Grid2::generate(
+            support, 
+            |_| OnceLock::new()
+        );
+        let _ = summands.get_default().set(KRTotComplexSummand::zero());
+        Self { q_slice, range, data, cube, summands }
     }
 
     pub fn q_slice(&self) -> isize { 
@@ -137,23 +152,27 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         ))
     }
 
-    fn d_matrix_for(&self, idx: isize2) -> SpMat<R> { 
-        let idx1 = idx + self.d_deg();
-        let m = self.rank(idx1);
-        let n = self.rank(idx);
+    fn d_matrix_for(&self, from: isize2) -> SpMat<R> { 
+        let to = from + self.d_deg();
+        let m = self.rank(to);
+        let n = self.rank(from);
 
         if m == 0 && n == 0 { 
             return SpMat::zero((0, 0))
         }
 
+        if to.1 > *self.range.1.end() { 
+            return SpMat::zero((0, n))
+        }
+
         if crate::config::is_multithread_enabled() { 
             let cols = (0..n).into_par_iter().map(|j| { 
-                self.d_matrix_col(idx, n, j)
+                self.d_matrix_col(from, n, j)
             }).collect::<Vec<_>>();
             SpMat::from_col_vecs(m, cols)
         } else { 
             let cols = (0..n).map(|j| { 
-                self.d_matrix_col(idx, n, j)
+                self.d_matrix_col(from, n, j)
             });
             SpMat::from_col_vecs(m, cols)
         }
@@ -167,8 +186,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.vectorize(idx + self.d_deg(), &w)
     }
 
-    pub fn reduced(self) -> ChainComplex2<R> {
-        self.as_generic().reduced(false)
+    pub fn h_slice(&self, i: isize) -> ChainComplex<R> { 
+        ChainComplex::generate(self.range.1.clone(), 1, |j|
+            self.d_matrix(isize2(i, j))
+        )
     }
 }
 
@@ -333,7 +354,7 @@ mod tests {
     fn complex_red() { 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let q = -4;
-        let c = make_cpx(&l, q).reduced();
+        let c = make_cpx(&l, q).as_generic().reduced(false);
 
         assert_eq!(c[(0, 0)].rank(), 0);
         assert_eq!(c[(0, 1)].rank(), 0);

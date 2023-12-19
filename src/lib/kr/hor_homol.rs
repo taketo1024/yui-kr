@@ -8,7 +8,7 @@ use yui_homology::{GridTrait, RModStr, XHomologySummand, Grid1};
 use yui_matrix::sparse::SpVec;
 use yui::bitseq::BitSeq;
 
-use super::base::{KRGen, KRChain};
+use super::base::{KRGen, KRChain, extend_ends_bounded};
 use super::data::KRCubeData;
 use super::hor_cpx::KRHorComplex;
 use super::hor_excl::KRHorExcl;
@@ -29,12 +29,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn new_restr(data: Arc<KRCubeData<R>>, q_slice: isize, v_coords: BitSeq, h_range: RangeInclusive<isize>) -> Self { 
-        let h_range = {
-            let n = data.dim() as isize;
-            let start = *h_range.start();
-            let end = isize::min(h_range.end() + 1, n);
-            start..=end
-        };
+        let n = data.dim() as isize;
+        let h_range = extend_ends_bounded(h_range, 1, 0..=n);
+
         let excl = data.excl(v_coords);
         let complex = KRHorComplex::new_restr(data.clone(), q_slice, v_coords, h_range);
         let inner = complex.homology();

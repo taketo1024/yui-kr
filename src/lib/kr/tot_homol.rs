@@ -1,12 +1,13 @@
 use std::cell::OnceCell;
-use std::ops::Index;
+use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 use delegate::delegate;
 
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, isize3, ChainComplex, ChainComplexTrait, Grid2};
+use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, isize3, ChainComplex, Grid2, Grid1};
 
 use crate::kr::tot_cpx::KRTotComplex;
+use super::base::extend_ends_bounded;
 use super::data::KRCubeData;
 
 pub struct KRTotHomol<R>
@@ -14,7 +15,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     q_slice: isize,
     data: Arc<KRCubeData<R>>,
     complex: KRTotComplex<R>,
-    reduced: Vec<OnceCell<ChainComplex<R>>>, // vertical slices
+    reduced: Grid1<OnceCell<ChainComplex<R>>>, // vertical slices
     homology: Grid2<OnceCell<HomologySummand<R>>>
 } 
 
@@ -22,8 +23,21 @@ impl<R> KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
         let n = data.dim() as isize;
-        let complex = KRTotComplex::new(data.clone(), q_slice);
-        let reduced = (0..=n).map(|_| OnceCell::new() ).collect();
+        Self::new_restr(data, q_slice, (0..=n, 0..=n))
+    }
+
+    pub fn new_restr(data: Arc<KRCubeData<R>>, q_slice: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
+        let n = data.dim() as isize;
+        let range = (range.0, extend_ends_bounded(range.1, 1, 0..=n));
+        let complex = KRTotComplex::new_restr(
+            data.clone(), 
+            q_slice, 
+            range.clone()
+        );
+        let reduced = Grid1::generate(
+            range.0.clone(), 
+            |_| OnceCell::new()
+        );
         let homology = Grid2::generate(
             complex.support(), 
             |_| OnceCell::new()
@@ -37,18 +51,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn reduced(&self, i: isize) -> &ChainComplex<R> { 
-        let n = self.data.dim() as isize;
-        self.reduced[i as usize].get_or_init(|| { 
-            let cpx = ChainComplex::generate(0..=n, 1, |j|
-                self.complex.d_matrix(isize2(i, j))
-            );
-            cpx.reduced(false)
+        self.reduced[i].get_or_init(|| { 
+            self.complex.h_slice(i).reduced(false)
         })
     }
 
     fn homology(&self, idx: isize2) -> &HomologySummand<R> { 
         self.homology[idx].get_or_init(|| {
-            let isize2(i, j) = idx;
+            let (i, j) = idx.into();
             let g = isize3(self.q_slice, i, j);
 
             if self.data.is_triv_inner(g) { 

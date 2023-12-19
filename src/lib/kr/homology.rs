@@ -21,12 +21,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> KRHomology<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     pub fn new(link: &Link) -> Self { 
-        let data = KRCubeData::new(link);
+        let data = Arc::new(KRCubeData::new(link));
         Self::from_data(data)
     }
 
-    pub fn from_data(data: KRCubeData<R>) -> Self { 
-        let data = Arc::new(data);
+    pub fn from_data(data: Arc<KRCubeData<R>>) -> Self { 
         let slices = Grid1::generate(data.q_range(), |_| OnceCell::new());
         let zero = HomologySummand::zero();
         Self { data, slices, zero }
@@ -41,10 +40,31 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }
     }
 
-    fn slice(&self, q_slice: isize) -> &KRTotHomol<R> {
-        self.slices[q_slice].get_or_init(||
-            KRTotHomol::new(self.data.clone(), q_slice)
-        )
+    pub fn q_slice(&self, q_slice: isize) -> &KRTotHomol<R> {
+        self.slices[q_slice].get_or_init(|| {
+            let range = self.range_for(q_slice);
+            KRTotHomol::new_restr(self.data.clone(), q_slice, range)
+        })
+    }
+
+    pub fn range_for(&self, q_slice: isize) -> (RangeInclusive<isize>, RangeInclusive<isize>) { 
+        let n = self.data.dim() as isize;
+        let (h0, h1, v0, v1) = self.support().filter_map(|idx| {
+            let inner = self.data.to_inner_grad(idx).unwrap();
+            if inner.0 == q_slice { 
+                Some((inner.1, inner.2))
+            } else { 
+                None
+            }
+        }).fold((n, 0, n, 0), |res, (i, j)| {
+            (
+                isize::min(res.0, i),
+                isize::max(res.1, i),
+                isize::min(res.2, j),
+                isize::max(res.3, j)
+            )
+        });
+        (h0..=h1, v0..=v1)
     }
 
     pub fn structure(&self) -> KRHomologyStr { 
@@ -82,7 +102,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return &self.zero
         };
 
-        self.slice(q).get(isize2(h, v))
+        self.q_slice(q).get(isize2(h, v))
     }
 }
 
