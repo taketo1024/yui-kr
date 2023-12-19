@@ -25,8 +25,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         info!("create H_tot (q: {q_slice}).");
 
         let n = data.dim() as isize;
-        let complex = KRTotComplex::new(data.clone(), q_slice, true); // skip triv
-        let reduced = (0..=n).map(|_| OnceCell::new() ).collect();    // lazy
+        let complex = KRTotComplex::new(data.clone(), q_slice);
+        let reduced = (0..=n).map(|_| OnceCell::new() ).collect();
         let homology = Grid2::generate(
             complex.support(), 
             |_| OnceCell::new()

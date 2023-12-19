@@ -9,7 +9,7 @@ use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui::bitseq::BitSeq;
 use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, ChainComplexCommon, isize3};
+use yui_homology::{isize2, ChainComplex2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, ChainComplexCommon};
 use yui_matrix::sparse::{SpVec, SpMat};
 
 use super::base::KRChain;
@@ -26,10 +26,6 @@ impl<R> KRTotComplexSummand<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     fn new(gens: Vec<KRChain<R>>) -> Self { 
         Self { gens }
-    }
-
-    fn zero() -> Self { 
-        Self::new(vec![])
     }
 
     pub fn gens(&self) -> &Vec<KRChain<R>> { 
@@ -62,13 +58,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     q_slice: isize,
     data: Arc<KRCubeData<R>>,
     cube: KRTotCube<R>,
-    summands: Grid2<OnceLock<KRTotComplexSummand<R>>>,
-    skip_triv: bool
+    summands: Grid2<OnceLock<KRTotComplexSummand<R>>>
 }
 
 impl<R> KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize, skip_triv: bool) -> Self { 
+    pub fn new(data: Arc<KRCubeData<R>>, q_slice: isize) -> Self { 
         info!("create C_tot (q: {q_slice}).");
 
         let n = data.dim() as isize;
@@ -77,26 +72,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let support = cartesian!(0..=n, 0..=n).map(isize2::from);
         let summands = Grid2::generate(support, |_| OnceLock::new());
         
-        Self { q_slice, data, cube, summands, skip_triv }
+        Self { q_slice, data, cube, summands }
     }
 
     pub fn q_slice(&self) -> isize { 
         self.q_slice
     }
 
-    fn is_skippable(&self, idx: isize2) -> bool { 
-        self.data.is_triv_inner(isize3(self.q_slice, idx.0, idx.1,   )) &&
-        self.data.is_triv_inner(isize3(self.q_slice, idx.0, idx.1 + 1)) && 
-        self.data.is_triv_inner(isize3(self.q_slice, idx.0, idx.1 - 1))
-    }
-
     fn summand(&self, idx: isize2) -> &KRTotComplexSummand<R> { 
         self.summands[idx].get_or_init(|| {
-            if self.skip_triv && self.is_skippable(idx) { 
-                info!("C_tot (q: {}, h: {}, v: {}) => skip", self.q_slice, idx.0, idx.1);
-                return KRTotComplexSummand::zero()
-            }
-
             info!("C_tot (q: {}, h: {}, v: {}) ..", self.q_slice, idx.0, idx.1);
 
             let gens = self.collect_gens(idx);
@@ -113,11 +97,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let (i, j) = (idx.0 as usize, idx.1 as usize);
         let verts = self.data.verts_of_weight(j);
 
-        // init verts (multithread)
-        verts.iter().for_each(|&v| {
-            self.cube.vert(v);
-        });
-        
         // collect gens
         if crate::config::is_multithread_enabled() { 
             verts.par_iter().flat_map(|&v| {
@@ -287,7 +266,7 @@ mod tests {
 
     fn make_cpx(link: &Link, q_slice: isize) -> KRTotComplex<R> {
         let data = Arc::new( KRCubeData::<R>::new(link) );
-        KRTotComplex::new(data, q_slice, false)
+        KRTotComplex::new(data, q_slice)
     }
     
     #[test]
