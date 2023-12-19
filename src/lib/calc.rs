@@ -1,13 +1,11 @@
-#![allow(unused)] use std::sync::Arc;
+use std::sync::Arc;
 
 use itertools::Itertools;
-// remove later
 use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{GridTrait, RModStr, isize3, isize2};
+use yui_homology::{GridTrait, RModStr, isize3};
 use yui_link::Link;
 
-use crate::kr::tot_homol::KRTotHomol;
 use crate::{KRHomologyStr, KRHomology};
 use crate::kr::data::KRCubeData;
 
@@ -57,15 +55,15 @@ where
         let dir = File::working_dir();
         let path = std::path::Path::new(&dir);
         if !path.exists() { 
-            std::fs::create_dir(&path);
+            std::fs::create_dir(&path)?;
         }
         Ok(())
     }
 
     pub fn compute(&mut self) -> Result<(), Box<dyn std::error::Error>> { 
         if self.save_progress { 
-            self.prepare_dir();
-            File::Result(&self.name).write(&self.result);
+            self.prepare_dir()?;
+            File::Result(&self.name).write(&self.result)?;
         }
 
         let total = self.result.non_determined().count();
@@ -73,30 +71,35 @@ where
         info!("compute KRHomology.");
         info!("targets: {total}");
         
-        let targets = self.organize_targets();
+        let targets = self.q_sliced_targets();
 
-        dbg!(&targets);
+        let q_total = targets.len();
+        let mut c = 1;
+
+        for (q, list) in targets { 
+            info!("- - - - - - - - - - - - - - - -");
+            info!("({c}/{q_total}) q: {q} ..");
+
+            self.compute_in(q, &list)?;
+
+            c += 1;
+        }
 
         info!("- - - - - - - - - - - - - - - -");
-
-        let mut c = 0;
-        for (q_slice, list) in targets { 
-            self.compute_in(q_slice, &list, total, &mut c);
-        }
 
         Ok(())
     }
 
-    fn compute_in(&mut self, q_slice: isize, targets: &Vec<isize3>, total: usize, c: &mut usize) -> Result<(), Box<dyn std::error::Error>> { 
-        info!("q_slice: {q_slice} ..");
-
-        let tot = KRTotHomol::new(self.data.clone(), q_slice);
+    fn compute_in(&mut self, q: isize, targets: &Vec<isize3>) -> Result<(), Box<dyn std::error::Error>> { 
+        let kr = KRHomology::from_data(self.data.clone());
+        
+        info!("range: {:?}", kr.range_for(q));
 
         for &idx in targets { 
-            info!("({}/{}) H[{}] ..", *c + 1, total, idx);
-
             let inner = self.data.to_inner_grad(idx).unwrap();
-            let h = tot.get(isize2(inner.1, inner.2));
+            info!("H[{}] .. (h: {}, v: {})", idx, inner.1, inner.2);
+
+            let h = kr.get(idx);
 
             info!("H[{}] => {}", idx, h.math_symbol());
 
@@ -105,22 +108,15 @@ where
             if self.save_progress { 
                 File::Result(&self.name).write(&self.result)?;
             }
-
-            info!("- - - - - - - - - - - - - - - -");
-
-            *c += 1;
         }
 
         Ok(())
     }
 
-    fn organize_targets(&self) -> Vec<(isize, Vec<isize3>)> {
+    fn q_sliced_targets(&self) -> Vec<(isize, Vec<isize3>)> {
         self.result.non_determined().map(|idx| isize3::from(*idx)).into_group_map_by(|&idx|
-            self.data.to_inner_grad(idx).unwrap().0
-        ).into_iter().map(|(q_slice, list)| 
-            // TODO sort list.
-            (q_slice, list)
-        ).sorted_by_key(|(q_slice, _)| *q_slice).collect()
+            self.data.to_inner_grad(idx).unwrap().0 // q
+        ).into_iter().sorted_by_key(|(q_slice, _)| *q_slice).collect()
     }
 }
 
