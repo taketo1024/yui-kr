@@ -2,9 +2,10 @@ use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
 use delegate::delegate;
+use log::info;
 use num_traits::Zero;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{GridTrait, RModStr, XHomologySummand, Grid1};
+use yui_homology::{GridTrait, RModStr, XHomologySummand, Grid1, DisplaySeq};
 use yui_matrix::sparse::SpVec;
 use yui::bitseq::BitSeq;
 
@@ -29,6 +30,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq, h_range: RangeInclusive<isize>) -> Self { 
+        info!("H_hor (q: {}, v: {:?})..", q, v_coords);
+
         let n = data.dim() as isize;
         let h_range = extend_ends_bounded(h_range, 1, 0..=n);
 
@@ -36,6 +39,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let complex = KRHorComplex::new_restr(data.clone(), q, v_coords, h_range);
         let inner = complex.homology();
         
+        info!("H_hor (q: {}, v: {:?})\n{}", q, v_coords, inner.display_seq("h"));
+
         Self { q, v_coords, excl, inner }
     }
 

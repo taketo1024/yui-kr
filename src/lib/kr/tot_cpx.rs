@@ -4,11 +4,12 @@ use std::sync::{Arc, OnceLock};
 
 use cartesian::cartesian;
 use delegate::delegate;
+use log::info;
 use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui::bitseq::BitSeq;
 use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, GridTrait, GridIter, Grid2, ChainComplexTrait, ChainComplex, RModStr, DisplayForGrid, rmod_str_symbol};
+use yui_homology::{isize2, GridTrait, GridIter, Grid2, ChainComplexTrait, ChainComplex, RModStr, DisplayForGrid, rmod_str_symbol, DisplaySeq};
 use yui_matrix::sparse::{SpVec, SpMat};
 
 use super::base::KRChain;
@@ -78,17 +79,53 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             q, 
             range.0.clone()
         );
-        let support = cartesian!(range.0.clone(), range.1.clone()).map(isize2::from);
+        
+        let support = cartesian!(
+            range.0.clone(), 
+            range.1.clone()
+        ).map(isize2::from);
+
         let summands = Grid2::generate_with_default(
             support, 
             |_| OnceLock::new(),
             OnceLock::from(KRTotComplexSummand::zero())
         );
+
         Self { q, range, data, cube, summands }
     }
 
     pub fn q_deg(&self) -> isize { 
         self.q
+    }
+
+    pub fn h_slice(&self, i: isize) -> ChainComplex<R> { 
+        let v_range = self.range.1.clone();
+
+        info!("C_tot/h (q: {}, h: {i}, v: {:?})..", self.q, v_range);
+        info!("prepare generators..");
+
+        v_range.clone().into_par_iter().for_each(|j| { 
+            self.summand((i, j).into());
+        });
+
+        info!("prepare matrices..");
+
+        let c = ChainComplex::generate(v_range, 1, |j| {
+            let n = self.rank((i, j).into());
+            let m = self.rank((i, j + 1).into());
+            
+            info!("d_tot ({}, {}) -> ({}, {}), size: {:?}", 
+                i, j, 
+                i, j + 1, 
+                (m, n)
+            );
+
+            self.d_matrix(isize2(i, j))
+        });
+
+        info!("C_tot/h (q: {}, h: {i})\n{}", self.q, c.display_seq("v"));
+
+        c
     }
 
     fn summand(&self, idx: isize2) -> &KRTotComplexSummand<R> { 
@@ -184,12 +221,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let z = self.as_chain(idx, &ej);        
         let w = self.d(idx, &z);
         self.vectorize(idx + self.d_deg(), &w)
-    }
-
-    pub fn h_slice(&self, i: isize) -> ChainComplex<R> { 
-        ChainComplex::generate(self.range.1.clone(), 1, |j|
-            self.d_matrix(isize2(i, j))
-        )
     }
 }
 

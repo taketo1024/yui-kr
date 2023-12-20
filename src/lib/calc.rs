@@ -78,7 +78,7 @@ where
 
         for (q, list) in targets { 
             info!("- - - - - - - - - - - - - - - -");
-            info!("({c}/{q_total}) q: {q} ..");
+            info!("({c}/{q_total}) q: {q}");
 
             self.compute_in(q, &list)?;
 
@@ -97,11 +97,12 @@ where
 
         for &idx in targets { 
             let inner = self.data.to_inner_grad(idx).unwrap();
-            info!("H[{}] .. (h: {}, v: {})", idx, inner.1, inner.2);
+
+            info!("H[{}] (h: {}, v: {}) ..", idx, inner.1, inner.2);
 
             let h = kr.get(idx);
 
-            info!("H[{}] => {}", idx, h.math_symbol());
+            info!("H[{}] (h: {}, v: {}) => {}", idx, inner.1, inner.2, h.math_symbol());
 
             self.result.set((idx.0, idx.1, idx.2), h.rank());
 

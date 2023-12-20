@@ -3,8 +3,9 @@ use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 use delegate::delegate;
 
+use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, isize3, ChainComplex, Grid2, Grid1};
+use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, isize3, ChainComplex, Grid2, Grid1, DisplaySeq};
 
 use crate::kr::tot_cpx::KRTotComplex;
 use super::base::extend_ends_bounded;
@@ -54,7 +55,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     fn reduced(&self, i: isize) -> &ChainComplex<R> { 
         self.reduced[i].get_or_init(|| { 
-            self.complex.h_slice(i).reduced(false)
+            let c = self.complex.h_slice(i);
+            
+            info!("reduce C_tot/h (q: {}, h: {})..", self.q, i);
+
+            let c = c.reduced(false);
+
+            info!("reduce C_tot/h (q: {}, h: {})\n{}", self.q, i, c.display_seq("v"));
+
+            c
         })
     }
 
