@@ -32,10 +32,10 @@ pub struct CliArgs {
     pub save_progress: bool,
 
     #[arg(short, long)]
-    pub check_result: bool,
+    pub save_result: bool,
 
     #[arg(short, long)]
-    pub save_result: bool,
+    pub check_result: bool,
 
     #[arg(long)]
     pub no_multithread: bool,
@@ -135,9 +135,11 @@ impl App {
     }
 
     fn compute(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> { 
-        if !self.args.force_compute && result_exists(&self.args.target) { 
-            info!("result exists: {}", self.args.target);
-            let res = load_result(&self.args.target)?;
+        let target = &self.args.target;
+
+        if !self.args.force_compute && result_exists(target) { 
+            info!("result exists: {}", target);
+            let res = load_result(target)?;
             let res = if self.args.mirror { res.mirror() } else { res };
             return Ok(res)
         }
@@ -152,11 +154,15 @@ impl App {
         };
 
         if self.args.check_result { 
-            check_result(&self.args.target, &res)?;
+            if let Ok(prev) = load_result(target) { 
+                if prev != res { 
+                    err!("Incorrect result for {target}.\nComputed: {res:#?},\nExpected: {prev:#?}")?;
+                }
+            }
         }
         
         if self.args.save_result { 
-            save_result(&self.args.target, &res)?;
+            save_result(target, &res)?;
         }
 
         Ok(res)

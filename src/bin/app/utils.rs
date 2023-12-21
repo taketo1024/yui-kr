@@ -38,23 +38,20 @@ pub fn load_result(name: &str) -> Result<KRHomologyStr, Box<dyn std::error::Erro
 
 pub fn save_result(name: &str, data: &KRHomologyStr) -> Result<(), Box<dyn std::error::Error>> { 
     let file = File::Result(name);
-    if file.exists() { 
-        info!("overwrite existing result: {}", file.path());
+
+    if let Ok(prev) = load_result(name) { 
+        if &prev == data { 
+            info!("data exists: {}", file.path());
+            return Ok(())
+        } else { 
+            info!("save (overwrite): {}", file.path());
+        }
     } else { 
         info!("save: {}", file.path());
     }
 
     file.write(data)?;
-    Ok(())
-}
 
-pub fn check_result(name: &str, data: &KRHomologyStr) -> Result<(), Box<dyn std::error::Error>> {
-    if result_exists(name) { 
-        let expected = load_result(name)?;
-        if data != &expected { 
-            err!("Incorrect result for {name}.\nComputed: {data:#?},\nExpected: {expected:#?}")?;
-        }
-    }
     Ok(())
 }
 
@@ -112,24 +109,14 @@ mod tests {
     }
 
     #[test]
-    fn check_result_ok() { 
-        let data = KRHomologyStr::from(hashmap!{ 
+    fn load() { 
+        let res = load_result("3_1");
+        
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), KRHomologyStr::from(hashmap!{ 
             (0,4,-2) => 1,
             (-2,2,2) => 1,
             (2,2,-2) => 1
-        });
-        let res = check_result("3_1", &data);
-        assert!(res.is_ok());
-    }
-
-    #[test]
-    fn check_result_ng() { 
-        let data = KRHomologyStr::from(hashmap!{ 
-            (0,4,-2) => 1,
-            (-2,2,2) => 2,
-            (2,2,-2) => 1
-        });
-        let res = check_result("3_1", &data);
-        assert!(res.is_err());
+        }));
     }
 }
