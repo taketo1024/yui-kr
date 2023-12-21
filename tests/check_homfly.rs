@@ -37,7 +37,7 @@ fn check_homfly(target: &str) -> Result<(), Box<dyn std::error::Error>>  {
         let answer = parse_homfly(&data)?;
 
         let result = load_result(name)?;
-        let poly = yui_kr::util::homfly_poly(&result);
+        let poly = result.homfly_poly();
 
         assert_eq!(answer, poly);
     }
