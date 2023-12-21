@@ -3,8 +3,8 @@ use std::sync::Arc;
 use delegate::delegate;
 
 use num_traits::Zero;
-use yui::{Ring, RingOps, EucRing, EucRingOps};
-use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, XHomology, Grid1, XModStr};
+use yui::{Ring, RingOps};
+use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, Grid1, XModStr};
 use yui_matrix::sparse::SpMat;
 use yui::bitseq::BitSeq;
 
@@ -52,6 +52,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
                 KRChain::zero()
             }
         })
+    }
+
+    pub fn reduced(&self) -> XChainComplex<KRGen, R> {
+        self.inner.reduced()
     }
 
     pub fn q_deg(&self) -> isize { 
@@ -105,13 +109,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let dz_exc = self.inner.d(i, &z_exc);
         let dz = self.excl.backward(&dz_exc, true);
         dz
-    }
-}
-
-impl<R> KRHorComplex<R>
-where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub fn homology(&self) -> XHomology<KRGen, R> { 
-        self.inner.reduced().homology(true)
     }
 }
 

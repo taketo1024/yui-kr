@@ -1,7 +1,9 @@
 use std::ops::RangeInclusive;
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
+use itertools::Itertools;
 use num_traits::One;
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui::{EucRing, EucRingOps};
 use yui::bitseq::BitSeq;
 
@@ -13,29 +15,34 @@ pub struct KRTotCube<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     data: Arc<KRCubeData<R>>,
     q: isize,
-    h_range: RangeInclusive<isize>,
-    verts: Vec<OnceLock<KRHorHomol<R>>> // serialized for fast access
+    verts: Vec<KRHorHomol<R>> // serialized for fast access
 } 
 
 impl<R> KRTotCube<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(data: Arc<KRCubeData<R>>, q: isize) -> Self {
         let n = data.dim() as isize;
-        Self::new_restr(data, q, 0..=n)
+        Self::new_restr(data, q, (0..=n, 0..=n))
     }
 
-    pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, h_range: RangeInclusive<isize>) -> Self {
+    pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self {
         let n = data.dim();
-        let verts = BitSeq::generate(n).map(|_|
-            OnceLock::new()
+        let (h_range, v_range) = range;
+
+        let verts = BitSeq::generate(n).collect_vec().into_par_iter().map(|v|
+            if v_range.contains(&(v.weight() as isize)) { 
+                KRHorHomol::new_restr(
+                    data.clone(), 
+                    q, 
+                    v, 
+                    h_range.clone()
+                )
+            } else { 
+                KRHorHomol::zero(data.clone(), q, v)
+            }
         ).collect();
 
-        Self {
-            data,
-            q,
-            h_range,
-            verts
-        }
+        Self { data, q, verts }
     }
 
     pub fn dim(&self) -> usize { 
@@ -48,14 +55,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     pub fn vert(&self, v_coords: BitSeq) -> &KRHorHomol<R> {
         let i = v_coords.as_u64() as usize;
-        self.verts[i].get_or_init(||
-            KRHorHomol::new_restr(
-                self.data.clone(), 
-                self.q, 
-                v_coords, 
-                self.h_range.clone()
-            )
-        )
+        &self.verts[i]
     }
 
     pub fn edge_poly(&self, h_coords: BitSeq, i: usize) -> KRPoly<R> {

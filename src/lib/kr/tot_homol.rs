@@ -30,13 +30,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
         let n = data.dim() as isize;
         let range = (range.0, extend_ends_bounded(range.1, 1, 0..=n));
+
         let complex = KRTotComplex::new_restr(
             data.clone(), 
             q, 
             range.clone()
         );
         let reduced = Grid1::generate_with_default(
-            range.0.clone(), 
+            range.0,
             |_| OnceCell::new(),
             OnceCell::from(ChainComplex::zero())
         );

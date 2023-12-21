@@ -59,9 +59,9 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 pub struct KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    data: Arc<KRCubeData<R>>,
     q: isize,
     range: (RangeInclusive<isize>, RangeInclusive<isize>),
-    data: Arc<KRCubeData<R>>,
     cube: KRTotCube<R>,
     summands: Grid2<OnceLock<KRTotComplexSummand<R>>>
 }
@@ -77,7 +77,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let cube = KRTotCube::new_restr(
             data.clone(), 
             q, 
-            range.0.clone()
+            range.clone()
         );
         
         let support = cartesian!(

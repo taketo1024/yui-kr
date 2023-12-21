@@ -4,6 +4,7 @@ use std::sync::Arc;
 use delegate::delegate;
 use log::info;
 use num_traits::Zero;
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui::{EucRing, EucRingOps};
 use yui_homology::{GridTrait, RModStr, XHomologySummand, Grid1, DisplaySeq};
 use yui_matrix::sparse::SpVec;
@@ -37,10 +38,16 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let excl = data.excl(v_coords);
         let complex = KRHorComplex::new_restr(data.clone(), q, v_coords, h_range);
-        let inner = complex.homology();
+        let inner = complex.reduced().homology(true);
         
         info!("H_hor (q: {}, v: {:?})\n{}", q, v_coords, inner.display_seq("h"));
 
+        Self { q, v_coords, excl, inner }
+    }
+
+    pub fn zero(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq) -> Self { 
+        let excl = data.excl(v_coords);
+        let inner = Grid1::default();
         Self { q, v_coords, excl, inner }
     }
 
@@ -58,7 +65,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     pub fn gens(&self, i: isize) -> Vec<KRChain<R>> { 
         let r = self.rank(i);
-        (0..r).map(|k| { 
+        (0..r).into_par_iter().map(|k| { 
             let v = SpVec::unit(r, k);
             self.as_chain(i, &v)
         }).collect()
