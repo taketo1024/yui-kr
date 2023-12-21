@@ -178,16 +178,26 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn reduced(&self) -> ChainComplex2<R> {
         info!("reduce C_tot (q: {})..", self.q);
 
-        let mut reducer = ChainReducer::new(self.support(), self.d_deg(), true);
+        let mut reducer = ChainReducer::new(self.support(), self.d_deg(), false);
 
         info!("initial run..");
 
         for idx in self.support() {
-            let d = if let Some(t) = reducer.trans(idx) {
-                self.d_matrix_for(idx, &t.backward_mat())
+            // MEMO: The 'next matrix' will serve as trans-back for the current one. 
+            // This is to reduce the input dim without `with_trans = true`.
+            
+            let d = if let Some(q) = reducer.matrix(idx) {
+                self.d_matrix_for(idx, &q)
             } else { 
                 self.d_matrix(idx)
             };
+
+            let to_idx = idx + self.d_deg();
+            if self.is_supported(to_idx) { 
+                let m = d.nrows();
+                reducer.set_matrix(to_idx, SpMat::id(m));
+            }
+
             reducer.set_matrix(idx, d);
             reducer.reduce_at(idx, false);
         }
