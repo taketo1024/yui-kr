@@ -18,10 +18,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 }
 
 impl<R> KRCalc<R>
-where 
-    R: EucRing, for<'x> &'x R: EucRingOps<R>,
-    R: serde::Serialize + for<'de> serde::Deserialize<'de>
-{
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn init(name: &str, l: &Link) -> Self { 
         let name = name.to_owned();
         let data = Arc::new(KRCubeData::new(&l));
@@ -103,9 +100,10 @@ where
 
             self.result.set((idx.0, idx.1, idx.2), h.rank());
 
-            if self.save_progress { 
-                File::Result(&self.name).write(&self.result)?;
-            }
+        }
+
+        if self.save_progress { 
+            File::Result(&self.name).write(&self.result)?;
         }
 
         Ok(())

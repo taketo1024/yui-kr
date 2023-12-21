@@ -13,7 +13,6 @@ use super::base::{KRMono, KRPoly, KRGen, KRChain, KRPolyChain, combine, decombin
 use super::data::KRCubeData;
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Process<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     dir: usize,
@@ -31,7 +30,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     v_coords: BitSeq,
