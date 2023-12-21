@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use delegate::delegate;
 use num_traits::Zero;
+#[cfg(feature = "multithread")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui::{EucRing, EucRingOps};
 use yui_homology::{GridTrait, RModStr, XHomologySummand, Grid1};
@@ -69,7 +70,16 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     pub fn gens(&self, i: isize) -> Vec<KRChain<R>> { 
         let r = self.rank(i);
-        (0..r).into_par_iter().map(|k| { 
+        
+        cfg_if::cfg_if! { 
+            if #[cfg(feature = "multithread")] { 
+                let itr = (0..r).into_par_iter();
+            } else { 
+                let itr = (0..r).into_iter();
+            }
+        };
+
+        itr.map(|k| { 
             let v = SpVec::unit(r, k);
             self.as_chain(i, &v)
         }).collect()

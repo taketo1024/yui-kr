@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use itertools::Itertools;
 use num_traits::One;
+#[cfg(feature = "multithread")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui::{EucRing, EucRingOps};
 use yui::bitseq::BitSeq;
@@ -29,7 +30,17 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let n = data.dim();
         let (h_range, v_range) = range;
 
-        let verts = BitSeq::generate(n).collect_vec().into_par_iter().map(|v|
+        let vs = BitSeq::generate(n);
+
+        cfg_if::cfg_if! { 
+            if #[cfg(feature = "multithread")] { 
+                let itr = vs.collect_vec().into_par_iter();
+            } else { 
+                let itr = vs;
+            }
+        };
+
+        let verts = itr.map(|v|
             if v_range.contains(&(v.weight() as isize)) { 
                 KRHorHomol::new_restr(
                     data.clone(), 

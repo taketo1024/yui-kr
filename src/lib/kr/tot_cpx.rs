@@ -6,6 +6,7 @@ use cartesian::cartesian;
 use delegate::delegate;
 use log::info;
 use num_traits::Zero;
+#[cfg(feature = "multithread")]
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui::bitseq::BitSeq;
 use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
@@ -99,9 +100,20 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     fn summand(data: &KRCubeData<R>, cube: &KRTotCube<R>, idx: isize2) -> KRTotComplexSummand<R> { 
         let (i, j) = idx.into();
-        let gens = data.verts_of_weight(j as usize).par_iter().flat_map(|&v| {
+        let verts = data.verts_of_weight(j as usize);
+        
+        cfg_if::cfg_if! { 
+            if #[cfg(feature = "multithread")] { 
+                let itr = verts.par_iter();
+            } else { 
+                let itr = verts.iter();
+            }
+        };
+
+        let gens = itr.flat_map(|&v| {
             cube.vert(v).gens(i)
         }).collect();
+
         KRTotComplexSummand::new(gens)
     }
 
@@ -124,8 +136,17 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let z_decomp = decomp(z);
         let zero = KRChain::zero();
+        let verts = self.data.verts_of_weight(j as usize);
 
-        let vs = self.data.verts_of_weight(j as usize).par_iter().map(|&v| {
+        cfg_if::cfg_if! { 
+            if #[cfg(feature = "multithread")] { 
+                let itr = verts.par_iter();
+            } else { 
+                let itr = verts.iter();
+            }
+        };
+
+        let vs = itr.map(|&v| {
             let z_v = z_decomp.get(&v).unwrap_or(&zero);
             self.vectorize_v(i, v, z_v)
         }).collect::<Vec<_>>();
@@ -160,7 +181,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         
         info!("d_tot {from} -> {to}, size: {:?}", (m, n));
 
-        let cols = (0..n).into_par_iter().map(|j| { 
+        cfg_if::cfg_if! { 
+            if #[cfg(feature = "multithread")] { 
+                let itr = (0..n).into_par_iter();
+            } else { 
+                let itr = (0..n).into_iter();
+            }
+        };
+
+        let cols = itr.map(|j| { 
             self.d_matrix_col(from, q, j)
         }).collect::<Vec<_>>();
 
