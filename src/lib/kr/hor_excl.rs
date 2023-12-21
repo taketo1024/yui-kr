@@ -1,6 +1,6 @@
 use std::collections::{HashSet, HashMap};
 
-use log::{info, debug};
+use log::trace;
 use num_traits::{Zero, One};
 use yui::{Ring, RingOps, IndexList};
 use yui_homology::utils::make_matrix_async;
@@ -68,15 +68,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         let mut res = Self::new(v_coords, edge_polys);
 
-        info!("start excl for v: {v_coords}");
-        info!("initial: {:#?}", res.edge_polys);
+        trace!("start excl for v: {v_coords}");
+        trace!("initial: {:#?}", res.edge_polys);
 
         for d in 1..=level { 
             res.excl_all(d);
         }
 
-        info!("excluded: {:?}", res.excl_vars());
-        info!("result: {:#?}", res.edge_polys);
+        trace!("excluded: {:?}", res.excl_vars());
+        trace!("result: {:#?}", res.edge_polys);
 
         res
     }
@@ -177,13 +177,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             }
         }
 
-        debug!("excl step: {}", self.process.len());
-        debug!("direction: {i}");
-        debug!("chosen: {} in {p}", KRMono::from((k, deg)));
-        debug!("edge-poly: {:#?}", self.edge_polys);
-        debug!("remain: {:?}", self.remain_vars);
-        debug!("fst_exc: {:?}", self.fst_exc_vars);
-        debug!("snd_exc: {:?}", self.snd_exc_vars);
+        trace!("excl step: {}", self.process.len());
+        trace!("direction: {i}");
+        trace!("chosen: {} in {p}", KRMono::from((k, deg)));
+        trace!("edge-poly: {:#?}", self.edge_polys);
+        trace!("remain: {:?}", self.remain_vars);
+        trace!("fst_exc: {:?}", self.fst_exc_vars);
+        trace!("snd_exc: {:?}", self.snd_exc_vars);
 
         // insert new process.
         let d = Process {
