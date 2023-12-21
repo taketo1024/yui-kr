@@ -28,10 +28,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         Self { gens }
     }
 
-    fn zero() -> Self { 
-        Self::new(vec![])
-    }
-
     pub fn gens(&self) -> &Vec<KRChain<R>> { 
         &self.gens
     }
@@ -90,10 +86,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         info!("setup summands..");
 
-        let summands = Grid2::generate_with_default(
+        let summands = Grid2::generate(
             support, 
-            |idx| Self::summand(&data, &cube, idx),
-            KRTotComplexSummand::zero()
+            |idx| Self::summand(&data, &cube, idx)
         );
 
         info!("C_tot (q: {})\n{}", q, summands.display_table("h", "v"));
