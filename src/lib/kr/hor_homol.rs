@@ -31,14 +31,16 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq, h_range: RangeInclusive<isize>) -> Self { 
         let n = data.dim() as isize;
-        let h_range = extend_ends_bounded(h_range, 1, 0..=n);
+        let h_range_ext = extend_ends_bounded(h_range.clone(), 1, 0..=n);
 
         let excl = data.excl(v_coords);
-        let complex = KRHorComplex::new_restr(data.clone(), q, v_coords, h_range).reduced();
+        let complex = KRHorComplex::new_restr(data.clone(), q, v_coords, h_range_ext).reduced();
         
         info!("H_hor (q: {}, v: {:?})..", q, v_coords);
 
-        let inner = complex.homology(true);
+        let inner = Grid1::generate(h_range, |i|
+            complex.homology_at(i, true)
+        );
 
         info!("H_hor (q: {}, v: {:?})\n{}", q, v_coords, inner.display_seq("h"));
 
