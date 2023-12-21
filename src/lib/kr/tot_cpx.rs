@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::ops::{Index, RangeInclusive};
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 use cartesian::cartesian;
 use delegate::delegate;
@@ -9,7 +9,7 @@ use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui::bitseq::BitSeq;
 use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, GridTrait, GridIter, Grid2, ChainComplexTrait, ChainComplex, RModStr, DisplayForGrid, rmod_str_symbol, DisplaySeq};
+use yui_homology::{isize2, GridTrait, GridIter, Grid2, ChainComplexTrait, ChainComplex, RModStr, DisplayForGrid, rmod_str_symbol, DisplaySeq, DisplayTable};
 use yui_matrix::sparse::{SpVec, SpMat};
 
 use super::base::KRChain;
@@ -63,7 +63,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     q: isize,
     range: (RangeInclusive<isize>, RangeInclusive<isize>),
     cube: KRTotCube<R>,
-    summands: Grid2<OnceLock<KRTotComplexSummand<R>>>
+    summands: Grid2<KRTotComplexSummand<R>>
 }
 
 impl<R> KRTotComplex<R>
@@ -74,6 +74,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
+        info!("C_tot (q: {}, range: {:?})..", q, range);
+        info!("setup tot-cube..");
+
         let cube = KRTotCube::new_restr(
             data.clone(), 
             q, 
@@ -85,13 +88,25 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             range.1.clone()
         ).map(isize2::from);
 
+        info!("setup summands..");
+
         let summands = Grid2::generate_with_default(
             support, 
-            |_| OnceLock::new(),
-            OnceLock::from(KRTotComplexSummand::zero())
+            |idx| Self::summand(&data, &cube, idx),
+            KRTotComplexSummand::zero()
         );
 
+        info!("C_tot (q: {}, range: {:?})\n{}", q, range, summands.display_table("h", "v"));
+
         Self { q, range, data, cube, summands }
+    }
+
+    fn summand(data: &KRCubeData<R>, cube: &KRTotCube<R>, idx: isize2) -> KRTotComplexSummand<R> { 
+        let (i, j) = idx.into();
+        let gens = data.verts_of_weight(j as usize).par_iter().flat_map(|&v| {
+            cube.vert(v).gens(i)
+        }).collect();
+        KRTotComplexSummand::new(gens)
     }
 
     pub fn q_deg(&self) -> isize { 
@@ -102,12 +117,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let v_range = self.range.1.clone();
 
         info!("C_tot/h (q: {}, h: {i}, v: {:?})..", self.q, v_range);
-        info!("prepare generators..");
-
-        v_range.clone().into_par_iter().for_each(|j| { 
-            self.summand((i, j).into());
-        });
-
         info!("prepare matrices..");
 
         let c = ChainComplex::generate(v_range, 1, |j| {
@@ -126,29 +135,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         info!("C_tot/h (q: {}, h: {i})\n{}", self.q, c.display_seq("v"));
 
         c
-    }
-
-    fn summand(&self, idx: isize2) -> &KRTotComplexSummand<R> { 
-        self.summands[idx].get_or_init(|| {
-            let gens = self.collect_gens(idx);
-            KRTotComplexSummand::new(gens)
-        })
-    }
-
-    #[inline(never)] // for profilability
-    fn collect_gens(&self, idx: isize2) -> Vec<KRChain<R>> { 
-        let (i, j) = idx.into();
-        let verts = self.data.verts_of_weight(j as usize);
-
-        if crate::config::is_multithread_enabled() { 
-            verts.par_iter().flat_map(|&v| {
-                self.cube.vert(v).gens(i)
-            }).collect()
-        } else { 
-            verts.iter().flat_map(|&v| {
-                self.cube.vert(v).gens(i)
-            }).collect()
-        }
     }
 
     #[inline(never)] // for profilability
@@ -194,25 +180,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let m = self.rank(to);
         let n = self.rank(from);
 
-        if m == 0 && n == 0 { 
-            return SpMat::zero((0, 0))
+        if m == 0 || n == 0 { 
+            return SpMat::zero((m, n))
         }
+        
+        let cols = (0..n).into_par_iter().map(|j| { 
+            self.d_matrix_col(from, n, j)
+        }).collect::<Vec<_>>();
 
-        if to.1 > *self.range.1.end() { 
-            return SpMat::zero((0, n))
-        }
-
-        if crate::config::is_multithread_enabled() { 
-            let cols = (0..n).into_par_iter().map(|j| { 
-                self.d_matrix_col(from, n, j)
-            }).collect::<Vec<_>>();
-            SpMat::from_col_vecs(m, cols)
-        } else { 
-            let cols = (0..n).map(|j| { 
-                self.d_matrix_col(from, n, j)
-            });
-            SpMat::from_col_vecs(m, cols)
-        }
+        SpMat::from_col_vecs(m, cols)
     }
 
     #[inline(never)] // for profilability
@@ -250,7 +226,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn get(&self, i: isize2) -> &Self::Output { 
-        self.summand(i)
+        &self.summands[i]
     }
 }
 

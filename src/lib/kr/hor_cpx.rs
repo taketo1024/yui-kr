@@ -8,6 +8,9 @@ use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChain
 use yui_matrix::sparse::SpMat;
 use yui::bitseq::BitSeq;
 
+// use log::info;
+// use yui_homology::DisplaySeq;
+
 use crate::kr::hor_cube::KRHorCube;
 
 use super::base::{KRGen, KRChain};
@@ -17,7 +20,6 @@ use super::hor_excl::KRHorExcl;
 pub struct KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     q: isize,
-    v_coords: BitSeq,
     excl: Arc<KRHorExcl<R>>,
     inner: XChainComplex<KRGen, R>
 } 
@@ -30,11 +32,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq, h_range: RangeInclusive<isize>) -> Self { 
+        // info!("C_hor (q: {}, v: {:?})..", q, v_coords);
+
         let excl = data.excl(v_coords);
         let cube = KRHorCube::new(data.clone(), q, v_coords);
         let inner = Self::make_cpx(excl.clone(), cube, h_range);
 
-        Self { v_coords, q, excl, inner }
+        // info!("C_hor (q: {}, v: {:?})\n{}", q, v_coords, inner.display_seq("h"));
+
+        Self { q, excl, inner }
     }
 
     fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>, h_range: RangeInclusive<isize>) -> XChainComplex<KRGen, R> { 
@@ -55,7 +61,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn reduced(&self) -> XChainComplex<KRGen, R> {
-        self.inner.reduced()
+        // info!("red C_hor (q: {}, v: {:?})..", self.q, self.v_coords);
+
+        let red = self.inner.reduced();
+
+        // info!("red C_hor (q: {}, v: {:?})\n{}", self.q, self.v_coords, red.display_seq("h"));
+
+        red
     }
 
     pub fn q_deg(&self) -> isize { 
@@ -63,7 +75,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn v_coords(&self) -> BitSeq { 
-        self.v_coords
+        self.excl.v_coords()
     }
 }
 
@@ -134,7 +146,7 @@ mod tests {
             inner
         };
 
-        KRHorComplex { v_coords, q, excl, inner }
+        KRHorComplex { q, excl, inner }
     }
 
     #[test]

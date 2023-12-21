@@ -18,7 +18,6 @@ use super::hor_excl::KRHorExcl;
 pub struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     q: isize,
-    v_coords: BitSeq,
     excl: Arc<KRHorExcl<R>>,
     inner: Grid1<XHomologySummand<KRGen, R>>
 } 
@@ -31,24 +30,25 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq, h_range: RangeInclusive<isize>) -> Self { 
-        info!("H_hor (q: {}, v: {:?})..", q, v_coords);
-
         let n = data.dim() as isize;
         let h_range = extend_ends_bounded(h_range, 1, 0..=n);
 
         let excl = data.excl(v_coords);
-        let complex = KRHorComplex::new_restr(data.clone(), q, v_coords, h_range);
-        let inner = complex.reduced().homology(true);
+        let complex = KRHorComplex::new_restr(data.clone(), q, v_coords, h_range).reduced();
         
+        info!("H_hor (q: {}, v: {:?})..", q, v_coords);
+
+        let inner = complex.homology(true);
+
         info!("H_hor (q: {}, v: {:?})\n{}", q, v_coords, inner.display_seq("h"));
 
-        Self { q, v_coords, excl, inner }
+        Self { q, excl, inner }
     }
 
     pub fn zero(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq) -> Self { 
         let excl = data.excl(v_coords);
         let inner = Grid1::default();
-        Self { q, v_coords, excl, inner }
+        Self { q, excl, inner }
     }
 
     pub fn q_deg(&self) -> isize { 
@@ -56,7 +56,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn v_coords(&self) -> BitSeq { 
-        self.v_coords
+        self.excl.v_coords()
     }
 
     pub fn rank(&self, i: isize) -> usize {
