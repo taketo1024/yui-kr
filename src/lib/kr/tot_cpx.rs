@@ -9,7 +9,9 @@ use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui::bitseq::BitSeq;
 use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, GridTrait, GridIter, Grid2, ChainComplexTrait, ChainComplex, RModStr, DisplayForGrid, rmod_str_symbol, DisplayTable, ChainComplex2};
+use yui_homology::utils::ChainReducer;
+use yui_homology::{isize2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, DisplayTable, ChainComplex2};
+use yui_matrix::MatTrait;
 use yui_matrix::sparse::{SpVec, SpMat};
 
 use super::base::KRChain;
@@ -57,7 +59,6 @@ pub struct KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
     q: isize,
-    range: (RangeInclusive<isize>, RangeInclusive<isize>),
     cube: KRTotCube<R>,
     summands: Grid2<KRTotComplexSummand<R>>
 }
@@ -93,7 +94,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         info!("C_tot (q: {})\n{}", q, summands.display_table("h", "v"));
 
-        Self { q, range, data, cube, summands }
+        Self { q, data, cube, summands }
     }
 
     fn summand(data: &KRCubeData<R>, cube: &KRTotCube<R>, idx: isize2) -> KRTotComplexSummand<R> { 
@@ -106,29 +107,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     pub fn q_deg(&self) -> isize { 
         self.q
-    }
-
-    pub fn as_generic(&self) -> ChainComplex2<R> { 
-        ChainComplex2::generate(self.summands.support(), isize2(0, 1), |idx| {
-            self.d_matrix(idx)
-        })
-    }
-
-    pub fn reduced(&self) -> ChainComplex2<R> {
-        info!("reduce C_tot (q: {})..", self.q);
-
-        let red = self.as_generic().reduced(false);
-
-        info!("reduce C_tot (q: {})\n{}", self.q, red.display_table("h", "v"));
-
-        red
-    }
-
-    pub fn h_slice(&self, i: isize) -> ChainComplex<R> { 
-        let v_range = self.range.1.clone();
-        ChainComplex::generate(v_range, 1, |j| {
-            self.d_matrix(isize2(i, j))
-        })
     }
 
     #[inline(never)] // for profilability
@@ -169,30 +147,60 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         ))
     }
 
-    fn d_matrix_for(&self, from: isize2) -> SpMat<R> { 
+    fn d_matrix_for(&self, from: isize2, q: &SpMat<R>) -> SpMat<R> { 
+        assert_eq!(self.rank(from), q.nrows());
+
         let to = from + self.d_deg();
         let m = self.rank(to);
-        let n = self.rank(from);
-
-        info!("d_tot {from} -> {to}, size: {:?}", (m, n));
+        let n = q.ncols();
 
         if m == 0 || n == 0 { 
             return SpMat::zero((m, n))
         }
         
+        info!("d_tot {from} -> {to}, size: {:?}", (m, n));
+
         let cols = (0..n).into_par_iter().map(|j| { 
-            self.d_matrix_col(from, n, j)
+            self.d_matrix_col(from, q, j)
         }).collect::<Vec<_>>();
 
         SpMat::from_col_vecs(m, cols)
     }
 
     #[inline(never)] // for profilability
-    fn d_matrix_col(&self, idx: isize2, n: usize, j: usize) -> SpVec<R> {
-        let ej = SpVec::unit(n, j);
-        let z = self.as_chain(idx, &ej);        
+    fn d_matrix_col(&self, idx: isize2, q: &SpMat<R>, j: usize) -> SpVec<R> {
+        let qj = q.col_vec(j);
+        let z = self.as_chain(idx, &qj);
         let w = self.d(idx, &z);
         self.vectorize(idx + self.d_deg(), &w)
+    }
+
+    pub fn reduced(&self) -> ChainComplex2<R> {
+        info!("reduce C_tot (q: {})..", self.q);
+
+        let mut reducer = ChainReducer::new(self.support(), self.d_deg(), true);
+
+        info!("initial run..");
+
+        for idx in self.support() {
+            let d = if let Some(t) = reducer.trans(idx) {
+                self.d_matrix_for(idx, &t.backward_mat())
+            } else { 
+                self.d_matrix(idx)
+            };
+            reducer.set_matrix(idx, d);
+            reducer.reduce_at(idx, false);
+        }
+
+        info!("second run..");
+
+        reducer.reduce_all(true);
+
+        let red = reducer.into_complex();
+
+        info!("reduce C_tot (q: {})\n{}", self.q, red.display_table("h", "v"));
+
+        red
     }
 }
 
@@ -253,7 +261,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn d_matrix(&self, idx: isize2) -> SpMat<Self::R> {
-        self.d_matrix_for(idx)
+        let n = self.rank(idx);
+        let q = SpMat::id(n);
+        self.d_matrix_for(idx, &q)
     }
 }
 
