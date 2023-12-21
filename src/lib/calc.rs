@@ -71,7 +71,7 @@ where
         info!("compute KRHomology.");
         info!("targets: {total}");
         
-        let targets = self.q_sliced_targets();
+        let targets = self.organize_targets();
 
         let q_total = targets.len();
         let mut c = 1;
@@ -111,10 +111,24 @@ where
         Ok(())
     }
 
-    fn q_sliced_targets(&self) -> Vec<(isize, Vec<isize3>)> {
-        self.result.non_determined().map(|idx| isize3::from(*idx)).into_group_map_by(|&idx|
-            self.data.to_inner_grad(idx).unwrap().0 // q
-        ).into_iter().sorted_by_key(|(q_slice, _)| *q_slice).collect()
+    fn organize_targets(&self) -> Vec<(isize, Vec<isize3>)> {
+        self.result.non_determined().map(|&idx| {
+            // convert to inner-grad.
+            let outer = idx.into();
+            let inner = self.data.to_inner_grad(outer).unwrap();
+            (outer, inner)
+        }).into_group_map_by(|(_, inner)|
+            // group by q.
+            inner.0
+        ).into_iter().map(|(q, list)| { 
+            // order by lex in (h, v)
+            let list = list.into_iter().sorted_by(|e, f| { 
+                isize::cmp(&e.1.1, &f.1.1).then( isize::cmp(&e.1.2, &f.1.2) )
+            }).map(|(outer, _)| 
+                outer
+            ).collect_vec();
+            (q, list)
+        }).sorted_by_key(|(q, _)| *q).collect()
     }
 }
 
