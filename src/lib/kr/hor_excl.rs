@@ -3,7 +3,7 @@ use std::collections::{HashSet, HashMap};
 use log::trace;
 use num_traits::{Zero, One};
 use yui::{Ring, RingOps, IndexList};
-use yui_homology::utils::make_matrix_async;
+use yui_homology::utils::make_matrix;
 use yui_matrix::sparse::Trans;
 use yui::poly::Mono;
 use yui::bitseq::BitSeq;
@@ -394,8 +394,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn trans_for(&self, from: &IndexList<KRGen>, to: &IndexList<KRGen>) -> Trans<R> {
-        let fwd = make_matrix_async(from, to, |x| self.forward_x(x));
-        let bwd = make_matrix_async(to, from, |x| self.backward_x(x));
+        let fwd = make_matrix(from, to, |x| self.forward_x(x));
+        let bwd = make_matrix(to, from, |x| self.backward_x(x));
         Trans::new(fwd, bwd)
     }
 }
