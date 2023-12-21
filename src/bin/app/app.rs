@@ -110,7 +110,6 @@ impl App {
     fn set_multithread_enabled(flag: bool) { 
         yui_matrix::config::set_multithread_enabled(flag);
         yui_homology::config::set_multithread_enabled(flag);
-        yui_kr::config::set_multithread_enabled(flag);
     }
 
     pub fn run(&self) -> Result<String, Box<dyn std::error::Error>> { 
