@@ -9,7 +9,7 @@ use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui::bitseq::BitSeq;
 use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, GridTrait, GridIter, Grid2, ChainComplexTrait, ChainComplex, RModStr, DisplayForGrid, rmod_str_symbol, DisplaySeq, DisplayTable};
+use yui_homology::{isize2, GridTrait, GridIter, Grid2, ChainComplexTrait, ChainComplex, RModStr, DisplayForGrid, rmod_str_symbol, DisplayTable, ChainComplex2};
 use yui_matrix::sparse::{SpVec, SpMat};
 
 use super::base::KRChain;
@@ -96,7 +96,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             KRTotComplexSummand::zero()
         );
 
-        info!("C_tot (q: {}, range: {:?})\n{}", q, range, summands.display_table("h", "v"));
+        info!("C_tot (q: {})\n{}", q, summands.display_table("h", "v"));
 
         Self { q, range, data, cube, summands }
     }
@@ -113,28 +113,27 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.q
     }
 
+    pub fn as_generic(&self) -> ChainComplex2<R> { 
+        ChainComplex2::generate(self.summands.support(), isize2(0, 1), |idx| {
+            self.d_matrix(idx)
+        })
+    }
+
+    pub fn reduced(&self) -> ChainComplex2<R> {
+        info!("reduce C_tot (q: {})..", self.q);
+
+        let red = self.as_generic().reduced(false);
+
+        info!("reduce C_tot (q: {})\n{}", self.q, red.display_table("h", "v"));
+
+        red
+    }
+
     pub fn h_slice(&self, i: isize) -> ChainComplex<R> { 
         let v_range = self.range.1.clone();
-
-        info!("C_tot/h (q: {}, h: {i}, v: {:?})..", self.q, v_range);
-        info!("prepare matrices..");
-
-        let c = ChainComplex::generate(v_range, 1, |j| {
-            let n = self.rank((i, j).into());
-            let m = self.rank((i, j + 1).into());
-            
-            info!("d_tot ({}, {}) -> ({}, {}), size: {:?}", 
-                i, j, 
-                i, j + 1, 
-                (m, n)
-            );
-
+        ChainComplex::generate(v_range, 1, |j| {
             self.d_matrix(isize2(i, j))
-        });
-
-        info!("C_tot/h (q: {}, h: {i})\n{}", self.q, c.display_seq("v"));
-
-        c
+        })
     }
 
     #[inline(never)] // for profilability
@@ -179,6 +178,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let to = from + self.d_deg();
         let m = self.rank(to);
         let n = self.rank(from);
+
+        info!("d_tot {from} -> {to}, size: {:?}", (m, n));
 
         if m == 0 || n == 0 { 
             return SpMat::zero((m, n))

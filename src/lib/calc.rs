@@ -97,9 +97,6 @@ where
 
         for &idx in targets { 
             let inner = self.data.to_inner_grad(idx).unwrap();
-
-            info!("H[{}] (h: {}, v: {}) ..", idx, inner.1, inner.2);
-
             let h = kr.get(idx);
 
             info!("H[{}] (h: {}, v: {}) => {}", idx, inner.1, inner.2, h.math_symbol());

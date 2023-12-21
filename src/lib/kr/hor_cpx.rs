@@ -61,11 +61,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn reduced(&self) -> XChainComplex<KRGen, R> {
-        // info!("red C_hor (q: {}, v: {:?})..", self.q, self.v_coords);
+        // info!("reduce C_hor (q: {}, v: {:?})..", self.q, self.v_coords);
 
         let red = self.inner.reduced();
 
-        // info!("red C_hor (q: {}, v: {:?})\n{}", self.q, self.v_coords, red.display_seq("h"));
+        // info!("reduce C_hor (q: {}, v: {:?})\n{}", self.q, self.v_coords, red.display_seq("h"));
 
         red
     }

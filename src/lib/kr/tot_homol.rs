@@ -1,23 +1,20 @@
-use std::cell::OnceCell;
 use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 use delegate::delegate;
 
 use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, isize3, ChainComplex, Grid2, Grid1, DisplaySeq};
+use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, isize3, Grid2, ChainComplex2, DisplayTable};
 
 use crate::kr::tot_cpx::KRTotComplex;
 use super::base::extend_ends_bounded;
 use super::data::KRCubeData;
 
+#[derive(Default)]
 pub struct KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     q: isize,
-    data: Arc<KRCubeData<R>>,
-    complex: KRTotComplex<R>,
-    reduced: Grid1<OnceCell<ChainComplex<R>>>, // vertical slices
-    homology: Grid2<OnceCell<HomologySummand<R>>>
+    inner: Grid2<HomologySummand<R>>
 } 
 
 impl<R> KRTotHomol<R>
@@ -34,51 +31,34 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let complex = KRTotComplex::new_restr(
             data.clone(), 
             q, 
-            range.clone()
-        );
-        let reduced = Grid1::generate_with_default(
-            range.0,
-            |_| OnceCell::new(),
-            OnceCell::from(ChainComplex::zero())
-        );
-        let homology = Grid2::generate_with_default(
+            range
+        ).reduced();
+
+        info!("H_tot (q: {})..", q);
+
+        let inner = Grid2::generate(
             complex.support(), 
-            |_| OnceCell::new(),
-            OnceCell::from(HomologySummand::zero())
+            |idx| Self::homology_at(&data, q, &complex, idx)
         );
 
-        Self { q, data, complex, reduced, homology }
+        info!("H_tot (q: {})\n{}", q, inner.display_table("h", "v"));
+
+        Self { q, inner }
+    }
+
+    fn homology_at(data: &KRCubeData<R>, q: isize, complex: &ChainComplex2<R>, idx: isize2) -> HomologySummand<R> { 
+        let (i, j) = idx.into();
+        let g = isize3(q, i, j);
+
+        if data.is_triv_inner(g) { 
+            HomologySummand::zero()
+        } else { 
+            complex.homology_at(idx, false)
+        }
     }
 
     pub fn q_deg(&self) -> isize { 
         self.q
-    }
-
-    fn reduced(&self, i: isize) -> &ChainComplex<R> { 
-        self.reduced[i].get_or_init(|| { 
-            let c = self.complex.h_slice(i);
-            
-            info!("reduce C_tot/h (q: {}, h: {})..", self.q, i);
-
-            let c = c.reduced(false);
-
-            info!("reduce C_tot/h (q: {}, h: {})\n{}", self.q, i, c.display_seq("v"));
-
-            c
-        })
-    }
-
-    fn homology(&self, idx: isize2) -> &HomologySummand<R> { 
-        self.homology[idx].get_or_init(|| {
-            let (i, j) = idx.into();
-            let g = isize3(self.q, i, j);
-
-            if self.data.is_triv_inner(g) { 
-                HomologySummand::zero()
-            } else { 
-                self.reduced(i).homology_at(j, false)
-            }
-        })
     }
 }
 
@@ -88,14 +68,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = HomologySummand<R>;
 
     delegate! { 
-        to self.homology {
+        to self.inner {
             fn support(&self) -> Self::Itr;
             fn is_supported(&self, i: isize2) -> bool;
         }
     }
 
     fn get(&self, idx: isize2) -> &Self::Output { 
-        self.homology(idx)
+        &self.inner[idx]
     }
 }
 
