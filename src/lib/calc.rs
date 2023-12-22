@@ -87,7 +87,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Ok(())
     }
 
-    fn compute_in(&mut self, q: isize, targets: &Vec<isize3>) -> Result<(), Box<dyn std::error::Error>> { 
+    fn compute_in(&mut self, _q: isize, targets: &Vec<isize3>) -> Result<(), Box<dyn std::error::Error>> { 
         let kr = KRHomology::from_data(self.data.clone());
         
         for &idx in targets { 
