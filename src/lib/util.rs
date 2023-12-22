@@ -1,4 +1,4 @@
-use crate::kr::result::QAPoly;
+use crate::result::QAPoly;
 
 // KnotInfo, Polynomial vector notation
 // see: https://knotinfo.math.indiana.edu/descriptions/homfly_polynomial_vector.html

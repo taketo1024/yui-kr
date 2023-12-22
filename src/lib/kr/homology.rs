@@ -7,8 +7,8 @@ use yui::{EucRing, EucRingOps};
 use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand, Grid1};
 use yui_link::Link;
 
+use crate::KRHomologyStr;
 use super::data::KRCubeData;
-use super::result::KRHomologyStr;
 use super::tot_homol::KRTotHomol;
 
 pub struct KRHomology<R>
