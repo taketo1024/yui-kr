@@ -7,7 +7,7 @@ use yui_homology::{GridTrait, RModStr, isize3};
 use yui_link::Link;
 
 use crate::{KRHomologyStr, KRHomology};
-use crate::kr::data::KRCubeData;
+use crate::internal::data::KRCubeData;
 
 pub struct KRCalc<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 

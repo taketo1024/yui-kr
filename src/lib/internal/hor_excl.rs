@@ -8,8 +8,7 @@ use yui_matrix::sparse::Trans;
 use yui::poly::Mono;
 use yui::bitseq::BitSeq;
 
-use crate::kr::base::sign_between;
-use super::base::{KRMono, KRPoly, KRGen, KRChain, KRPolyChain, combine, decombine};
+use super::base::{KRMono, KRPoly, KRGen, KRChain, KRPolyChain, sign_between, combine, decombine};
 use super::data::KRCubeData;
 
 #[derive(Debug, Clone)]
@@ -451,8 +450,8 @@ mod tests {
     use yui::util::macros::hashmap;
     use yui::bitseq::BitSeq;
 
-    use crate::kr::data::KRCubeData;
-    use crate::kr::hor_cube::KRHorCube;
+    use crate::internal::data::KRCubeData;
+    use crate::internal::hor_cube::KRHorCube;
 
     use super::*;
 

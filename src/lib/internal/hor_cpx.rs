@@ -11,10 +11,9 @@ use yui::bitseq::BitSeq;
 // use log::info;
 // use yui_homology::DisplaySeq;
 
-use crate::kr::hor_cube::KRHorCube;
-
 use super::base::{KRGen, KRChain};
 use super::data::KRCubeData;
+use super::hor_cube::KRHorCube;
 use super::hor_excl::KRHorExcl;
 
 pub struct KRHorComplex<R>

@@ -6,7 +6,7 @@ use log::info;
 use yui::{EucRing, EucRingOps};
 use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, isize3, Grid2, ChainComplex2, DisplayTable};
 
-use crate::kr::tot_cpx::KRTotComplex;
+use super::tot_cpx::KRTotComplex;
 use super::base::extend_ends_bounded;
 use super::data::KRCubeData;
 

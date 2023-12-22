@@ -1,8 +1,9 @@
 pub mod kr;
+pub mod internal;
+pub mod result;
 pub mod calc;
 pub mod util;
-pub mod result;
 
-pub use kr::homology::KRHomology;
+pub use kr::KRHomology;
 pub use result::KRHomologyStr;
 pub use calc::KRCalc;
