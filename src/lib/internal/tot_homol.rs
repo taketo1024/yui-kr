@@ -34,14 +34,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             range
         ).reduced();
 
-        info!("H_tot (q: {})..", q);
+        info!("H (q: {})..", q);
 
         let inner = Grid2::generate(
             complex.support(), 
             |idx| Self::homology_at(&data, q, &complex, idx)
         );
 
-        info!("H_tot (q: {})\n{}", q, inner.display_table("h", "v"));
+        info!("H (q: {})\n{}", q, inner.display_table("h", "v"));
 
         Self { q, inner }
     }

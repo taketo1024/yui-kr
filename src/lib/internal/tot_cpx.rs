@@ -72,8 +72,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
-        info!("C_tot (q: {}, range: {:?})..", q, range);
-        info!("setup tot-cube..");
+        info!("C (q: {}, range: {:?})..", q, range);
+        info!("setup cube..");
 
         let cube = KRTotCube::new_restr(
             data.clone(), 
@@ -93,7 +93,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             |idx| Self::summand(&data, &cube, idx)
         );
 
-        info!("C_tot (q: {})\n{}", q, summands.display_table("h", "v"));
+        info!("C (q: {})\n{}", q, summands.display_table("h", "v"));
 
         Self { q, data, cube, summands }
     }
@@ -179,8 +179,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             return SpMat::zero((m, n))
         }
         
-        info!("d_tot {from} -> {to}, size: {:?}", (m, n));
-
         cfg_if::cfg_if! { 
             if #[cfg(feature = "multithread")] { 
                 let itr = (0..n).into_par_iter();
@@ -209,9 +207,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let mut reducer = ChainReducer::new(self.support(), self.d_deg(), false);
 
-        info!("initial run..");
-
         for idx in self.support() {
+            let to_idx = idx + self.d_deg();
+
+            info!("d {idx} -> {to_idx}");
+
             // MEMO: The 'next matrix' will serve as trans-back for the current one. 
             // This is to reduce the input dim without `with_trans = true`.
             
@@ -221,23 +221,22 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
                 self.d_matrix(idx)
             };
 
-            let to_idx = idx + self.d_deg();
+            info!("  size:    {:?}", d.shape());
+
             if self.is_supported(to_idx) { 
                 let m = d.nrows();
                 reducer.set_matrix(to_idx, SpMat::id(m));
             }
 
             reducer.set_matrix(idx, d);
-            reducer.reduce_at(idx, false);
+            reducer.reduce_at(idx, true);
+
+            info!("  reduced: {:?}", reducer.matrix(idx).unwrap().shape());
         }
-
-        info!("second run..");
-
-        reducer.reduce_all(true);
 
         let red = reducer.into_complex();
 
-        info!("reduce C_tot (q: {})\n{}", self.q, red.display_table("h", "v"));
+        info!("reduced C (q: {})\n{}", self.q, red.display_table("h", "v"));
 
         red
     }

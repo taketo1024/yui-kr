@@ -90,16 +90,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn compute_in(&mut self, q: isize, targets: &Vec<isize3>) -> Result<(), Box<dyn std::error::Error>> { 
         let kr = KRHomology::from_data(self.data.clone());
         
-        info!("range: {:?}", kr.range_for(q));
-
         for &idx in targets { 
-            let inner = self.data.to_inner_grad(idx).unwrap();
             let h = kr.get(idx);
-
-            info!("H[{}] (h: {}, v: {}) => {}", idx, inner.1, inner.2, h.math_symbol());
-
             self.result.set((idx.0, idx.1, idx.2), h.rank());
-
         }
 
         if self.save_progress { 
