@@ -1,0 +1,201 @@
+running yui-kr...
+    Updating crates.io index
+    Updating git repository `https://github.com/taketo1024/yui`
+warning: unused variable: `q`
+  --> src/lib/calc.rs:90:30
+   |
+90 |     fn compute_in(&mut self, q: isize, targets: &Vec<isize3>) -> Result<(), Box<dyn std::error::Error>> { 
+   |                              ^ help: if this is intentional, prefix it with an underscore: `_q`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: `yui-kr` (lib) generated 1 warning (run `cargo fix --lib -p yui-kr` to apply 1 suggestion)
+    Finished release [optimized + debuginfo] target(s) in 1.22s
+     Running `target/release/ykr 11a_123 -i bigint -s -p --debug`
+21:25:00 [INFO] args: CliArgs { target: "11a_123", int_type: BigInt, mirror: false, format: PolyTable, force_compute: false, save_progress: true, save_result: true, check_result: false, debug: true }
+21:25:00 [INFO] n-threads: 64
+21:25:00 [INFO] braid: [1, 1, 1, 2, -1, 2, 3, -2, 3, 2, -4, 3, -2, 3, 4, 4]
+21:25:00 [INFO] compute from mirror.
+21:25:21 [INFO] load: /lustre1/home/taketo.sano/yui-kr/tmp/11a_123_result.json
+21:25:21 [INFO] save: /lustre1/home/taketo.sano/yui-kr/tmp/11a_123_result.json
+21:25:21 [INFO] compute KRHomology.
+21:25:21 [INFO] targets: 168
+21:25:21 [INFO] - - - - - - - - - - - - - - - -
+21:25:21 [INFO] (1/4) q: -25
+21:25:21 [INFO] C (q: -25, range: (12..=15, 3..=16))..
+21:25:21 [INFO] setup cube..
+21:35:54 [INFO] setup summands..
+21:42:33 [INFO] C (q: -25)
+ v\h  12  13   14      15 
+ 16   .   Q¹⁸  Q¹⁰⁹⁸   Q⁵⁸⁵⁶ 
+ 15   .   Q⁵⁸  Q⁷²³⁶   Q⁵²⁴¹⁸ 
+ 14   .   Q⁵⁸  Q¹⁹¹⁹⁶  Q²⁰³¹⁹⁴ 
+ 13   .   Q²¹  Q²⁶³³⁹  Q⁴⁴⁷⁴⁴⁹ 
+ 12   .   Q²   Q²⁰⁰⁵⁹  Q⁶¹⁶¹⁵⁴ 
+ 11   .   .    Q⁸⁴⁸³   Q⁵⁴⁹⁰⁰³ 
+ 10   .   .    Q¹⁸⁶⁴   Q³¹⁵⁶⁹⁶ 
+ 9    .   .    Q¹⁷¹    Q¹¹²⁹⁴⁴ 
+ 8    .   .    Q²      Q²³⁰⁰¹ 
+ 7    .   .    .       Q²¹²⁷ 
+ 6    .   .    .       Q²⁸ 
+ 5    .   .    .       . 
+ 4    .   .    .       . 
+ 3    .   .    .       . 
+
+21:42:33 [INFO] reduce C_tot (q: -25)..
+21:42:33 [INFO] d (12, 3) -> (12, 4)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 4) -> (12, 5)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 5) -> (12, 6)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 6) -> (12, 7)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 7) -> (12, 8)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 8) -> (12, 9)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 9) -> (12, 10)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 10) -> (12, 11)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 11) -> (12, 12)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 12) -> (12, 13)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 13) -> (12, 14)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 14) -> (12, 15)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 15) -> (12, 16)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (12, 16) -> (12, 17)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (13, 3) -> (13, 4)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (13, 4) -> (13, 5)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (13, 5) -> (13, 6)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (13, 6) -> (13, 7)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (13, 7) -> (13, 8)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (13, 8) -> (13, 9)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (13, 9) -> (13, 10)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (13, 10) -> (13, 11)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (13, 11) -> (13, 12)
+21:42:33 [INFO]   size:    (2, 0)
+21:42:33 [INFO]   reduced: (2, 0)
+21:42:33 [INFO] d (13, 12) -> (13, 13)
+21:42:33 [INFO]   size:    (21, 2)
+21:42:33 [INFO]   reduced: (19, 0)
+21:42:33 [INFO] d (13, 13) -> (13, 14)
+21:42:33 [INFO]   size:    (58, 19)
+21:42:33 [INFO]   reduced: (39, 0)
+21:42:33 [INFO] d (13, 14) -> (13, 15)
+21:42:33 [INFO]   size:    (58, 39)
+21:42:33 [INFO]   reduced: (19, 0)
+21:42:33 [INFO] d (13, 15) -> (13, 16)
+21:42:33 [INFO]   size:    (18, 19)
+21:42:33 [INFO]   reduced: (0, 1)
+21:42:33 [INFO] d (13, 16) -> (13, 17)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (14, 3) -> (14, 4)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (14, 4) -> (14, 5)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (14, 5) -> (14, 6)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (14, 6) -> (14, 7)
+21:42:33 [INFO]   size:    (0, 0)
+21:42:33 [INFO]   reduced: (0, 0)
+21:42:33 [INFO] d (14, 7) -> (14, 8)
+21:42:33 [INFO]   size:    (2, 0)
+21:42:33 [INFO]   reduced: (2, 0)
+21:42:33 [INFO] d (14, 8) -> (14, 9)
+21:42:33 [INFO]   size:    (171, 2)
+21:42:33 [INFO]   reduced: (169, 0)
+21:42:33 [INFO] d (14, 9) -> (14, 10)
+21:42:34 [INFO]   size:    (1864, 169)
+21:42:34 [INFO]   reduced: (1695, 0)
+21:42:34 [INFO] d (14, 10) -> (14, 11)
+21:42:35 [INFO]   size:    (8483, 1695)
+21:42:35 [INFO]   reduced: (6788, 0)
+21:42:35 [INFO] d (14, 11) -> (14, 12)
+21:42:46 [INFO]   size:    (20059, 6788)
+21:42:47 [INFO]   reduced: (13271, 0)
+21:42:47 [INFO] d (14, 12) -> (14, 13)
+21:43:20 [INFO]   size:    (26339, 13271)
+21:43:23 [INFO]   reduced: (13068, 0)
+21:43:23 [INFO] d (14, 13) -> (14, 14)
+21:43:48 [INFO]   size:    (19196, 13068)
+21:43:54 [INFO]   reduced: (6138, 10)
+21:43:54 [INFO] d (14, 14) -> (14, 15)
+21:43:59 [INFO]   size:    (7236, 6138)
+21:43:59 [INFO]   reduced: (1098, 0)
+21:43:59 [INFO] d (14, 15) -> (14, 16)
+21:43:59 [INFO]   size:    (1098, 1098)
+21:43:59 [INFO]   reduced: (0, 0)
+21:43:59 [INFO] d (14, 16) -> (14, 17)
+21:43:59 [INFO]   size:    (0, 0)
+21:43:59 [INFO]   reduced: (0, 0)
+21:43:59 [INFO] d (15, 3) -> (15, 4)
+21:43:59 [INFO]   size:    (0, 0)
+21:43:59 [INFO]   reduced: (0, 0)
+21:43:59 [INFO] d (15, 4) -> (15, 5)
+21:43:59 [INFO]   size:    (0, 0)
+21:43:59 [INFO]   reduced: (0, 0)
+21:43:59 [INFO] d (15, 5) -> (15, 6)
+21:43:59 [INFO]   size:    (28, 0)
+21:43:59 [INFO]   reduced: (28, 0)
+21:43:59 [INFO] d (15, 6) -> (15, 7)
+21:43:59 [INFO]   size:    (2127, 28)
+21:43:59 [INFO]   reduced: (2099, 0)
+21:43:59 [INFO] d (15, 7) -> (15, 8)
+21:44:00 [INFO]   size:    (23001, 2099)
+21:44:00 [INFO]   reduced: (20902, 0)
+21:44:00 [INFO] d (15, 8) -> (15, 9)
+21:44:17 [INFO]   size:    (112944, 20902)
+21:44:18 [INFO]   reduced: (92042, 0)
+21:44:18 [INFO] d (15, 9) -> (15, 10)
+21:48:27 [INFO]   size:    (315696, 92042)
+21:48:46 [INFO]   reduced: (223654, 0)
+21:48:46 [INFO] d (15, 10) -> (15, 11)
+22:15:21 [INFO]   size:    (549003, 223654)
+22:35:55 [INFO]   reduced: (325349, 0)
+22:35:55 [INFO] d (15, 11) -> (15, 12)
+23:38:18 [INFO]   size:    (616154, 325349)
+04:08:28 [INFO]   reduced: (290817, 12)
+04:08:28 [INFO] d (15, 12) -> (15, 13)
+05:05:20 [INFO]   size:    (447449, 290817)
+=>> PBS: job killed: walltime 43275 exceeded limit 43200
