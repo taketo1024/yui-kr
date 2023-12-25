@@ -8,8 +8,6 @@ use yui_kr::{KRHomologyStr, KRCalc};
 use yui_link::{Braid, Link};
 use super::utils::*;
 
-const MAX_BRAID_LEN: usize = 14;
-
 #[derive(Parser, Debug, Default)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
@@ -203,11 +201,8 @@ impl App {
         let target = &self.args.target;
         let braid = Braid::load(target)?;
 
-        if braid.len() > MAX_BRAID_LEN { 
-            err!("braid-length {} of '{target}' exceeds limit: {MAX_BRAID_LEN}", braid.len())?;
-        }
-
         info!("braid: {}", braid);
+        info!("braid-len: {}", braid.len());
 
         let link = braid.closure();
         let link = if self.args.mirror { link.mirror() } else { link };
