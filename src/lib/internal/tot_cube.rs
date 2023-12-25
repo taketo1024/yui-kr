@@ -54,14 +54,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         };
 
         let verts = itr.map(|v| {
-            if log::log_enabled!(log::Level::Info) { 
-                let c = counter.incr();
-                if c % 100_000 == 0 { 
-                    info!("  {c}/{total}");
-                }
-            }
-
             if v_range.contains(&(v.weight() as isize)) { 
+                if log::log_enabled!(log::Level::Info) { 
+                    let c = counter.incr();
+                    if c % 10_000 == 0 { 
+                        info!("  {c}/{total}");
+                    }
+                }
+    
                 KRHorHomol::new_restr(
                     data.clone(), 
                     q, 
