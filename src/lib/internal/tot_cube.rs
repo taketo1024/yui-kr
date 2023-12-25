@@ -2,9 +2,11 @@ use std::ops::RangeInclusive;
 use std::sync::Arc;
 
 use itertools::Itertools;
+use log::info;
 use num_traits::One;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use yui::util::sync::SyncCounter;
 use yui::{EucRing, EucRingOps};
 use yui::bitseq::BitSeq;
 
@@ -30,6 +32,17 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let n = data.dim();
         let (h_range, v_range) = range;
 
+        let total = if log::log_enabled!(log::Level::Info) { 
+            BitSeq::generate(n).filter(|v| 
+                v_range.contains(&(v.weight() as isize))
+            ).count()
+        } else { 
+            0
+        };
+        let counter = SyncCounter::new();
+
+        info!("setup cube.. (total: {total})");
+
         let vs = BitSeq::generate(n);
 
         cfg_if::cfg_if! { 
@@ -40,7 +53,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             }
         };
 
-        let verts = itr.map(|v|
+        let verts = itr.map(|v| {
+            if log::log_enabled!(log::Level::Info) { 
+                let c = counter.incr();
+                if c % 100_000 == 0 { 
+                    info!("  {c}/{total}");
+                }
+            }
+
             if v_range.contains(&(v.weight() as isize)) { 
                 KRHorHomol::new_restr(
                     data.clone(), 
@@ -51,7 +71,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             } else { 
                 KRHorHomol::zero(data.clone(), q, v)
             }
-        ).collect();
+        }).collect();
 
         Self { data, q, verts }
     }
