@@ -57,7 +57,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             if v_range.contains(&(v.weight() as isize)) { 
                 if log::log_enabled!(log::Level::Info) { 
                     let c = counter.incr();
-                    if c % 10_000 == 0 { 
+                    if c % 3000 == 0 { 
                         info!("  {c}/{total}");
                     }
                 }
