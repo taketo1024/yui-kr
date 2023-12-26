@@ -13,7 +13,7 @@ use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
 use yui_homology::utils::ChainReducer;
 use yui_homology::{isize2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, DisplayTable, ChainComplex2};
 use yui_matrix::MatTrait;
-use yui_matrix::sparse::{SpVec, SpMat};
+use yui_matrix::sparse::{SpVec, SpMat, pivot::PivotCondition};
 
 use super::base::KRChain;
 use super::data::KRCubeData;
@@ -204,7 +204,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn reduced(&self) -> ChainComplex2<R> {
         info!("reduce C_tot (q: {})..", self.q);
 
-        let mut reducer = ChainReducer::new(self.support(), self.d_deg(), false);
+        let p_cond = PivotCondition::One;
+        let mut reducer = ChainReducer::new(self.support(), self.d_deg(), p_cond, false);
 
         for idx in self.support() {
             let to_idx = idx + self.d_deg();
@@ -228,10 +229,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             }
 
             reducer.set_matrix(idx, d);
-            reducer.reduce_at(idx, true);
+            reducer.reduce_at(idx, false);
 
             info!("  reduced: {:?}", reducer.matrix(idx).unwrap().shape());
         }
+
+        info!("second run..");
+        
+        reducer.reduce_all(true);
 
         let red = reducer.into_complex();
 
