@@ -179,34 +179,17 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub fn q_range(&self) -> RangeInclusive<isize> { 
-        let q_all = self.support().filter_map(|idx| {
+        range(self.support().filter_map(|idx| {
             self.to_inner_grad(idx).map(|g| g.0)
-        }).collect::<HashSet<_>>();
-        
-        let q0 = q_all.iter().min().cloned().unwrap_or(0);
-        let q1 = q_all.iter().max().cloned().unwrap_or(0);
-
-        q0..=q1
+        }))
     }
 
     pub fn hv_range(&self, q: isize) -> (RangeInclusive<isize>, RangeInclusive<isize>) { 
-        let n = self.dim() as isize;
-        let (h0, h1, v0, v1) = self.support().filter_map(|idx| {
+        let hv = self.support().filter_map(|idx| {
             let inner = self.to_inner_grad(idx).unwrap();
-            if inner.0 == q { 
-                Some((inner.1, inner.2))
-            } else { 
-                None
-            }
-        }).fold((n, 0, n, 0), |res, (i, j)| {
-            (
-                isize::min(res.0, i),
-                isize::max(res.1, i),
-                isize::min(res.2, j),
-                isize::max(res.3, j)
-            )
+            (inner.0 == q).then(|| (inner.1, inner.2))
         });
-        (h0..=h1, v0..=v1)
+        range2(hv)
     }
 
     pub fn support(&self) -> GridIter<isize3> {
@@ -305,7 +288,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
                 let x = &resolved.data()[i];
                 let e = x.edge(j);
                 let x_i = KRPoly::variable(i);
-                let p_i = match (is_vert(x, signs[i]), j) {
+                let p_i = match (Self::is_vert(x, signs[i]), j) {
                     (true, 0) | (false, 3) =>  x_i,
                     (true, 1) | (false, 0) => -x_i,
                     _ => panic!()
@@ -340,7 +323,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         (0 .. n).map(|i| {
             let x = &resolved.data()[i];
-            let (a,b,c) = if is_vert(x, signs[i]) { 
+            let (a,b,c) = if Self::is_vert(x, signs[i]) { 
                 (3,2,0)
             } else { 
                 (2,1,3)
@@ -378,24 +361,40 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         Link::new(data)
     }
+
+    // is_vert: 
+    //          
+    //  a(3) b(2)   c(3) a(2)
+    //    ↑\ /↑        \ /→  
+    //      X           X    
+    //     / \         / \→   
+    //  c(0) d(1)   d(0) b(1)
+    //
+    //    true        false
+
+    fn is_vert(x: &Crossing, sign: Sign) -> bool { 
+        use CrossingType::*;
+        match (x.ctype(), sign.is_positive()) {
+            (X, false) | (Xm, true)  | (V, _) => true,
+            (X, true)  | (Xm, false) | (H, _) => false
+        }
+    }
 }
 
-// is_vert: 
-//          
-//  a(3) b(2)   c(3) a(2)
-//    ↑\ /↑        \ /→  
-//      X           X    
-//     / \         / \→   
-//  c(0) d(1)   d(0) b(1)
-//
-//    true        false
+pub(crate) fn range<I>(vals: I) -> RangeInclusive<isize>
+where I: IntoIterator<Item = isize> { 
+    let set = vals.into_iter().collect::<HashSet<_>>();
+    let i0 = set.iter().min().cloned().unwrap_or(0);
+    let i1 = set.iter().max().cloned().unwrap_or(0);
+    i0..=i1
+}
 
-fn is_vert(x: &Crossing, sign: Sign) -> bool { 
-    use CrossingType::*;
-    match (x.ctype(), sign.is_positive()) {
-        (X, false) | (Xm, true)  | (V, _) => true,
-        (X, true)  | (Xm, false) | (H, _) => false
-    }
+pub(crate) fn range2<I>(vals: I) -> (RangeInclusive<isize>, RangeInclusive<isize>)
+where I: IntoIterator<Item = (isize, isize)> { 
+    let set = vals.into_iter().collect::<HashSet<_>>();
+    let r0 = range(set.iter().map(|i| i.0));
+    let r1 = range(set.iter().map(|i| i.1));
+    (r0, r1)
 }
 
 #[cfg(test)]
