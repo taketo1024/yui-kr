@@ -1,11 +1,10 @@
-use std::cell::OnceCell;
 use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
 use delegate::delegate;
 use yui::{EucRing, EucRingOps};
 use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand, Grid1};
-use yui_link::Link;
+use yui_link::{Link, Braid};
 
 use crate::KRHomologyStr;
 use crate::internal::data::KRCubeData;
@@ -14,21 +13,33 @@ use crate::internal::tot_homol::KRTotHomol;
 pub struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
-    q_slices: Grid1<OnceCell<KRTotHomol<R>>>,
-    zero: HomologySummand<R>
+    q_slices: Grid1<KRTotHomol<R>>
 }
 
 impl<R> KRHomology<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    pub fn new(link: &Link) -> Self { 
-        let data = Arc::new(KRCubeData::new(link));
-        Self::from_data(data)
+    pub fn from_braid(b: &Braid) -> Self { 
+        let l = b.closure();
+        Self::from_link(&l)
     }
 
-    pub fn from_data(data: Arc<KRCubeData<R>>) -> Self { 
-        let q_slices = Grid1::generate(data.q_range(), |_| OnceCell::new());
-        let zero = HomologySummand::zero();
-        Self { data, q_slices, zero }
+    pub fn from_link(link: &Link) -> Self { 
+        assert_eq!(link.components().len(), 1, "only knots are supported.");
+        let data = Arc::new(KRCubeData::new(link));
+        Self::new(data)
+    }
+
+    pub fn new(data: Arc<KRCubeData<R>>) -> Self { 
+        let q_range = data.q_range();
+        Self::new_restr(data, q_range)
+    }
+
+    pub fn new_restr(data: Arc<KRCubeData<R>>, q_range: RangeInclusive<isize>) -> Self { 
+        let q_slices = Grid1::generate(q_range, |q| {
+            let range = data.hv_range(q);
+            KRTotHomol::new_restr(data.clone(), q, range)
+        });
+        Self { data, q_slices }
     }
 
     delegate! { 
@@ -38,33 +49,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             pub fn k_range(&self) -> RangeInclusive<isize>;
             pub fn q_range(&self) -> RangeInclusive<isize>;
         }
-    }
-
-    pub fn q_slice(&self, q: isize) -> &KRTotHomol<R> {
-        self.q_slices[q].get_or_init(|| {
-            let range = self.range_for(q);
-            KRTotHomol::new_restr(self.data.clone(), q, range)
-        })
-    }
-
-    pub fn range_for(&self, q: isize) -> (RangeInclusive<isize>, RangeInclusive<isize>) { 
-        let n = self.data.dim() as isize;
-        let (h0, h1, v0, v1) = self.support().filter_map(|idx| {
-            let inner = self.data.to_inner_grad(idx).unwrap();
-            if inner.0 == q { 
-                Some((inner.1, inner.2))
-            } else { 
-                None
-            }
-        }).fold((n, 0, n, 0), |res, (i, j)| {
-            (
-                isize::min(res.0, i),
-                isize::max(res.1, i),
-                isize::min(res.2, j),
-                isize::max(res.3, j)
-            )
-        });
-        (h0..=h1, v0..=v1)
     }
 
     pub fn structure(&self) -> KRHomologyStr { 
@@ -78,6 +62,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
                 None
             }
         }).collect()
+    }
+
+    pub fn display_table(&self) -> String { 
+        self.structure().qpoly_table()
+    }
+
+    pub fn print_table(&self) { 
+        println!("{}", self.display_table())
     }
 }
 
@@ -94,15 +86,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn get(&self, idx: isize3) -> &Self::Output {
-        if !self.is_supported(idx) { 
-            return &self.zero
+        if let Some(isize3(q, h, v)) = self.data.to_inner_grad(idx) { 
+            &self.q_slices[q][(h, v)]
+        } else { 
+            self.q_slices.get_default().get(isize2(0, 0))
         }
-
-        let Some(isize3(q, h, v)) = self.data.to_inner_grad(idx) else { 
-            return &self.zero
-        };
-
-        self.q_slice(q).get(isize2(h, v))
     }
 }
 
@@ -124,10 +112,25 @@ mod tests {
     type R = Ratio<i64>;
 
     #[test]
+    fn trivial() { 
+        let b = Braid::from([1]);
+        let h = KRHomology::<R>::from_braid(&b);
+
+        assert_eq!(h[(0,0,0)].rank(), 1);
+        assert_eq!(h[(1,0,0)].rank(), 0);
+
+        let s = h.structure();
+
+        assert_eq!(s.total_rank(), 1);
+        assert_eq!(s, KRHomologyStr::from(hashmap!{ 
+            (0,0,0) => 1
+        }));
+    }
+
+    #[test]
     fn b3_1() { 
         let b = Braid::from([1,1,1]);
-        let l = b.closure();
-        let h = KRHomology::<R>::new(&l);
+        let h = KRHomology::<R>::from_braid(&b);
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 3);
@@ -141,8 +144,7 @@ mod tests {
     #[test]
     fn b4_1() { 
         let b = Braid::from([1,-2,1,-2]);
-        let l = b.closure();
-        let h = KRHomology::<R>::new(&l);
+        let h = KRHomology::<R>::from_braid(&b);
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 5);
@@ -158,8 +160,7 @@ mod tests {
     #[test]
     fn b5_1() { 
         let b = Braid::from([1,1,1,1,1]);
-        let l = b.closure();
-        let h = KRHomology::<R>::new(&l);
+        let h = KRHomology::<R>::from_braid(&b);
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 5);
@@ -175,8 +176,7 @@ mod tests {
     #[test]
     fn b5_2() { 
         let b = Braid::from([1,1,1,2,-1,2]);
-        let l = b.closure();
-        let h = KRHomology::<R>::new(&l);
+        let h = KRHomology::<R>::from_braid(&b);
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 7);
@@ -194,8 +194,7 @@ mod tests {
     #[test]
     fn b6_1() { 
         let b = Braid::from([1,1,2,-1,-3,2,-3]);
-        let l = b.closure();
-        let h = KRHomology::<R>::new(&l);
+        let h = KRHomology::<R>::from_braid(&b);
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 9);
@@ -214,8 +213,7 @@ mod tests {
     #[test]
     fn b6_2() { 
         let b = Braid::from([1,1,1,-2,1,-2]);
-        let l = b.closure();
-        let h = KRHomology::<R>::new(&l);
+        let h = KRHomology::<R>::from_braid(&b);
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 11);
@@ -236,8 +234,7 @@ mod tests {
     #[test]
     fn b6_3() { 
         let b = Braid::from([1,1,-2,1,-2,-2]);
-        let l = b.closure();
-        let h = KRHomology::<R>::new(&l);
+        let h = KRHomology::<R>::from_braid(&b);
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 13);

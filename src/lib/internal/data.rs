@@ -189,6 +189,26 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         q0..=q1
     }
 
+    pub fn hv_range(&self, q: isize) -> (RangeInclusive<isize>, RangeInclusive<isize>) { 
+        let n = self.dim() as isize;
+        let (h0, h1, v0, v1) = self.support().filter_map(|idx| {
+            let inner = self.to_inner_grad(idx).unwrap();
+            if inner.0 == q { 
+                Some((inner.1, inner.2))
+            } else { 
+                None
+            }
+        }).fold((n, 0, n, 0), |res, (i, j)| {
+            (
+                isize::min(res.0, i),
+                isize::max(res.1, i),
+                isize::min(res.2, j),
+                isize::max(res.3, j)
+            )
+        });
+        (h0..=h1, v0..=v1)
+    }
+
     pub fn support(&self) -> GridIter<isize3> {
         let i_range = self.i_range().step_by(2);
         let j_range = self.j_range().step_by(2);

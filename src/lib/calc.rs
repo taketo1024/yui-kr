@@ -63,13 +63,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             File::Result(&self.name).write(&self.result)?;
         }
 
-        let total = self.result.non_determined().count();
-
         info!("compute KRHomology.");
-        info!("targets: {total}");
+        info!("q-range: {:?}", self.data.q_range());
         
         let targets = self.organize_targets();
-
         let q_total = targets.len();
         let mut c = 1;
 
@@ -87,8 +84,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Ok(())
     }
 
-    fn compute_in(&mut self, _q: isize, targets: &Vec<isize3>) -> Result<(), Box<dyn std::error::Error>> { 
-        let kr = KRHomology::from_data(self.data.clone());
+    fn compute_in(&mut self, q: isize, targets: &Vec<isize3>) -> Result<(), Box<dyn std::error::Error>> { 
+        let kr = KRHomology::new_restr(self.data.clone(), q..=q);
         
         for &idx in targets { 
             let h = kr.get(idx);
