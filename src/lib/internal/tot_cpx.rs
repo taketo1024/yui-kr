@@ -208,6 +208,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         for idx in self.support() {
             let to_idx = idx + self.d_deg();
+            
+            if self.rank(idx).is_zero() { 
+                let m = self.rank(to_idx);
+                reducer.set_matrix(idx, SpMat::zero((m, 0)));
+                continue;
+            }
 
             info!("d {idx} -> {to_idx}");
 
@@ -233,9 +239,25 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             info!("  reduced: {:?}", reducer.matrix(idx).unwrap().shape());
         }
 
-        info!("second run..");
-        
-        reducer.reduce_all(true);
+        if !reducer.is_done() { 
+            info!("second run..");
+
+            for idx in self.support() {
+                let to_idx = idx + self.d_deg();
+                let d = reducer.matrix(idx).unwrap();
+                
+                if d.is_zero() { 
+                    continue;
+                }
+    
+                info!("d {idx} -> {to_idx}");
+                info!("  size:    {:?}", d.shape());
+    
+                reducer.reduce_at(idx, true);
+    
+                info!("  reduced: {:?}", reducer.matrix(idx).unwrap().shape());
+            }    
+        }
 
         let red = reducer.into_complex();
 
