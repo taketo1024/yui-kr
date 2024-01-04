@@ -72,7 +72,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
-        info!("C (q: {}, range: {:?})..", q, range);
+        info!("C (q: {}, h: {:?}, v: {:?})..", q, range.0, range.1);
 
         let cube = KRTotCube::new_restr(
             data.clone(), 
@@ -92,7 +92,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             |idx| Self::summand(&data, &cube, idx)
         );
 
-        info!("C (q: {})\n{}", q, summands.display_table("h", "v"));
+        info!("C (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, summands.display_table("h", "v"));
 
         Self { q, data, cube, summands }
     }

@@ -1,10 +1,11 @@
 use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
+use cartesian::cartesian;
 use delegate::delegate;
 
 use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, isize3, Grid2, ChainComplex2, DisplayTable};
+use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, Grid2, DisplayTable};
 
 use super::tot_cpx::KRTotComplex;
 use super::base::extend_ends_bounded;
@@ -25,36 +26,45 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
-        let n = data.dim() as isize;
-        let range = (range.0, extend_ends_bounded(range.1, 1, 0..=n));
+        info!("H (q: {}, h: {:?}, v: {:?})..", q, range.0, range.1);
 
-        let complex = KRTotComplex::new_restr(
-            data.clone(), 
-            q, 
-            range
-        ).reduced();
+        let inner = Self::make_homol(data, q, range.clone());
 
-        info!("H (q: {})..", q);
-
-        let inner = Grid2::generate(
-            complex.support(), 
-            |idx| Self::homology_at(&data, q, &complex, idx)
-        );
-
-        info!("H (q: {})\n{}", q, inner.display_table("h", "v"));
+        info!("H (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, inner.display_table("h", "v"));
 
         Self { q, inner }
     }
 
-    fn homology_at(data: &KRCubeData<R>, q: isize, complex: &ChainComplex2<R>, idx: isize2) -> HomologySummand<R> { 
-        let (i, j) = idx.into();
-        let g = isize3(q, i, j);
+    fn make_cpx(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> KRTotComplex<R> { 
+        let n = data.dim() as isize;
+        let c_range = (
+            range.0.clone(), 
+            extend_ends_bounded(range.1.clone(), 1, 0..=n)
+        );
+        
+        KRTotComplex::new_restr(
+            data.clone(), 
+            q, 
+            c_range
+        )
+    }
 
-        if data.is_triv_inner(g) { 
-            HomologySummand::zero()
-        } else { 
-            complex.homology_at(idx, false)
-        }
+    fn make_homol(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Grid2<HomologySummand<R>> {
+        let support = cartesian!(
+            range.0.clone(), 
+            range.1.clone()
+        ).map(isize2::from);
+
+        let complex = Self::make_cpx(
+            data.clone(), 
+            q, 
+            range.clone()
+        ).reduced();
+
+        Grid2::generate(
+            support,
+            |idx| complex.homology_at(idx, false)
+        )
     }
 
     pub fn q_deg(&self) -> isize { 

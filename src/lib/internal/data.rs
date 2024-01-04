@@ -264,11 +264,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         isize3(i, j, k)
     }
 
-    pub(crate) fn is_triv_inner(&self, grad: isize3) -> bool { 
-        let outer = self.to_outer_grad(grad);
-        !self.is_supported(outer)
-    }
-
     pub fn hor_edge_poly(&self, v_coords: BitSeq, i: usize) -> KRPoly<R> {
         use Bit::{Bit0, Bit1};
 
