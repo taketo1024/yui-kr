@@ -20,6 +20,9 @@ pub struct CliArgs {
     #[arg(short, long)]
     pub mirror: bool,
 
+    #[arg(long)]
+    pub per_col: bool,
+
     #[arg(short, long, default_value = "poly-table")]
     pub format: Output,
 
@@ -174,6 +177,10 @@ impl App {
                 calc.load_if_exists()?;
             }
             calc.save_progress = true;
+        }
+        
+        if self.args.per_col { 
+            calc.compute_per_col = true;
         }
 
         calc.compute()?;
