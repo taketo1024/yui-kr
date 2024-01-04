@@ -10,24 +10,28 @@ use crate::internal::tot_homol::KRTotHomol;
 use crate::KRHomologyStr;
 use crate::internal::data::{KRCubeData, range2};
 
+#[derive(Clone, Copy, Default, Debug, clap::ValueEnum)]
+pub enum KRCalcMode { 
+    #[default] Default, PerCol, PerItem
+}
+
 pub struct KRCalc<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     name: String,
     data: Arc<KRCubeData<R>>,
+    mode: KRCalcMode,
     result: KRHomologyStr,
-    pub compute_per_col: bool,
     pub save_progress: bool
 }
 
 impl<R> KRCalc<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub fn init(name: &str, l: &Link) -> Self { 
+    pub fn init(name: &str, l: &Link, mode: KRCalcMode) -> Self { 
         let name = name.to_owned();
         let data = Arc::new(KRCubeData::new(&l));
         let result = data.support().map(|idx| ((idx.0, idx.1, idx.2), None)).collect();
-        let compute_per_col = false;
         let save_progress = false;
-        Self { name, data, result, compute_per_col, save_progress }
+        Self { name, data, result, mode, save_progress }
     }
 
     pub fn load_if_exists(&mut self) -> Result<(), Box<dyn std::error::Error>> { 
@@ -69,10 +73,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         info!("compute KRHomology.");
         info!("q-range: {:?}", self.data.q_range());
         
-        let targets = if self.compute_per_col { 
-            self.group_targets_qh()
-        } else {
-            self.group_targets_q()
+        let targets = match self.mode {
+            KRCalcMode::Default => self.group_targets_q(),
+            KRCalcMode::PerCol  => self.group_targets_qh(),
+            KRCalcMode::PerItem => self.group_targets_qhv(),
         };
         let q_total = targets.len();
 
@@ -124,6 +128,18 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
                 self.data.to_inner_grad(outer).unwrap().1
             ).into_iter().sorted_by_key(|(h, _)| 
                 *h
+            ).map(move |(_, list)|
+                (q, list)
+            )
+        }).collect()
+    }
+
+    fn group_targets_qhv(&self) -> Vec<(isize, Vec<isize3>)> {
+        self.group_targets_qh().into_iter().flat_map(|(q, list)| { 
+            list.into_iter().into_group_map_by(|&outer|
+                self.data.to_inner_grad(outer).unwrap().2
+            ).into_iter().sorted_by_key(|(v, _)| 
+                *v
             ).map(move |(_, list)|
                 (q, list)
             )

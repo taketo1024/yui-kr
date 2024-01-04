@@ -4,6 +4,7 @@ use clap::{Parser, ValueEnum};
 use derive_more::Display;
 use num_bigint::BigInt;
 use yui::{Ratio, EucRing, EucRingOps};
+use yui_kr::calc::KRCalcMode;
 use yui_kr::{KRHomologyStr, KRCalc};
 use yui_link::{Braid, Link};
 use super::utils::*;
@@ -20,14 +21,14 @@ pub struct CliArgs {
     #[arg(short, long)]
     pub mirror: bool,
 
-    #[arg(long)]
-    pub per_col: bool,
-
     #[arg(short, long, default_value = "poly-table")]
     pub format: Output,
 
     #[arg(short = 'F', long)]
     pub force_compute: bool,
+
+    #[arg(long)]
+    pub mode: KRCalcMode,
 
     #[arg(short = 'p', long)]
     pub save_progress: bool,
@@ -168,7 +169,7 @@ impl App {
 
     fn compute_kr<R>(&self, link: &Link) -> Result<KRHomologyStr, Box<dyn std::error::Error>>
     where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-        let mut calc = KRCalc::init(&self.args.target, link);
+        let mut calc = KRCalc::init(&self.args.target, link, self.args.mode);
         
         if self.args.save_progress { 
             if self.args.force_compute { 
@@ -177,10 +178,6 @@ impl App {
                 calc.load_if_exists()?;
             }
             calc.save_progress = true;
-        }
-        
-        if self.args.per_col { 
-            calc.compute_per_col = true;
         }
 
         calc.compute()?;
