@@ -6,8 +6,9 @@ use yui::{EucRing, EucRingOps};
 use yui_homology::{GridTrait, RModStr, isize3};
 use yui_link::Link;
 
-use crate::{KRHomologyStr, KRHomology};
-use crate::internal::data::KRCubeData;
+use crate::internal::tot_homol::KRTotHomol;
+use crate::KRHomologyStr;
+use crate::internal::data::{KRCubeData, range2};
 
 pub struct KRCalc<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
@@ -66,7 +67,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         info!("compute KRHomology.");
         info!("q-range: {:?}", self.data.q_range());
         
-        let targets = self.organize_targets();
+        let targets = self.group_targets_q();
         let q_total = targets.len();
         let mut c = 1;
 
@@ -85,11 +86,18 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn compute_in(&mut self, q: isize, targets: &Vec<isize3>) -> Result<(), Box<dyn std::error::Error>> { 
-        let kr = KRHomology::new_restr(self.data.clone(), q..=q);
+        let hv = targets.iter().map(|&idx| {
+            let inner = self.data.to_inner_grad(idx).unwrap();
+            assert_eq!(inner.0, q);
+            (inner.1, inner.2)
+        });
+        let hv_range = range2(hv);
+        let kr = KRTotHomol::new_restr(self.data.clone(), q, hv_range);
         
         for &idx in targets { 
-            let h = kr.get(idx);
-            self.result.set((idx.0, idx.1, idx.2), h.rank());
+            let inner = self.data.to_inner_grad(idx).unwrap();
+            let h = kr.get((inner.1, inner.2).into());
+            self.result.set(idx.into(), h.rank());
         }
 
         if self.save_progress { 
@@ -99,7 +107,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Ok(())
     }
 
-    fn organize_targets(&self) -> Vec<(isize, Vec<isize3>)> {
+    fn group_targets_q(&self) -> Vec<(isize, Vec<isize3>)> {
         self.result.non_determined().map(|&idx| {
             // convert to inner-grad.
             let outer = idx.into();

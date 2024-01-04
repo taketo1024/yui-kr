@@ -31,10 +31,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     pub fn new(data: Arc<KRCubeData<R>>) -> Self { 
         let q_range = data.q_range();
-        Self::new_restr(data, q_range)
-    }
-
-    pub fn new_restr(data: Arc<KRCubeData<R>>, q_range: RangeInclusive<isize>) -> Self { 
         let q_slices = Grid1::generate(q_range, |q| {
             let range = data.hv_range(q);
             KRTotHomol::new_restr(data.clone(), q, range)
