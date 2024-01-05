@@ -27,8 +27,11 @@ pub struct CliArgs {
     #[arg(short = 'F', long)]
     pub force_compute: bool,
 
-    #[arg(long)]
+    #[arg(long, default_value = "default")]
     pub mode: KRCalcMode,
+
+    #[arg(short, long)]
+    pub limit: Option<usize>,
 
     #[arg(short = 'p', long)]
     pub save_progress: bool,
@@ -169,8 +172,14 @@ impl App {
 
     fn compute_kr<R>(&self, link: &Link) -> Result<KRHomologyStr, Box<dyn std::error::Error>>
     where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-        let mut calc = KRCalc::init(&self.args.target, link, self.args.mode);
+        let mut calc = KRCalc::init(&self.args.target, link);
         
+        calc.mode = self.args.mode;
+
+        if let Some(limit) = self.args.limit { 
+            calc.size_limit = limit;
+        }
+
         if self.args.save_progress { 
             if self.args.force_compute { 
                 calc.clear()?;
@@ -197,7 +206,7 @@ impl App {
             str
         } else { 
             let non_det = res.non_determined().map(|idx| format!("{idx:?}")).join(", ");
-            str + &format!("\nNon-determined: {non_det}")
+            str + &format!("\n\x1b[0;31mNon-determined\x1b[0m: {non_det}")
         }
     }
 

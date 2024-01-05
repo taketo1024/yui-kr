@@ -19,19 +19,22 @@ pub struct KRCalc<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     name: String,
     data: Arc<KRCubeData<R>>,
-    mode: KRCalcMode,
     result: KRHomologyStr,
+    pub mode: KRCalcMode,
+    pub size_limit: usize,
     pub save_progress: bool
 }
 
 impl<R> KRCalc<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub fn init(name: &str, l: &Link, mode: KRCalcMode) -> Self { 
+    pub fn init(name: &str, l: &Link) -> Self { 
         let name = name.to_owned();
         let data = Arc::new(KRCubeData::new(&l));
         let result = data.support().map(|idx| ((idx.0, idx.1, idx.2), None)).collect();
+        let mode = KRCalcMode::default();
+        let size_limit = usize::MAX;
         let save_progress = false;
-        Self { name, data, result, mode, save_progress }
+        Self { name, data, result, mode, size_limit, save_progress }
     }
 
     pub fn load_if_exists(&mut self) -> Result<(), Box<dyn std::error::Error>> { 
@@ -97,12 +100,13 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             (inner.1, inner.2)
         });
         let hv_range = range2(hv);
-        let kr = KRTotHomol::new_restr(self.data.clone(), q, hv_range);
+        let kr = KRTotHomol::try_partial(self.data.clone(), q, hv_range, self.size_limit);
         
         for &idx in targets { 
             let inner = self.data.to_inner_grad(idx).unwrap();
-            let h = kr.get((inner.1, inner.2).into());
-            self.result.set(idx.into(), h.rank());
+            if let Some(h) = kr.get((inner.1, inner.2).into()) { 
+                self.result.set(idx.into(), h.rank());
+            }
         }
 
         if self.save_progress { 
