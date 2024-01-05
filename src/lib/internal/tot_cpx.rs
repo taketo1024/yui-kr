@@ -202,7 +202,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn reduced(&self) -> ChainComplex2<R> {
+        self.reduced_with_limit(usize::MAX)
+    }
+
+    pub fn reduced_with_limit(&self, size_limit: usize) -> ChainComplex2<R> {
         let mut reducer = KRTotComplexReducer::new(self);
+        reducer.size_limit = size_limit;
         reducer.reduce();
         reducer.into_complex()
     }
