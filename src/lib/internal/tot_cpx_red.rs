@@ -28,73 +28,63 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub(crate) fn reduce(&mut self) { 
         info!("reduce C_tot (q: {})..", self.complex.q_deg());
 
-        self.reduce_initial();
+        for idx in self.complex.support() {
+            self.setup(idx);
+            self.reduce_at(idx, false);
+        }
 
-        if !self.reducer.is_done() { 
-            info!("second run..");
+        if self.reducer.is_done() { 
+            return;
+        }
 
-            self.reduce_second();
+        info!("second run..");
+
+        for idx in self.complex.support() {
+            self.reduce_at(idx, true);
         }
     }
 
-    fn reduce_initial(&mut self) { 
-        for idx in self.complex.support() {
-            let to_idx = idx + self.complex.d_deg();
+    fn setup(&mut self, idx: isize2) {
+        let to_idx = idx + self.complex.d_deg();
+        let m = self.complex.rank(to_idx);
             
-            if self.complex.rank(idx).is_zero() { 
-                let m = self.complex.rank(to_idx);
-                self.reducer.set_matrix(idx, SpMat::zero((m, 0)));
-                continue;
-            }
-
-            info!("d {idx} -> {to_idx}");
-
-            // MEMO: The 'next matrix' will serve as trans-back for the current one. 
-            // This is to reduce the input dim without `with_trans = true`.
-            
-            let d = if let Some(q) = self.reducer.matrix(idx) {
-                self.complex.d_matrix_for(idx, &q)
-            } else { 
-                self.complex.d_matrix(idx)
-            };
-
-            if self.complex.is_supported(to_idx) { 
-                let m = d.nrows();
-                self.reducer.set_matrix(to_idx, SpMat::id(m));
-            }
-
-            self.reducer.set_matrix(idx, d);
-
-            self.reduce_at(idx, false);
+        if self.complex.rank(idx).is_zero() { 
+            self.reducer.set_matrix(idx, SpMat::zero((m, 0)));
+            return;
         }
-    }
 
-    fn reduce_second(&mut self) { 
-        for idx in self.complex.support() {
-            let to_idx = idx + self.complex.d_deg();
-            let d = self.reducer.matrix(idx).unwrap();
-            
-            if d.is_zero() { 
-                continue;
-            }
+        // MEMO: The 'next matrix' will serve as trans-back for the current one. 
+        // This is to reduce the input dim without `with_trans = true`.
+        
+        let d = if let Some(q) = self.reducer.matrix(idx) {
+            self.complex.d_matrix_for(idx, &q)
+        } else { 
+            self.complex.d_matrix(idx)
+        };
 
-            info!("d {idx} -> {to_idx}");
+        self.reducer.set_matrix(idx, d);
 
-            self.reduce_at(idx, false);
-        }    
+        if self.complex.is_supported(to_idx) { 
+            self.reducer.set_matrix(to_idx, SpMat::id(m));
+        }
     }
 
     fn reduce_at(&mut self, idx: isize2, deep: bool) { 
-        let d = self.reducer.matrix(idx).unwrap();
-
-        info!("  size:    {:?}", d.shape());
+        let to_idx = idx + self.complex.d_deg();
+        
+        info!("d {idx} -> {to_idx}");
+        info!("  size:    {:?}", self.d_size(idx).unwrap());
 
         self.reducer.reduce_at(idx, deep);
 
-        info!("  reduced: {:?}", self.reducer.matrix(idx).unwrap().shape());
+        info!("  reduced: {:?}", self.d_size(idx).unwrap());
     }
 
-    pub(crate) fn into_complex(self) -> ChainComplex2<R> { 
+    fn d_size(&self, idx: isize2) -> Option<(usize, usize)> { 
+        self.reducer.matrix(idx).map(|d| d.shape())
+    }
+
+    pub fn into_complex(self) -> ChainComplex2<R> { 
         let red = self.reducer.into_complex();
 
         info!("reduced C (q: {})\n{}", self.complex.q_deg(), red.display_table("h", "v"));
