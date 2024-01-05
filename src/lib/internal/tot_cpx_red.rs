@@ -11,21 +11,23 @@ use super::tot_cpx::KRTotComplex;
 pub struct KRTotComplexReducer<'a, R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     complex: &'a KRTotComplex<R>,
-    reducer: ChainReducer<isize2, R>
+    reducer: ChainReducer<isize2, R>,
+    pub size_limit: usize
 }
 
 impl<'a, R> KRTotComplexReducer<'a, R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub(crate) fn new(complex: &'a KRTotComplex<R>) -> Self { 
+    pub fn new(complex: &'a KRTotComplex<R>) -> Self { 
         let reducer = ChainReducer::new(
             complex.support(), 
             complex.d_deg(), 
             false
         );
-        Self { complex, reducer }
+        let size_limit = usize::MAX;
+        Self { complex, reducer, size_limit }
     }
 
-    pub(crate) fn reduce(&mut self) { 
+    pub fn reduce(&mut self) { 
         info!("reduce C_tot (q: {})..", self.complex.q_deg());
 
         for idx in self.complex.support() {
@@ -70,11 +72,19 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     fn reduce_at(&mut self, idx: isize2, deep: bool) { 
-        let to_idx = idx + self.complex.d_deg();
-        
-        info!("d {idx} -> {to_idx}");
-        info!("  size:    {:?}", self.d_size(idx).unwrap());
+        assert!(self.reducer.matrix(idx).is_some());
 
+        let to_idx = idx + self.complex.d_deg();
+        let size = self.d_size(idx).unwrap();
+
+        info!("d {idx} -> {to_idx}");
+        info!("  size:    {:?}", size);
+
+        if usize::max(size.0, size.1) > self.size_limit {
+            info!("  skipped.");
+            return;
+        }
+        
         self.reducer.reduce_at(idx, deep);
 
         info!("  reduced: {:?}", self.d_size(idx).unwrap());
