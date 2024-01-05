@@ -1,10 +1,12 @@
 use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
+use cartesian::cartesian;
 use delegate::delegate;
 
+use itertools::Itertools;
 use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, isize3, Grid2, ChainComplex2, DisplayTable};
+use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, Grid2, DisplayTable, ChainComplexTrait, DisplayForGrid};
 
 use super::tot_cpx::KRTotComplex;
 use super::base::extend_ends_bounded;
@@ -25,36 +27,66 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
-        let n = data.dim() as isize;
-        let range = (range.0, extend_ends_bounded(range.1, 1, 0..=n));
+        info!("H (q: {}, h: {:?}, v: {:?})..", q, range.0, range.1);
 
-        let complex = KRTotComplex::new_restr(
-            data.clone(), 
-            q, 
-            range
-        ).reduced();
+        let support = cartesian!(
+            range.0.clone(), 
+            range.1.clone()
+        ).map(isize2::from);
 
-        info!("H (q: {})..", q);
+        let complex = Self::make_cpx(data, q, range.clone());
+        let complex = complex.reduced();
 
         let inner = Grid2::generate(
-            complex.support(), 
-            |idx| Self::homology_at(&data, q, &complex, idx)
+            support,
+            |idx| complex.homology_at(idx, false)
         );
 
-        info!("H (q: {})\n{}", q, inner.display_table("h", "v"));
+        info!("H (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, inner.display_table("h", "v"));
 
         Self { q, inner }
     }
 
-    fn homology_at(data: &KRCubeData<R>, q: isize, complex: &ChainComplex2<R>, idx: isize2) -> HomologySummand<R> { 
-        let (i, j) = idx.into();
-        let g = isize3(q, i, j);
+    pub fn try_partial(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>), size_limit: usize) -> Grid2<Option<HomologySummand<R>>> {
+        info!("H (q: {}, h: {:?}, v: {:?})..", q, range.0, range.1);
 
-        if data.is_triv_inner(g) { 
-            HomologySummand::zero()
-        } else { 
-            complex.homology_at(idx, false)
-        }
+        let support = cartesian!(
+            range.0.clone(), 
+            range.1.clone()
+        ).map(isize2::from);
+
+        let complex = Self::make_cpx(data, q, range.clone());
+        let complex = complex.reduced_with_limit(size_limit);
+
+        let d_deg = complex.d_deg();
+        let grid = Grid2::generate(
+            support,
+            |idx| (complex.rank(idx - d_deg) <= size_limit 
+                && complex.rank(idx)         <= size_limit 
+                && complex.rank(idx + d_deg) <= size_limit).then(|| 
+                    complex.homology_at(idx, false)
+                )
+        );
+
+        info!("H (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, 
+            display_table(&grid, "h", "v", |h| h.as_ref().map(|h| h.display_for_grid()).unwrap_or("?".to_string()))
+        );
+
+        grid
+    }
+
+    fn make_cpx(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> KRTotComplex<R> { 
+        let n = data.dim() as isize;
+        let c_range = (
+            range.0.clone(), 
+            extend_ends_bounded(range.1.clone(), 1, 0..=n)
+        );
+        
+        KRTotComplex::new_restr(
+            data.clone(), 
+            q, 
+            c_range
+        )
     }
 
     pub fn q_deg(&self) -> isize { 
@@ -85,6 +117,22 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn index(&self, index: (isize, isize)) -> &Self::Output { 
         self.get(index.into())
     }
+}
+
+// TODO to be removed
+fn display_table<E, F>(grid: &Grid2<E>, label0: &str, label1: &str, f: F) -> String
+where F: Fn(&E) -> String {
+    use yui::util::format::table;
+
+    let head = format!("{}\\{}", label1, label0);
+    let cols = grid.support().map(|e| e.0).unique().sorted();
+    let rows = grid.support().map(|e| e.1).unique().sorted().rev();
+
+    let str = table(head, rows, cols, |&j, &i| {
+        f(grid.get(isize2(i, j)))
+    });
+
+    str
 }
 
 #[cfg(test)]

@@ -10,13 +10,13 @@ use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui::bitseq::BitSeq;
 use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::utils::ChainReducer;
 use yui_homology::{isize2, GridTrait, GridIter, Grid2, ChainComplexTrait, RModStr, DisplayForGrid, rmod_str_symbol, DisplayTable, ChainComplex2};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::{SpVec, SpMat};
 
 use super::base::KRChain;
 use super::data::KRCubeData;
+use super::tot_cpx_red::KRTotComplexReducer;
 use super::tot_cube::KRTotCube;
 
 #[derive(Default)]
@@ -72,7 +72,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
-        info!("C (q: {}, range: {:?})..", q, range);
+        info!("C (q: {}, h: {:?}, v: {:?})..", q, range.0, range.1);
 
         let cube = KRTotCube::new_restr(
             data.clone(), 
@@ -92,7 +92,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             |idx| Self::summand(&data, &cube, idx)
         );
 
-        info!("C (q: {})\n{}", q, summands.display_table("h", "v"));
+        info!("C (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, summands.display_table("h", "v"));
 
         Self { q, data, cube, summands }
     }
@@ -167,7 +167,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         ))
     }
 
-    fn d_matrix_for(&self, from: isize2, q: &SpMat<R>) -> SpMat<R> { 
+    pub(crate) fn d_matrix_for(&self, from: isize2, q: &SpMat<R>) -> SpMat<R> { 
         assert_eq!(self.rank(from), q.nrows());
 
         let to = from + self.d_deg();
@@ -202,46 +202,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn reduced(&self) -> ChainComplex2<R> {
-        info!("reduce C_tot (q: {})..", self.q);
+        self.reduced_with_limit(usize::MAX)
+    }
 
-        let mut reducer = ChainReducer::new(self.support(), self.d_deg(), false);
-
-        for idx in self.support() {
-            let to_idx = idx + self.d_deg();
-
-            info!("d {idx} -> {to_idx}");
-
-            // MEMO: The 'next matrix' will serve as trans-back for the current one. 
-            // This is to reduce the input dim without `with_trans = true`.
-            
-            let d = if let Some(q) = reducer.matrix(idx) {
-                self.d_matrix_for(idx, &q)
-            } else { 
-                self.d_matrix(idx)
-            };
-
-            info!("  size:    {:?}", d.shape());
-
-            if self.is_supported(to_idx) { 
-                let m = d.nrows();
-                reducer.set_matrix(to_idx, SpMat::id(m));
-            }
-
-            reducer.set_matrix(idx, d);
-            reducer.reduce_at(idx, false);
-
-            info!("  reduced: {:?}", reducer.matrix(idx).unwrap().shape());
-        }
-
-        info!("second run..");
-        
-        reducer.reduce_all(true);
-
-        let red = reducer.into_complex();
-
-        info!("reduced C (q: {})\n{}", self.q, red.display_table("h", "v"));
-
-        red
+    pub fn reduced_with_limit(&self, size_limit: usize) -> ChainComplex2<R> {
+        let mut reducer = KRTotComplexReducer::new(self);
+        reducer.size_limit = size_limit;
+        reducer.reduce();
+        reducer.into_complex()
     }
 }
 
@@ -307,7 +275,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.d_matrix_for(idx, &q)
     }
 }
-
 
 #[cfg(test)]
 mod tests { 
