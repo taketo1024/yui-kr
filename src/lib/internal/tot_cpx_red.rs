@@ -75,23 +75,24 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         assert!(self.reducer.matrix(idx).is_some());
 
         let to_idx = idx + self.complex.d_deg();
-        let size = self.d_size(idx).unwrap();
+        let d = self.reducer.matrix(idx).unwrap();
+
+        if d.is_zero() { 
+            return;
+        }
 
         info!("d {idx} -> {to_idx}");
-        info!("  size:    {:?}", size);
+        info!("  size:    {:?}", d.shape());
 
-        if usize::max(size.0, size.1) > self.size_limit {
+        if usize::max(d.nrows(), d.ncols()) > self.size_limit {
             info!("  skipped.");
             return;
         }
         
         self.reducer.reduce_at(idx, deep);
 
-        info!("  reduced: {:?}", self.d_size(idx).unwrap());
-    }
-
-    fn d_size(&self, idx: isize2) -> Option<(usize, usize)> { 
-        self.reducer.matrix(idx).map(|d| d.shape())
+        let d = self.reducer.matrix(idx).unwrap();
+        info!("  reduced: {:?}", d.shape());
     }
 
     pub fn into_complex(self) -> ChainComplex2<R> { 
