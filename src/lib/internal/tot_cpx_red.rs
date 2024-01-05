@@ -48,10 +48,20 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     fn setup(&mut self, idx: isize2) {
         let to_idx = idx + self.complex.d_deg();
-        let m = self.complex.rank(to_idx);
+
+        let size = { 
+            let m = self.complex.rank(to_idx);
+            let n = if let Some(q) = self.reducer.matrix(idx) { 
+                q.ncols()
+            } else { 
+                self.complex.rank(idx)
+            };
+            (m, n)
+        };
             
-        if self.complex.rank(idx).is_zero() { 
-            self.reducer.set_matrix(idx, SpMat::zero((m, 0)));
+        if size.0.is_zero() || size.1.is_zero() || usize::max(size.0, size.1) > self.size_limit { 
+            let d = SpMat::zero(size);
+            self.reducer.set_matrix(idx, d);
             return;
         }
 
@@ -67,6 +77,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.reducer.set_matrix(idx, d);
 
         if self.complex.is_supported(to_idx) { 
+            let m = size.0;
             self.reducer.set_matrix(to_idx, SpMat::id(m));
         }
     }
