@@ -3,9 +3,10 @@ use std::sync::Arc;
 use cartesian::cartesian;
 use delegate::delegate;
 
+use itertools::Itertools;
 use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, Grid2, DisplayTable};
+use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, Grid2, DisplayTable, ChainComplexTrait, DisplayForGrid};
 
 use super::tot_cpx::KRTotComplex;
 use super::base::extend_ends_bounded;
@@ -28,11 +29,50 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Self { 
         info!("H (q: {}, h: {:?}, v: {:?})..", q, range.0, range.1);
 
-        let inner = Self::make_homol(data, q, range.clone());
+        let support = cartesian!(
+            range.0.clone(), 
+            range.1.clone()
+        ).map(isize2::from);
+
+        let complex = Self::make_cpx(data, q, range.clone());
+        let complex = complex.reduced();
+
+        let inner = Grid2::generate(
+            support,
+            |idx| complex.homology_at(idx, false)
+        );
 
         info!("H (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, inner.display_table("h", "v"));
 
         Self { q, inner }
+    }
+
+    pub fn try_partial(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>), size_limit: usize) -> Grid2<Option<HomologySummand<R>>> {
+        info!("H (q: {}, h: {:?}, v: {:?})..", q, range.0, range.1);
+
+        let support = cartesian!(
+            range.0.clone(), 
+            range.1.clone()
+        ).map(isize2::from);
+
+        let complex = Self::make_cpx(data, q, range.clone());
+        let complex = complex.reduced_with_limit(size_limit);
+
+        let d_deg = complex.d_deg();
+        let grid = Grid2::generate(
+            support,
+            |idx| (complex.rank(idx - d_deg) <= size_limit 
+                && complex.rank(idx)         <= size_limit 
+                && complex.rank(idx + d_deg) <= size_limit).then(|| 
+                    complex.homology_at(idx, false)
+                )
+        );
+
+        info!("H (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, 
+            display_table(&grid, "h", "v", |h| h.as_ref().map(|h| h.display_for_grid()).unwrap_or("?".to_string()))
+        );
+
+        grid
     }
 
     fn make_cpx(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> KRTotComplex<R> { 
@@ -46,24 +86,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             data.clone(), 
             q, 
             c_range
-        )
-    }
-
-    fn make_homol(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> Grid2<HomologySummand<R>> {
-        let support = cartesian!(
-            range.0.clone(), 
-            range.1.clone()
-        ).map(isize2::from);
-
-        let complex = Self::make_cpx(
-            data.clone(), 
-            q, 
-            range.clone()
-        ).reduced();
-
-        Grid2::generate(
-            support,
-            |idx| complex.homology_at(idx, false)
         )
     }
 
@@ -95,6 +117,22 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn index(&self, index: (isize, isize)) -> &Self::Output { 
         self.get(index.into())
     }
+}
+
+// TODO to be removed
+fn display_table<E, F>(grid: &Grid2<E>, label0: &str, label1: &str, f: F) -> String
+where F: Fn(&E) -> String {
+    use yui::util::format::table;
+
+    let head = format!("{}\\{}", label1, label0);
+    let cols = grid.support().map(|e| e.0).unique().sorted();
+    let rows = grid.support().map(|e| e.1).unique().sorted().rev();
+
+    let str = table(head, rows, cols, |&j, &i| {
+        f(grid.get(isize2(i, j)))
+    });
+
+    str
 }
 
 #[cfg(test)]
