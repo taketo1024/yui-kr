@@ -5,30 +5,19 @@ use yui_kr::result::QAPoly;
 mod app;
 
 #[test]
-fn check_homfly_10() -> Result<(), Box<dyn std::error::Error>> { 
-    check_homfly("homfly-10")
-}
-
-#[test]
-fn check_homfly_11() -> Result<(), Box<dyn std::error::Error>> { 
-    check_homfly("homfly-11")
-}
-
-fn check_homfly(target: &str) -> Result<(), Box<dyn std::error::Error>>  {
-    use log::info;
+fn check_homfly() -> Result<(), Box<dyn std::error::Error>> { 
     use app::utils::*;
 
     let proj_dir = std::env!("CARGO_MANIFEST_DIR");
     let data_dir = format!("{proj_dir}/data/");
-    let mut reader = csv::Reader::from_path(&format!("{data_dir}/{target}.csv"))?;
+    let mut reader = csv::Reader::from_path(&format!("{data_dir}/homfly.csv"))?;
 
     for r in reader.records() { 
         let r = r?;
         let name = &r[0];
 
         if !result_exists(name) { 
-            info!("skip: {name}");
-            continue
+            panic!("result for {name} does not exist.");
         }
 
         let data = &r[1];
