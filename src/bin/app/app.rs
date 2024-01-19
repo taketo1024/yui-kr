@@ -124,10 +124,11 @@ impl App {
 
     pub fn compute(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> { 
         let target = &self.args.target;
+        let file = File::Result(target);
 
-        if !self.args.force_compute && result_exists(target) { 
+        if !self.args.force_compute && file.exists() { 
             info!("result exists: {}", target);
-            let res = load_result(target)?;
+            let res: KRHomologyStr = file.read()?;
             let res = if self.args.mirror { res.mirror() } else { res };
             return Ok(res)
         }

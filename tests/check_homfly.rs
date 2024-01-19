@@ -1,3 +1,4 @@
+use yui_kr::KRHomologyStr;
 use yui_kr::result::QAPoly;
 
 #[path = "../src/bin/app/mod.rs"]
@@ -15,8 +16,9 @@ fn check_homfly() -> Result<(), Box<dyn std::error::Error>> {
     for r in reader.records() { 
         let r = r?;
         let name = &r[0];
+        let file = File::Result(name);
 
-        if !result_exists(name) { 
+        if !file.exists() { 
             panic!("result for {name} does not exist.");
         }
 
@@ -24,7 +26,7 @@ fn check_homfly() -> Result<(), Box<dyn std::error::Error>> {
         let data = data.replace(";", ",");
         let answer = parse_homfly(&data)?;
 
-        let result = load_result(name)?;
+        let result: KRHomologyStr = file.read()?;
         let poly = result.homfly_poly();
 
         assert_eq!(answer, poly);

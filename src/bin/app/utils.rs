@@ -1,8 +1,5 @@
 use super::app::{AppErr, err};
 use log::info;
-use yui_kr::KRHomologyStr;
-
-const RESULT_DIR: &str = "results";
 
 pub fn measure<F, Res>(proc: F) -> (Res, std::time::Duration) 
 where F: FnOnce() -> Res { 
@@ -28,39 +25,14 @@ where F: FnOnce() -> Result<R, Box<dyn std::error::Error>> + std::panic::UnwindS
     })
 }
 
-pub fn result_exists(name: &str) -> bool {
-    File::Result(name).exists()
-}
+const RESULT_DIR: &str = "results";
 
-pub fn load_result(name: &str) -> Result<KRHomologyStr, Box<dyn std::error::Error>> {
-    File::Result(name).read()
-}
-
-pub fn save_result(name: &str, data: &KRHomologyStr) -> Result<(), Box<dyn std::error::Error>> { 
-    let file = File::Result(name);
-
-    if let Ok(prev) = load_result(name) { 
-        if &prev == data { 
-            info!("data exists: {}", file.path());
-            return Ok(())
-        } else { 
-            info!("save (overwrite): {}", file.path());
-        }
-    } else { 
-        info!("save: {}", file.path());
-    }
-
-    file.write(data)?;
-
-    Ok(())
-}
-
-enum File<'a> { 
+pub enum File<'a> { 
     Result(&'a str)
 }
 
 impl<'a> File<'a> { 
-    fn dir(&self) -> String { 
+    pub fn dir(&self) -> String { 
         let proj_dir = std::env!("CARGO_MANIFEST_DIR");
         let dir = match self {
             File::Result(_) => RESULT_DIR
@@ -68,7 +40,7 @@ impl<'a> File<'a> {
         format!("{proj_dir}/{dir}")
     }
 
-    fn path(&self) -> String { 
+    pub fn path(&self) -> String { 
         let dir = self.dir();
         let name = match self {
             File::Result(name) => name,
@@ -77,19 +49,24 @@ impl<'a> File<'a> {
         format!("{dir}/{name}.{ext}")
     }
 
-    fn exists(&self) -> bool { 
+    pub fn exists(&self) -> bool {
         std::path::Path::new(&self.path()).exists()
     }
     
-    fn read<D>(&self) -> Result<D, Box<dyn std::error::Error>>
+    pub fn read<D>(&self) -> Result<D, Box<dyn std::error::Error>>
     where for<'de> D: serde::Deserialize<'de> { 
         let str = std::fs::read_to_string(&self.path())?;
         let data = serde_json::from_str::<D>(&str)?;
         Ok(data)
     }
     
-    fn write<D>(&self, data: D) -> std::io::Result<()>
+    pub fn write<D>(&self, data: D) -> std::io::Result<()>
     where D: serde::Serialize {
+        if self.exists() { 
+            info!("write (overwrite): {}", self.path());
+        } else { 
+            info!("write: {}", self.path());
+        }    
         let json = serde_json::to_string(&data)?;
         std::fs::write(&self.path(), &json)?;
         Ok(())
@@ -100,17 +77,18 @@ impl<'a> File<'a> {
 #[cfg(not(feature = "batch_test"))]
 mod tests { 
     use yui::hashmap;
+    use yui_kr::KRHomologyStr;
     use super::*;
 
     #[test]
     fn data_exists() { 
-        assert!( result_exists("3_1"));
-        assert!(!result_exists("3_2"));
+        assert!( File::Result("3_1").exists());
+        assert!(!File::Result("3_2").exists());
     }
 
     #[test]
     fn load() { 
-        let res = load_result("3_1");
+        let res: Result<KRHomologyStr, _> = File::Result("3_1").read();
         
         assert!(res.is_ok());
         assert_eq!(res.unwrap(), KRHomologyStr::from(hashmap!{ 
