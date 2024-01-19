@@ -21,14 +21,14 @@ pub struct CliArgs {
     #[arg(short, long)]
     pub mirror: bool,
 
-    #[arg(short, long, default_value = "poly-table")]
+    #[arg(short, long, default_value = "poincare")]
     pub format: Output,
 
     #[arg(short = 'F', long)]
     pub force_compute: bool,
 
-    #[arg(long, default_value = "default")]
-    pub mode: KRCalcMode,
+    #[arg(short, long, default_value = "default")]
+    pub compute_mode: KRCalcMode,
 
     #[arg(short, long)]
     pub limit: Option<usize>,
@@ -52,10 +52,9 @@ pub enum IntType {
 #[derive(ValueEnum, Clone, Copy, Default, Debug)]
 pub enum Output { 
     #[default]
-    PolyTable, 
-    Delta,
     Poincare,
-    Homfly
+    Delta,
+    Table, 
 }
 
 #[derive(Debug, Display)]
@@ -157,7 +156,7 @@ impl App {
     where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
         let mut calc = KRCalc::init(&self.args.target, link);
         
-        calc.mode = self.args.mode;
+        calc.mode = self.args.compute_mode;
 
         if let Some(limit) = self.args.limit { 
             calc.size_limit = limit;
@@ -179,10 +178,9 @@ impl App {
 
     fn format(&self, res: &KRHomologyStr) -> String { 
         let str = match &self.args.format {
-            Output::Delta     => res.delta_table(),
-            Output::PolyTable => res.qpoly_table(),
-            Output::Poincare  => res.poincare_poly().to_string(),
-            Output::Homfly    => res.homfly_poly().to_string(),
+            Output::Poincare => res.poincare_poly().to_string(),
+            Output::Delta    => res.delta_table(),
+            Output::Table    => res.qpoly_table(),
         };
 
         if res.is_determined() { 
