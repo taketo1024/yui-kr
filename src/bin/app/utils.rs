@@ -25,17 +25,20 @@ where F: FnOnce() -> Result<R, Box<dyn std::error::Error>> + std::panic::UnwindS
     })
 }
 
-const RESULT_DIR: &str = "results";
+const RES_DIR: &str = "results";
+const TMP_DIR: &str = "tmp";
 
 pub enum File<'a> { 
-    Result(&'a str)
+    Result(&'a str),
+    Tmp(&'a str)
 }
 
 impl<'a> File<'a> { 
     pub fn dir(&self) -> String { 
         let proj_dir = std::env!("CARGO_MANIFEST_DIR");
         let dir = match self {
-            File::Result(_) => RESULT_DIR
+            File::Result(_) => RES_DIR,
+            File::Tmp(_)    => TMP_DIR,
         };
         format!("{proj_dir}/{dir}")
     }
@@ -43,7 +46,8 @@ impl<'a> File<'a> {
     pub fn path(&self) -> String { 
         let dir = self.dir();
         let name = match self {
-            File::Result(name) => name,
+            File::Result(name) | 
+            File::Tmp(name) => name,
         };
         let ext = "json";
         format!("{dir}/{name}.{ext}")
@@ -62,6 +66,12 @@ impl<'a> File<'a> {
     
     pub fn write<D>(&self, data: D) -> std::io::Result<()>
     where D: serde::Serialize {
+        let dir = self.dir();
+        let dir_path = std::path::Path::new(&dir);
+        if !dir_path.exists() { 
+            std::fs::create_dir(&dir_path)?;
+        }
+
         if self.exists() { 
             info!("write (overwrite): {}", self.path());
         } else { 
@@ -69,6 +79,14 @@ impl<'a> File<'a> {
         }    
         let json = serde_json::to_string(&data)?;
         std::fs::write(&self.path(), &json)?;
+        Ok(())
+    }
+
+    pub fn delete(&self) -> std::io::Result<()> { 
+        if self.exists() { 
+            info!("delete: {}", self.path());
+            std::fs::remove_file(&self.path())?;
+        }
         Ok(())
     }
 }

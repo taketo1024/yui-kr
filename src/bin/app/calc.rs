@@ -10,6 +10,8 @@ use yui_kr::internal::data::{KRCubeData, range2};
 use yui_kr::internal::tot_homol::KRTotHomol;
 use yui_kr::KRHomologyStr;
 
+use super::utils::File;
+
 #[derive(Clone, Copy, Default, Debug, clap::ValueEnum)]
 pub enum KRCalcMode { 
     #[default] Default, PerCol, PerItem
@@ -38,15 +40,20 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn load_if_exists(&mut self) -> Result<(), Box<dyn std::error::Error>> { 
-        let file = File::Result(&self.name);
+        let file = File::Tmp(&self.name);
         if file.exists() { 
             self.result = file.read()?;
         }
         Ok(())
     }
 
+    pub fn save_current(&self) -> Result<(), Box<dyn std::error::Error>> {
+        File::Tmp(&self.name).write(&self.result)?;
+        Ok(())
+    }
+
     pub fn clear(&self) -> Result<(), Box<dyn std::error::Error>> { 
-        File::Result(&self.name).delete()?;
+        File::Tmp(&self.name).delete()?;
         Ok(())
     }
 
@@ -58,19 +65,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.result
     }
 
-    fn prepare_dir(&self) -> Result<(), Box<dyn std::error::Error>> { 
-        let dir = File::working_dir();
-        let path = std::path::Path::new(&dir);
-        if !path.exists() { 
-            std::fs::create_dir(&path)?;
-        }
-        Ok(())
-    }
-
     pub fn compute(&mut self) -> Result<(), Box<dyn std::error::Error>> { 
         if self.save_progress { 
-            self.prepare_dir()?;
-            File::Result(&self.name).write(&self.result)?;
+            self.save_current()?;
         }
 
         info!("compute KRHomology.");
@@ -110,7 +107,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }
 
         if self.save_progress { 
-            File::Result(&self.name).write(&self.result)?;
+            self.save_current()?;
         }
 
         Ok(())
@@ -148,60 +145,5 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
                 (q, list)
             )
         }).collect()
-    }
-}
-
-enum File<'a> { 
-    Result(&'a str)
-}
-
-impl<'a> File<'a> { 
-    fn working_dir() -> String { 
-        let proj_dir = std::env!("CARGO_MANIFEST_DIR");
-        format!("{proj_dir}/tmp")
-    }
-
-    fn suffix(&self) -> &str { 
-        match self { 
-            File::Result(_) => "result",
-        }
-    }
-
-    fn path(&self) -> String { 
-        let dir = Self::working_dir();
-        let name = match self {
-            File::Result(name) => name,
-        };
-        let suffix = self.suffix();
-        let ext = "json";
-        format!("{dir}/{name}_{suffix}.{ext}")
-    }
-
-    fn exists(&self) -> bool { 
-        std::path::Path::new(&self.path()).exists()
-    }
-
-    fn read<D>(&self) -> Result<D, Box<dyn std::error::Error>>
-    where for<'de> D: serde::Deserialize<'de> { 
-        info!("load: {}", self.path());
-        let str = std::fs::read_to_string(self.path())?;
-        let data = serde_json::from_str::<D>(&str)?;
-        Ok(data)
-    }
-
-    fn write<D>(&self, data: D) -> std::io::Result<()>
-    where D: serde::Serialize {
-        info!("save: {}", self.path());
-        let json = serde_json::to_string(&data)?;
-        std::fs::write(self.path(), &json)?;
-        Ok(())
-    }
-
-    fn delete(&self) -> std::io::Result<()> { 
-        if self.exists() { 
-            info!("delete: {}", self.path());
-            std::fs::remove_file(&self.path())?;
-        }
-        Ok(())
     }
 }
