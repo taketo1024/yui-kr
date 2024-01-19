@@ -36,12 +36,6 @@ pub struct CliArgs {
     #[arg(short = 'p', long)]
     pub save_progress: bool,
 
-    #[arg(short, long)]
-    pub save_result: bool,
-
-    #[arg(short, long)]
-    pub check_result: bool,
-
     #[arg(long)]
     pub debug: bool
 }
@@ -146,18 +140,6 @@ impl App {
         } else { 
             self.compute_kr_dispatch(&link)?
         };
-
-        if self.args.check_result { 
-            if let Ok(prev) = load_result(target) { 
-                if prev != res { 
-                    err!("Incorrect result for {target}.\nComputed: {res:#?},\nExpected: {prev:#?}")?;
-                }
-            }
-        }
-        
-        if self.args.save_result { 
-            save_result(target, &res)?;
-        }
 
         Ok(res)
     }
