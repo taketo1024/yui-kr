@@ -128,7 +128,7 @@ impl App {
         Ok(output)
     }
 
-    fn compute(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> { 
+    pub fn compute(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> { 
         let target = &self.args.target;
 
         if !self.args.force_compute && result_exists(target) { 
