@@ -60,6 +60,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     pub(crate) fn new_no_excl(link: &Link) -> Self { 
+        assert!(link.is_knot(), "only knots are supported.");
+
         let n = link.crossing_num();
         let w = link.writhe() as isize;
         let s = link.seifert_circles().len() as isize;

@@ -15,6 +15,9 @@ use super::utils::*;
 pub struct CliArgs {
     pub target: String,
 
+    #[arg(short, long)]
+    pub braid: Option<String>,
+
     #[arg(short, long, default_value = "i64")]
     pub int_type: IntType,
 
@@ -126,7 +129,7 @@ impl App {
         let target = &self.args.target;
         let file = File::Result(target);
 
-        if !self.args.force_compute && file.exists() { 
+        if !self.args.force_compute && self.args.braid.is_none() && file.exists() { 
             info!("result exists: {}", target);
             let res: KRHomologyStr = file.read()?;
             let res = if self.args.mirror { res.mirror() } else { res };
@@ -194,8 +197,13 @@ impl App {
     }
 
     fn make_link(&self) -> Result<Link, Box<dyn std::error::Error>> { 
-        let target = &self.args.target;
-        let braid = Braid::load(target)?;
+        let braid = if let Some(b) = &self.args.braid { 
+            let seq: Vec<i32> = serde_json::from_str(&b)?;
+            Braid::from_iter(seq)
+        } else { 
+            let target = &self.args.target;
+            Braid::load(target)?
+        };
 
         info!("braid: {}", braid);
         info!("braid-len: {}", braid.len());
