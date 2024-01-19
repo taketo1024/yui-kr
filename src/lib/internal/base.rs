@@ -5,8 +5,8 @@ use derive_more::{Display, DebugCustom};
 use itertools::{Itertools, FoldWhile};
 use num_traits::One;
 use yui::{Elem, Sign, PowMod2, GetSign, Ring, RingOps};
-use yui::lc::{Gen, Lc};
-use yui::poly::{PolyN, MultiVar};
+use yui::lc::{Gen, Lc, OrdForDisplay};
+use yui::poly::{PolyN, MultiVar, MonoOrd};
 use yui::bitseq::{BitSeq, Bit};
 
 pub(crate) type KRMono = MultiVar<'x', usize>;
@@ -15,7 +15,7 @@ pub(crate) type KRPoly<R> = PolyN<'x', R>;
 pub type KRChain<R> = Lc<KRGen, R>;
 pub type KRPolyChain<R> = Lc<KRGen, KRPoly<R>>;
 
-#[derive(PartialEq, Eq, Hash, Default, Clone, Display, DebugCustom, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, Hash, Default, Clone, Display, DebugCustom)]
 #[display(fmt = "<{}; {}-{}>", _2, _0, _1)]
 #[debug(fmt = "{}", self)]
 pub struct KRGen(
@@ -27,6 +27,17 @@ pub struct KRGen(
 impl Elem for KRGen {
     fn math_symbol() -> String {
         String::from("")
+    }
+}
+
+impl OrdForDisplay for KRGen {
+    fn cmp_for_display(&self, other: &Self) -> std::cmp::Ordering {
+        // order by priority: v > h > mono
+        BitSeq::cmp(&self.1, &other.1).then_with(||
+            BitSeq::cmp(&self.0, &other.0)
+        ).then_with(||
+            KRMono::cmp_grlex(&self.2, &other.2)
+        )
     }
 }
 
