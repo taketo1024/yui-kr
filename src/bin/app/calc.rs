@@ -6,9 +6,9 @@ use yui::{EucRing, EucRingOps};
 use yui_homology::{GridTrait, RModStr, isize3};
 use yui_link::Link;
 
-use crate::internal::tot_homol::KRTotHomol;
-use crate::KRHomologyStr;
-use crate::internal::data::{KRCubeData, range2};
+use yui_kr::internal::data::{KRCubeData, range2};
+use yui_kr::internal::tot_homol::KRTotHomol;
+use yui_kr::KRHomologyStr;
 
 #[derive(Clone, Copy, Default, Debug, clap::ValueEnum)]
 pub enum KRCalcMode { 

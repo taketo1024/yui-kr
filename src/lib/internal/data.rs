@@ -381,7 +381,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
-pub(crate) fn range<I>(vals: I) -> RangeInclusive<isize>
+pub fn range<I>(vals: I) -> RangeInclusive<isize>
 where I: IntoIterator<Item = isize> { 
     let set = vals.into_iter().collect::<HashSet<_>>();
     let i0 = set.iter().min().cloned().unwrap_or(0);
@@ -389,7 +389,7 @@ where I: IntoIterator<Item = isize> {
     i0..=i1
 }
 
-pub(crate) fn range2<I>(vals: I) -> (RangeInclusive<isize>, RangeInclusive<isize>)
+pub fn range2<I>(vals: I) -> (RangeInclusive<isize>, RangeInclusive<isize>)
 where I: IntoIterator<Item = (isize, isize)> { 
     let set = vals.into_iter().collect::<HashSet<_>>();
     let r0 = range(set.iter().map(|i| i.0));

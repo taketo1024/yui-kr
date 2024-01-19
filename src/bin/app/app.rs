@@ -4,9 +4,9 @@ use clap::{Parser, ValueEnum};
 use derive_more::Display;
 use num_bigint::BigInt;
 use yui::{Ratio, EucRing, EucRingOps};
-use yui_kr::calc::KRCalcMode;
-use yui_kr::{KRHomologyStr, KRCalc};
+use yui_kr::KRHomologyStr;
 use yui_link::{Braid, Link};
+use super::calc::{KRCalc, KRCalcMode};
 use super::utils::*;
 
 #[derive(Parser, Debug, Default)]
