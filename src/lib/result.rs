@@ -8,7 +8,7 @@ use yui::poly::{LPoly, LPoly2, LPoly3, Var3, Var2, Mono};
 
 pub type QPoly = LPoly<'q', i32>;
 pub type QAPoly = LPoly2<'q', 'a', i32>;
-pub type QATPoly = LPoly3<'q', 'a', 't', i32>;
+pub type TQAPoly = LPoly3<'t', 'q', 'a', i32>;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct KRHomologyStr(HashMap<(isize, isize, isize), Option<usize>>);
@@ -95,10 +95,10 @@ impl KRHomologyStr {
         self.delta().len() <= 1
     }
 
-    pub fn poincare_poly(&self) -> QATPoly { 
+    pub fn poincare_poly(&self) -> TQAPoly { 
         self.iter_determined().map(|(idx, &r)| { 
             let &(i, j, k) = idx;
-            let x = Var3::from((i, j, (k - j)/2));
+            let x = Var3::from(((k - j)/2, i, j));
             let r = r as i32;
             (x, r)
         }).collect()
@@ -106,9 +106,9 @@ impl KRHomologyStr {
     
     pub fn homfly_poly(&self) -> QAPoly { 
         self.poincare_poly().into_iter().map(|(x, r)|{
-            let (i, j, k) = x.deg();
+            let (t, i, j) = x.deg();
             let x = Var2::from((i, j)); // q^i a^j
-            let r = if k.is_even() { r } else { -r }; // t ↦ -1
+            let r = if t.is_even() { r } else { -r }; // t ↦ -1
             (x, r)
         }).collect::<QAPoly>()
     }
