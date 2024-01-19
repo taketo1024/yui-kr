@@ -23,7 +23,7 @@ debug = true
 overflow-checks = true
 
 [dependencies]
-yui  =         { git = "https://github.com/taketo1024/yui", branch = "develop" }
+yui  =         { git = "https://github.com/taketo1024/yui", branch = "develop", features = ["tex"]}
 yui-link =     { git = "https://github.com/taketo1024/yui", branch = "develop" }
 yui-matrix =   { git = "https://github.com/taketo1024/yui", branch = "develop" }
 yui-homology = { git = "https://github.com/taketo1024/yui", branch = "develop" }

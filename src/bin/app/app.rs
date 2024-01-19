@@ -3,7 +3,7 @@ use log::{info, error};
 use clap::{Parser, ValueEnum};
 use derive_more::Display;
 use num_bigint::BigInt;
-use yui::{Ratio, EucRing, EucRingOps};
+use yui::{Ratio, EucRing, EucRingOps, TeX};
 use yui_kr::KRHomologyStr;
 use yui_link::{Braid, Link};
 use super::calc::{KRCalc, KRCalcMode};
@@ -53,6 +53,7 @@ pub enum IntType {
 pub enum Output { 
     #[default]
     Poincare,
+    PoincareTex,
     Delta,
     Table, 
 }
@@ -178,9 +179,10 @@ impl App {
 
     fn format(&self, res: &KRHomologyStr) -> String { 
         let str = match &self.args.format {
-            Output::Poincare => res.poincare_poly().to_string(),
-            Output::Delta    => res.delta_table(),
-            Output::Table    => res.qpoly_table(),
+            Output::Poincare    => res.poincare_poly().to_string(),
+            Output::PoincareTex => res.poincare_poly().to_tex_string(),
+            Output::Delta => res.delta_table(),
+            Output::Table => res.qpoly_table(),
         };
 
         if res.is_determined() { 
