@@ -20,8 +20,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn new(complex: &'a KRTotComplex<R>) -> Self { 
         let reducer = ChainReducer::new(
             complex.support(), 
-            complex.d_deg(), 
-            false
+            complex.d_deg()
         );
         let size_limit = usize::MAX;
         Self { complex, reducer, size_limit }
@@ -61,7 +60,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             
         if size.0.is_zero() || size.1.is_zero() || usize::max(size.0, size.1) > self.size_limit { 
             let d = SpMat::zero(size);
-            self.reducer.set_matrix(idx, d);
+            self.reducer.set_matrix(idx, d, false);
             return;
         }
 
@@ -74,11 +73,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             self.complex.d_matrix(idx)
         };
 
-        self.reducer.set_matrix(idx, d);
+        self.reducer.set_matrix(idx, d, false);
 
         if self.complex.is_supported(to_idx) { 
             let m = size.0;
-            self.reducer.set_matrix(to_idx, SpMat::id(m));
+            self.reducer.set_matrix(to_idx, SpMat::id(m), false);
         }
     }
 
