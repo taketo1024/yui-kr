@@ -23,21 +23,21 @@ debug = true
 overflow-checks = true
 
 [dependencies]
-yui  =         { path = "../yui/yui", features = ["tex"] }
-yui-link =     { path = "../yui/yui-link" }
-yui-matrix =   { path = "../yui/yui-matrix" }
-yui-homology = { path = "../yui/yui-homology" }
-# yui  =         { git = "https://github.com/taketo1024/yui", branch = "develop", features = ["tex"]}
-# yui-link =     { git = "https://github.com/taketo1024/yui", branch = "develop" }
-# yui-matrix =   { git = "https://github.com/taketo1024/yui", branch = "develop" }
-# yui-homology = { git = "https://github.com/taketo1024/yui", branch = "develop" }
+yui  =         { git = "https://github.com/taketo1024/yui", branch = "develop", features = ["tex"]}
+yui-link =     { git = "https://github.com/taketo1024/yui", branch = "develop" }
+yui-matrix =   { git = "https://github.com/taketo1024/yui", branch = "develop" }
+yui-homology = { git = "https://github.com/taketo1024/yui", branch = "develop" }
+# yui  =         { path = "../yui/yui", features = ["tex"] }
+# yui-link =     { path = "../yui/yui-link" }
+# yui-matrix =   { path = "../yui/yui-matrix" }
+# yui-homology = { path = "../yui/yui-homology" }
 num-bigint = "0.4.6"
 num-traits = "0.2.19"
-itertools = "0.11.0"
+itertools = "0.13.0"
 petgraph = "0.6.5"
-derive_more = "0.99.18"
+derive_more = { version = "1.0.0", features = ["display", "debug"] }
 cartesian = "0.2.1"
-delegate = "0.10.0"
+delegate = "0.13.0"
 num-integer = "0.1.46"
 rayon = { version = "1.10.0", optional = true }
 log = "0.4.22"
