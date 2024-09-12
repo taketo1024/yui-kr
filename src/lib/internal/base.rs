@@ -1,7 +1,7 @@
 use std::iter::zip;
 use std::ops::RangeInclusive;
 
-use derive_more::{Display, DebugCustom};
+use derive_more::{Display, Debug};
 use itertools::{Itertools, FoldWhile};
 use num_traits::One;
 use yui::{Elem, Sign, PowMod2, GetSign, Ring, RingOps};
@@ -15,9 +15,9 @@ pub(crate) type KRPoly<R> = PolyN<'x', R>;
 pub type KRChain<R> = Lc<KRGen, R>;
 pub type KRPolyChain<R> = Lc<KRGen, KRPoly<R>>;
 
-#[derive(PartialEq, Eq, Hash, Default, Clone, Display, DebugCustom)]
-#[display(fmt = "<{}; {}-{}>", _2, _0, _1)]
-#[debug(fmt = "{}", self)]
+#[derive(PartialEq, Eq, Hash, Default, Clone, Display, Debug)]
+#[display("<{}; {}-{}>", _2, _0, _1)]
+#[debug("{}", self)]
 pub struct KRGen(
     pub BitSeq, // h-coords
     pub BitSeq, // v-coords
