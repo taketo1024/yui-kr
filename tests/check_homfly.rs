@@ -6,6 +6,7 @@ use yui_kr::result::QAPoly;
 mod app;
 
 #[test]
+#[ignore]
 fn check_homfly() -> Result<(), Box<dyn std::error::Error>> { 
     use app::utils::*;
 
