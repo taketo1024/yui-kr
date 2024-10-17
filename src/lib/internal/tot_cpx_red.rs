@@ -2,7 +2,7 @@ use log::info;
 use num_traits::Zero;
 use yui::{EucRing, EucRingOps};
 use yui_homology::utils::ChainReducer;
-use yui_homology::{isize2, DisplayTable, ChainComplex2, GridTrait, ChainComplexTrait};
+use yui_homology::{isize2, ChainComplexTrait, DisplayTable, GenericChainComplex2, GridTrait};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::SpMat;
 
@@ -105,7 +105,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         info!("  reduced: {:?}", d.shape());
     }
 
-    pub fn into_complex(self) -> ChainComplex2<R> { 
+    pub fn into_complex(self) -> GenericChainComplex2<R> { 
         let red = self.reducer.into_complex();
 
         info!("reduced C (q: {})\n{}", self.complex.q_deg(), red.display_table("h", "v"));

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use num_traits::One;
 use yui::{Ring, RingOps};
-use yui_homology::{XChainComplex, Grid1, XModStr};
+use yui_homology::{ChainComplex, Grid1, Summand};
 use yui::bitseq::BitSeq;
 
 use super::base::{KRPoly, KRMono, KRGen, KRChain, KRPolyChain, sign_between, combine, decombine};
@@ -98,13 +98,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.d(&KRChain::from(e.clone()))
     }
 
-    pub fn into_complex(self) -> XChainComplex<KRGen, R> {
+    pub fn into_complex(self) -> ChainComplex<KRGen, R> {
         let n = self.dim() as isize;
         let summands = Grid1::generate(0..=n, |i| { 
             let gens = self.gens(i as usize);
-            XModStr::free(gens)
+            Summand::from_raw_gens(gens)
         });
-        XChainComplex::new(summands, 1, move |_, z| {
+        ChainComplex::new(summands, 1, move |_, z| {
             self.d(z)
         })
     }
@@ -114,7 +114,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 mod tests {
     use itertools::Itertools;
     use num_traits::{One, Zero};
-    use yui_homology::{RModStr, ChainComplexCommon};
+    use yui_homology::{SummandTrait, ChainComplexTrait};
     use yui::Ratio;
     use yui_link::Link;
     use yui::util::macros::hashmap;
@@ -318,7 +318,7 @@ mod tests {
         let cube = make_cube(&l, q, v);
 
         let c = cube.into_complex();
-        let h = c.homology(false);
+        let h = c.homology();
 
         assert_eq!(h[0].rank(), 0);
         assert_eq!(h[1].rank(), 0);
@@ -330,7 +330,7 @@ mod tests {
         let q = 1;
         let cube = make_cube(&l, q, v);
         let c = cube.into_complex();
-        let h = c.homology(false);
+        let h = c.homology();
         
         assert_eq!(h[0].rank(), 0);
         assert_eq!(h[1].rank(), 0);

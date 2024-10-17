@@ -4,7 +4,7 @@ use delegate::delegate;
 
 use num_traits::Zero;
 use yui::{Ring, RingOps};
-use yui_homology::{ChainComplexTrait, GridTrait, GridIter, XChainComplex, XChainComplexSummand, Grid1, XModStr};
+use yui_homology::{ChainComplexTrait, GridTrait, GridIter, ChainComplex, Summand, Grid1};
 use yui_matrix::sparse::SpMat;
 use yui::bitseq::BitSeq;
 
@@ -20,7 +20,7 @@ pub struct KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     q: isize,
     excl: Arc<KRHorExcl<R>>,
-    inner: XChainComplex<KRGen, R>
+    inner: ChainComplex<KRGen, R>
 } 
 
 impl<R> KRHorComplex<R>
@@ -42,15 +42,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         Self { q, excl, inner }
     }
 
-    fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>, h_range: RangeInclusive<isize>) -> XChainComplex<KRGen, R> { 
+    fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>, h_range: RangeInclusive<isize>) -> ChainComplex<KRGen, R> { 
         let summands = Grid1::generate(h_range.clone(), |i| { 
             let gens = cube.gens(i as usize).filter(|v| 
                 excl.should_remain(v)
             );
-            XModStr::free(gens)
+            Summand::from_raw_gens(gens)
         });
         
-        XChainComplex::new(summands, 1, move |i, e| {
+        ChainComplex::new(summands, 1, move |i, e| {
             if i + 1 <= *h_range.end() { 
                 excl.d(e)
             } else { 
@@ -59,7 +59,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         })
     }
 
-    pub fn reduced(&self) -> XChainComplex<KRGen, R> {
+    pub fn reduced(&self) -> ChainComplex<KRGen, R> {
         // info!("reduce C_hor (q: {}, v: {:?})..", self.q, self.v_coords);
 
         let red = self.inner.reduced();
@@ -81,7 +81,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 impl<R> GridTrait<isize> for KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     type Itr = GridIter<isize>;
-    type Output = XChainComplexSummand<KRGen, R>;
+    type Output = Summand<KRGen, R>;
 
     delegate! { 
         to self.inner { 
@@ -94,7 +94,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> Index<isize> for KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    type Output = XChainComplexSummand<KRGen, R>;
+    type Output = Summand<KRGen, R>;
 
     fn index(&self, i: isize) -> &Self::Output {
         self.get(i)
@@ -125,7 +125,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 #[cfg(test)]
 mod tests { 
-    use yui_homology::{RModStr, ChainComplexCommon};
+    use yui_homology::{SummandTrait, ChainComplexTrait};
     use yui_link::Link;
     use yui::Ratio;
 
@@ -163,7 +163,7 @@ mod tests {
 
         c.check_d_all();
 
-        let h = c.inner.homology(false);
+        let h = c.inner.homology();
         
         assert_eq!(h[0].rank(), 0);
         assert_eq!(h[1].rank(), 0);
@@ -186,7 +186,7 @@ mod tests {
 
         c.check_d_all();
 
-        let h = c.inner.homology(false);
+        let h = c.inner.homology();
         
         assert_eq!(h[0].rank(), 0);
         assert_eq!(h[1].rank(), 0);
@@ -209,7 +209,7 @@ mod tests {
 
         c.check_d_all();
 
-        let h = c.inner.homology(false);
+        let h = c.inner.homology();
         
         assert_eq!(h[0].rank(), 0);
         assert_eq!(h[1].rank(), 0);
@@ -232,7 +232,7 @@ mod tests {
 
         c.check_d_all();
 
-        let h = c.inner.homology(false);
+        let h = c.inner.homology();
         
         assert_eq!(h[0].rank(), 0);
         assert_eq!(h[1].rank(), 0);
@@ -255,7 +255,7 @@ mod tests {
 
         c.check_d_all();
 
-        let h = c.inner.homology(false);
+        let h = c.inner.homology();
         
         assert_eq!(h[0].rank(), 0);
         assert_eq!(h[1].rank(), 0);
