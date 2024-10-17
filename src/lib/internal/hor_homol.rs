@@ -6,7 +6,7 @@ use num_traits::Zero;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui::{EucRing, EucRingOps};
-use yui_homology::{GridTrait, RModStr, XHomologySummand, Grid1};
+use yui_homology::{Grid1, GridTrait, Homology, Summand, SummandTrait};
 use yui_matrix::sparse::SpVec;
 use yui::bitseq::BitSeq;
 
@@ -22,7 +22,7 @@ pub struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     q: isize,
     excl: Arc<KRHorExcl<R>>,
-    inner: Grid1<XHomologySummand<KRGen, R>>
+    inner: Homology<KRGen, R>
 } 
 
 impl<R> KRHorHomol<R>
@@ -42,7 +42,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         // info!("H_hor (q: {}, v: {:?})..", q, v_coords);
 
         let inner = Grid1::generate(h_range, |i|
-            complex.homology_at(i, true)
+            complex.homology_at(i)
         );
 
         // info!("H_hor (q: {}, v: {:?})\n{}", q, v_coords, inner.display_seq("h"));
@@ -103,7 +103,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     pub fn as_chain(&self, i: isize, v_hml: &SpVec<R>) -> KRChain<R> {
         let h = &self.inner[i];
-        let z_exc = h.as_chain(v_hml);
+        let z_exc = h.devectorize(v_hml);
         self.excl.backward(&z_exc, true)
     }
 }
@@ -111,7 +111,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> GridTrait<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Itr = std::vec::IntoIter<isize>;
-    type Output = XHomologySummand<KRGen, R>;
+    type Output = Summand<KRGen, R>;
 
     delegate! { 
         to self.inner { 
@@ -124,7 +124,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> Index<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Output = XHomologySummand<KRGen, R>;
+    type Output = Summand<KRGen, R>;
     
     fn index(&self, index: isize) -> &Self::Output { 
         self.get(index)

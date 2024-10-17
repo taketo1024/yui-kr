@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use delegate::delegate;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, isize3, GridTrait, RModStr, GridIter, HomologySummand, Grid1};
+use yui_homology::{isize2, isize3, GenericSummand, Grid1, GridIter, GridTrait, SummandTrait};
 use yui_link::{Link, Braid};
 
 use crate::KRHomologyStr;
@@ -72,7 +72,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 impl<R> GridTrait<isize3> for KRHomology<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Itr = GridIter<isize3>;
-    type Output = HomologySummand<R>;
+    type Output = GenericSummand<isize2, R>;
 
     delegate! { 
         to self.data { 
@@ -92,7 +92,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> Index<(isize, isize, isize)> for KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Output = HomologySummand<R>;
+    type Output = GenericSummand<isize2, R>;
     fn index(&self, index: (isize, isize, isize)) -> &Self::Output {
         self.get(index.into())
     }

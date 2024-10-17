@@ -3,7 +3,7 @@ use std::sync::Arc;
 use itertools::Itertools;
 use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{GridTrait, RModStr, isize3};
+use yui_homology::{GridTrait, SummandTrait, isize3};
 use yui_link::Link;
 
 use yui_kr::internal::data::{KRCubeData, range2};
