@@ -71,22 +71,26 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> GridTrait<isize3> for KRHomology<R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Itr = GridIter<isize3>;
-    type Output = GenericSummand<isize2, R>;
+    type Support = GridIter<isize3>;
+    type Item = GenericSummand<isize2, R>;
 
     delegate! { 
         to self.data { 
-            fn support(&self) -> Self::Itr;
+            fn support(&self) -> Self::Support;
             fn is_supported(&self, idx: isize3) -> bool;
         }
     }
 
-    fn get(&self, idx: isize3) -> &Self::Output {
+    fn get(&self, idx: isize3) -> &Self::Item {
         if let Some(isize3(q, h, v)) = self.data.to_inner_grad(idx) { 
             &self.q_slices[q][(h, v)]
         } else { 
-            self.q_slices.get_default().get(isize2(0, 0))
+            self.get_default()
         }
+    }
+    
+    fn get_default(&self) -> &Self::Item {
+        self.q_slices.get_default().get(isize2(0, 0))
     }
 }
 
