@@ -1,6 +1,6 @@
 [package]
 name = "yui-kr"
-version = "0.1.0"
+version = "0.3.0"
 authors = ["Taketo Sano <taketo1024@gmail.com>"]
 description = "YUI-KR"
 license = "MIT"
@@ -40,10 +40,10 @@ serde = { version = "1.0.210", features = ["derive", "rc"] }
 serde_json = "1.0.128"
 regex = "1.10.6"
 cfg-if = "1.0.0"
-yui  =         { git = "https://github.com/taketo1024/yui", features = ["tex"] }
-yui-link =     { git = "https://github.com/taketo1024/yui" }
-yui-matrix =   { git = "https://github.com/taketo1024/yui" }
-yui-homology = { git = "https://github.com/taketo1024/yui" }
+yui  =         { git = "https://github.com/taketo1024/yui", version = "0.3.0", features = ["tex"] }
+yui-link =     { git = "https://github.com/taketo1024/yui", version = "0.3.0" }
+yui-matrix =   { git = "https://github.com/taketo1024/yui", version = "0.3.0" }
+yui-homology = { git = "https://github.com/taketo1024/yui", version = "0.3.0" }
 # yui  =         { path = "../yui/yui", features = ["tex"] }
 # yui-link =     { path = "../yui/yui-link" }
 # yui-matrix =   { path = "../yui/yui-matrix" }

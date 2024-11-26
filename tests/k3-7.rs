@@ -1,5 +1,3 @@
-#![cfg(feature = "batch_test")]
-
 mod common;
 use common::test;
 

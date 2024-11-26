@@ -9,8 +9,9 @@ macro_rules! test {
         fn $test() -> Result<(), Box<dyn std::error::Error>> { 
             use common::app::*;
             use common::app::utils::*;
+            use yui_kr::KRHomologyStr;
 
-            let answer = load_result($name)?;
+            let answer: KRHomologyStr = load($name)?;
 
             let args = CliArgs { 
                 target: $name.to_string(), 

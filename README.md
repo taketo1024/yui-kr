@@ -7,16 +7,16 @@ See: K. Nakagane, T. Sano *"Computations of HOMFLY homology"*, [arXiv:2111.00388
 
 * Install [Rust](https://www.rust-lang.org/tools/install).
 * Download [`yui-kr`](https://github.com/taketo1024/yui-kr.git).
-* Build
+* Install `ykr`
 
 ```sh
-$ cargo build -r
+$ cargo install --path .
 ```
 
 * Run
 
 ```sh
-$ ./target/release/ykr <TARGET> [OPTIONS]
+$ ykr <TARGET> [OPTIONS]
 ```
 
 ## Usage 

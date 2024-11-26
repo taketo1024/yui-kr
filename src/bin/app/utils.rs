@@ -25,6 +25,11 @@ where F: FnOnce() -> Result<R, Box<dyn std::error::Error>> + std::panic::UnwindS
     })
 }
 
+pub fn load<D>(name: &str) -> Result<D, Box<dyn std::error::Error>>
+where for<'de> D: serde::Deserialize<'de> { 
+    File::Result(name).read()
+}
+
 const RES_DIR: &str = "results";
 const TMP_DIR: &str = "tmp";
 
