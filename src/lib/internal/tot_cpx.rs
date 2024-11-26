@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
@@ -10,7 +11,7 @@ use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui::bitseq::BitSeq;
 use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, rmod_str_symbol, ChainComplexTrait, DisplayForGrid, DisplayTable, GenericChainComplex2, Grid2, GridIter, GridTrait, SummandTrait};
+use yui_homology::{isize2, rmod_str, ChainComplexTrait, DisplayTable, GenericChainComplex2, Grid2, GridIter, GridTrait, SummandTrait};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::{SpVec, SpMat};
 
@@ -49,10 +50,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 }
 
-impl<R> DisplayForGrid for KRTotComplexSummand<R>
+impl<R> Display for KRTotComplexSummand<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    fn display_for_grid(&self) -> String {
-        rmod_str_symbol(self.rank(), self.tors(), ".")
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        rmod_str(self.rank(), self.tors()).fmt(f)
     }
 }
 
@@ -228,18 +229,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> GridTrait<isize2> for KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Itr = GridIter<isize2>;
-    type Output = KRTotComplexSummand<R>;
+    type Support = GridIter<isize2>;
+    type Item = KRTotComplexSummand<R>;
 
     delegate! { 
         to self.summands { 
-            fn support(&self) -> Self::Itr;
+            fn support(&self) -> Self::Support;
             fn is_supported(&self, i: isize2) -> bool;
+            fn get(&self, i: isize2) -> &Self::Item;
+            fn get_default(&self) -> &Self::Item;
         }
-    }
-
-    fn get(&self, i: isize2) -> &Self::Output { 
-        &self.summands[i]
     }
 }
 

@@ -110,14 +110,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> GridTrait<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Itr = std::vec::IntoIter<isize>;
-    type Output = Summand<KRGen, R>;
+    type Support = std::vec::IntoIter<isize>;
+    type Item = Summand<KRGen, R>;
 
     delegate! { 
         to self.inner { 
-            fn support(&self) -> Self::Itr;
+            fn support(&self) -> Self::Support;
             fn is_supported(&self, i: isize) -> bool;
-            fn get(&self, i: isize) -> &Self::Output;
+            fn get(&self, i: isize) -> &Self::Item;
+            fn get_default(&self) -> &Self::Item;
         }
     }
 }

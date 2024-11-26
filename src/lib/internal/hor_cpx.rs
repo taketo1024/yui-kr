@@ -80,14 +80,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> GridTrait<isize> for KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    type Itr = GridIter<isize>;
-    type Output = Summand<KRGen, R>;
+    type Support = GridIter<isize>;
+    type Item = Summand<KRGen, R>;
 
     delegate! { 
         to self.inner { 
-            fn support(&self) -> Self::Itr;
+            fn support(&self) -> Self::Support;
             fn is_supported(&self, i: isize) -> bool;
-            fn get(&self, i: isize) -> &Self::Output;
+            fn get(&self, i: isize) -> &Self::Item;
+            fn get_default(&self) -> &Self::Item;
         }
     }
 }
