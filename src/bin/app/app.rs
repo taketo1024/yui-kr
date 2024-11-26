@@ -3,7 +3,8 @@ use log::{info, error};
 use clap::{Parser, ValueEnum};
 use derive_more::Display;
 use num_bigint::BigInt;
-use yui::{Ratio, EucRing, EucRingOps, TeX};
+use yui::{Ratio, EucRing, EucRingOps};
+use yui::tex::TeX;
 use yui_kr::KRHomologyStr;
 use yui_link::{Braid, Link};
 use super::calc::{KRCalc, KRCalcMode};
@@ -183,7 +184,7 @@ impl App {
     fn format(&self, res: &KRHomologyStr) -> String { 
         let str = match &self.args.format {
             Output::Poincare    => res.poincare_poly().to_string(),
-            Output::PoincareTex => res.poincare_poly().to_tex_string(),
+            Output::PoincareTex => res.poincare_poly().tex_string(),
             Output::Delta => res.delta_table(),
             Output::Table => res.qpoly_table(),
         };

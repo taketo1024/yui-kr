@@ -6,7 +6,7 @@ use delegate::delegate;
 use itertools::Itertools;
 use log::info;
 use yui::{EucRing, EucRingOps};
-use yui_homology::{isize2, GridTrait, GridIter, HomologySummand, Grid2, DisplayTable, ChainComplexTrait, DisplayForGrid};
+use yui_homology::{isize2, ChainComplexTrait, ComputeHomology, DisplayTable, GenericHomology2, GenericSummand, Grid2, GridIter, GridTrait};
 
 use super::tot_cpx::KRTotComplex;
 use super::base::extend_ends_bounded;
@@ -16,7 +16,7 @@ use super::data::KRCubeData;
 pub struct KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     q: isize,
-    inner: Grid2<HomologySummand<R>>
+    inner: GenericHomology2<R>
 } 
 
 impl<R> KRTotHomol<R>
@@ -39,7 +39,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let inner = Grid2::generate(
             support,
-            |idx| complex.homology_at(idx, false)
+            |idx| complex.compute_homology_at(idx, false)
         );
 
         info!("H (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, inner.display_table("h", "v"));
@@ -47,7 +47,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self { q, inner }
     }
 
-    pub fn try_partial(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>), size_limit: usize) -> Grid2<Option<HomologySummand<R>>> {
+    pub fn try_partial(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>), size_limit: usize) -> Grid2<Option<GenericSummand<isize2, R>>> {
         info!("H (q: {}, h: {:?}, v: {:?})..", q, range.0, range.1);
 
         let support = cartesian!(
@@ -64,12 +64,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             |idx| (complex.rank(idx - d_deg) <= size_limit 
                 && complex.rank(idx)         <= size_limit 
                 && complex.rank(idx + d_deg) <= size_limit).then(|| 
-                    complex.homology_at(idx, false)
+                    complex.compute_homology_at(idx, false)
                 )
         );
 
         info!("H (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, 
-            display_table(&grid, "h", "v", |h| h.as_ref().map(|h| h.display_for_grid()).unwrap_or("?".to_string()))
+            display_table(&grid, "h", "v", |h| h.as_ref().map(|h| h.to_string()).unwrap_or("?".to_string()))
         );
 
         grid
@@ -96,24 +96,22 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> GridTrait<isize2> for KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Itr = GridIter<isize2>;
-    type Output = HomologySummand<R>;
+    type Support = GridIter<isize2>;
+    type Item = GenericSummand<isize2, R>;
 
     delegate! { 
         to self.inner {
-            fn support(&self) -> Self::Itr;
+            fn support(&self) -> Self::Support;
             fn is_supported(&self, i: isize2) -> bool;
+            fn get(&self, idx: isize2) -> &Self::Item;
+            fn get_default(&self) -> &Self::Item;
         }
-    }
-
-    fn get(&self, idx: isize2) -> &Self::Output { 
-        &self.inner[idx]
     }
 }
 
 impl<R> Index<(isize, isize)> for KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Output = HomologySummand<R>;
+    type Output = GenericSummand<isize2, R>;
     fn index(&self, index: (isize, isize)) -> &Self::Output { 
         self.get(index.into())
     }
@@ -137,7 +135,7 @@ where F: Fn(&E) -> String {
 
 #[cfg(test)]
 mod tests { 
-    use yui_homology::RModStr;
+    use yui_homology::SummandTrait;
     use yui_link::Link;
     use yui::Ratio;
     use super::*;

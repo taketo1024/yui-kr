@@ -23,14 +23,6 @@ debug = true
 overflow-checks = true
 
 [dependencies]
-yui  =         { git = "https://github.com/taketo1024/yui", branch = "develop", features = ["tex"]}
-yui-link =     { git = "https://github.com/taketo1024/yui", branch = "develop" }
-yui-matrix =   { git = "https://github.com/taketo1024/yui", branch = "develop" }
-yui-homology = { git = "https://github.com/taketo1024/yui", branch = "develop" }
-# yui  =         { path = "../yui/yui", features = ["tex"] }
-# yui-link =     { path = "../yui/yui-link" }
-# yui-matrix =   { path = "../yui/yui-matrix" }
-# yui-homology = { path = "../yui/yui-homology" }
 num-bigint = "0.4.6"
 num-traits = "0.2.19"
 itertools = "0.13.0"
@@ -48,3 +40,11 @@ serde = { version = "1.0.210", features = ["derive", "rc"] }
 serde_json = "1.0.128"
 regex = "1.10.6"
 cfg-if = "1.0.0"
+yui  =         { git = "https://github.com/taketo1024/yui", features = ["tex"] }
+yui-link =     { git = "https://github.com/taketo1024/yui" }
+yui-matrix =   { git = "https://github.com/taketo1024/yui" }
+yui-homology = { git = "https://github.com/taketo1024/yui" }
+# yui  =         { path = "../yui/yui", features = ["tex"] }
+# yui-link =     { path = "../yui/yui-link" }
+# yui-matrix =   { path = "../yui/yui-matrix" }
+# yui-homology = { path = "../yui/yui-homology" }
