@@ -5,7 +5,7 @@ use derive_more::{Display, Debug};
 use itertools::{Itertools, FoldWhile};
 use num_traits::One;
 use yui_core::{Elem, Sign, PowMod2, GetSign, Ring, RingOps};
-use yui_core::lc::{Gen, Lc, OrdForDisplay};
+use yui_core::lc::{Gen, Lc};
 use yui_core::poly::{PolyN, MultiVar, MonoOrd};
 use yui_core::bitseq::{BitSeq, Bit};
 
@@ -30,8 +30,14 @@ impl Elem for KRGen {
     }
 }
 
-impl OrdForDisplay for KRGen {
-    fn cmp_for_display(&self, other: &Self) -> std::cmp::Ordering {
+impl PartialOrd for KRGen {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(Ord::cmp(self, other))
+    }
+}
+
+impl Ord for KRGen {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         // order by priority: v > h > mono
         BitSeq::cmp(&self.1, &other.1).then_with(||
             BitSeq::cmp(&self.0, &other.0)
