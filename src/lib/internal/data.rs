@@ -65,7 +65,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let n = link.count_crossings();
         let w = link.writhe() as isize;
         let s = link.seifert_circles().len() as isize;
-        let x_signs = link.crossing_signs();
+        let x_signs = link.collect_crossing_signs().iter().sorted_by_key(|(i, _)| *i).map(|(_, s)| *s).collect_vec();
         let x_polys = Self::collect_x_polys(link);
         let root_grad = Self::grad(n, w, s, &x_signs, BitSeq::zeros(n), BitSeq::zeros(n));
         let verts = BitSeq::generate(n).into_group_map_by(|b| b.weight());
@@ -277,7 +277,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     fn collect_x_polys(link: &Link) -> Vec<KRCrossData<R>> {
         let n = link.count_crossings();
-        let signs = link.crossing_signs();
+        let signs = link.collect_crossing_signs().iter().sorted_by_key(|(i, _)| *i).map(|(_, s)| *s).collect_vec();
         let resolved = Self::resolve(link);
 
         assert_eq!(resolved.n_components(), 1); 
