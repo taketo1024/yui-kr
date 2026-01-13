@@ -135,7 +135,7 @@ mod tests {
     type R = Ratio<i64>;
 
     fn make_cpx(link: &Link, v_coords: BitSeq, q: isize, level: usize, red: bool) -> KRHorComplex<R> {
-        let n = link.crossing_num() as isize;
+        let n = link.count_crossings() as isize;
         let data = Arc::new( KRCubeData::<R>::new_excl(link, level) );
         let excl = data.excl(v_coords);
         let cube = KRHorCube::new(data.clone(), q, v_coords);

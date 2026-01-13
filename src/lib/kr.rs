@@ -24,7 +24,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn from_link(link: &Link) -> Self { 
-        assert_eq!(link.components().len(), 1, "only knots are supported.");
+        assert_eq!(link.n_components(), 1, "only knots are supported.");
         let data = Arc::new(KRCubeData::new(link));
         Self::new(data)
     }

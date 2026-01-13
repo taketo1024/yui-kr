@@ -62,7 +62,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub(crate) fn new_no_excl(link: &Link) -> Self { 
         assert!(link.is_knot(), "only knots are supported.");
 
-        let n = link.crossing_num();
+        let n = link.count_crossings();
         let w = link.writhe() as isize;
         let s = link.seifert_circles().len() as isize;
         let x_signs = link.crossing_signs();
@@ -276,11 +276,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn collect_x_polys(link: &Link) -> Vec<KRCrossData<R>> {
-        let n = link.crossing_num();
+        let n = link.count_crossings();
         let signs = link.crossing_signs();
         let resolved = Self::resolve(link);
 
-        assert_eq!(resolved.components().len(), 1); 
+        assert_eq!(resolved.n_components(), 1); 
 
         let (path, mons) = { 
             let mut path = vec![];
@@ -350,7 +350,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             }
         ).collect::<HashSet<_>>();
 
-        let n = link.crossing_num();
+        let n = link.count_crossings();
         let s0 = link.ori_pres_state();
         let mut data = link.data().clone();
 
@@ -434,7 +434,7 @@ mod tests {
     fn resolve() { 
         let l = Link::hopf_link();
         let u = KRCubeData::<R>::resolve(&l);
-        assert_eq!(u.components().len(), 1);
+        assert_eq!(u.n_components(), 1);
     }
 
     #[test]
