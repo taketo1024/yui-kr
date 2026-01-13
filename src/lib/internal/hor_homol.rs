@@ -5,10 +5,10 @@ use delegate::delegate;
 use num_traits::Zero;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use yui::{EucRing, EucRingOps};
+use yui_core::{EucRing, EucRingOps};
 use yui_homology::{Grid1, GridTrait, Homology, Summand, SummandTrait};
 use yui_matrix::sparse::SpVec;
-use yui::bitseq::BitSeq;
+use yui_core::bitseq::BitSeq;
 
 // use log::info;
 // use yui_homology::DisplaySeq;
@@ -135,7 +135,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 #[cfg(test)]
 mod tests { 
     use yui_link::Link;
-    use yui::Ratio;
+    use yui_core::Ratio;
     use super::*;
 
     type R = Ratio<i64>;

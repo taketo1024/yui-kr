@@ -49,7 +49,7 @@ pub fn parse_homfly(s: &str) -> Result<QAPoly, Box<dyn std::error::Error>> {
     use regex::Regex;
     use std::str::FromStr;
     use num_traits::Pow;
-    use yui::AddMon;
+    use yui_core::AddMon;
 
     type P = QAPoly;
 

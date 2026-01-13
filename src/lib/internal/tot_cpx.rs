@@ -9,8 +9,8 @@ use log::info;
 use num_traits::Zero;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
-use yui::bitseq::BitSeq;
-use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
+use yui_core::bitseq::BitSeq;
+use yui_core::{EucRing, EucRingOps, Ring, RingOps, AddMon};
 use yui_homology::{isize2, rmod_str, ChainComplexTrait, DisplayTable, GenericChainComplex2, Grid2, GridIter, GridTrait, SummandTrait};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::{SpVec, SpMat};
@@ -278,7 +278,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 #[cfg(test)]
 mod tests { 
     use yui_link::Link;
-    use yui::Ratio;
+    use yui_core::Ratio;
     
     use yui_homology::{ChainComplexTrait, SummandTrait};
     use super::*;

@@ -99,7 +99,7 @@ impl<'a> File<'a> {
 #[cfg(test)]
 #[cfg(not(feature = "batch_test"))]
 mod tests { 
-    use yui::hashmap;
+    use yui_core::hashmap;
     use yui_kr::KRHomologyStr;
     use super::*;
 

@@ -1,6 +1,6 @@
 use log::info;
 use num_traits::Zero;
-use yui::{EucRing, EucRingOps};
+use yui_core::{EucRing, EucRingOps};
 use yui_homology::utils::ChainReducer;
 use yui_homology::{isize2, ChainComplexTrait, DisplayTable, GenericChainComplex2, GridTrait};
 use yui_matrix::MatTrait;

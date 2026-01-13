@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use num_traits::One;
-use yui::{Ring, RingOps};
+use yui_core::{Ring, RingOps};
 use yui_homology::{ChainComplex, Grid1, Summand};
-use yui::bitseq::BitSeq;
+use yui_core::bitseq::BitSeq;
 
 use super::base::{KRPoly, KRMono, KRGen, KRChain, KRPolyChain, sign_between, combine, decombine};
 use super::data::KRCubeData;
@@ -115,9 +115,9 @@ mod tests {
     use itertools::Itertools;
     use num_traits::{One, Zero};
     use yui_homology::{SummandTrait, ChainComplexTrait};
-    use yui::Ratio;
+    use yui_core::Ratio;
     use yui_link::Link;
-    use yui::util::macros::hashmap;
+    use yui_core::util::macros::hashmap;
     use super::*;
 
     type R = Ratio<i64>;

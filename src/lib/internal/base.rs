@@ -4,10 +4,10 @@ use std::ops::RangeInclusive;
 use derive_more::{Display, Debug};
 use itertools::{Itertools, FoldWhile};
 use num_traits::One;
-use yui::{Elem, Sign, PowMod2, GetSign, Ring, RingOps};
-use yui::lc::{Gen, Lc, OrdForDisplay};
-use yui::poly::{PolyN, MultiVar, MonoOrd};
-use yui::bitseq::{BitSeq, Bit};
+use yui_core::{Elem, Sign, PowMod2, GetSign, Ring, RingOps};
+use yui_core::lc::{Gen, Lc, OrdForDisplay};
+use yui_core::poly::{PolyN, MultiVar, MonoOrd};
+use yui_core::bitseq::{BitSeq, Bit};
 
 pub(crate) type KRMono = MultiVar<'x', usize>;
 pub(crate) type KRPoly<R> = PolyN<'x', R>;

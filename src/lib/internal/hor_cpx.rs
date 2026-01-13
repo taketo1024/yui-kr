@@ -3,10 +3,10 @@ use std::sync::Arc;
 use delegate::delegate;
 
 use num_traits::Zero;
-use yui::{Ring, RingOps};
+use yui_core::{Ring, RingOps};
 use yui_homology::{ChainComplexTrait, GridTrait, GridIter, ChainComplex, Summand, Grid1};
 use yui_matrix::sparse::SpMat;
-use yui::bitseq::BitSeq;
+use yui_core::bitseq::BitSeq;
 
 // use log::info;
 // use yui_homology::DisplaySeq;
@@ -128,7 +128,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 mod tests { 
     use yui_homology::{SummandTrait, ChainComplexTrait};
     use yui_link::Link;
-    use yui::Ratio;
+    use yui_core::Ratio;
 
     use super::*;
 

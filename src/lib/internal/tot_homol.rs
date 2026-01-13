@@ -5,7 +5,7 @@ use delegate::delegate;
 
 use itertools::Itertools;
 use log::info;
-use yui::{EucRing, EucRingOps};
+use yui_core::{EucRing, EucRingOps};
 use yui_homology::{isize2, ChainComplexTrait, ComputeHomology, DisplayTable, GenericHomology2, GenericSummand, Grid2, GridIter, GridTrait};
 
 use super::tot_cpx::KRTotComplex;
@@ -120,7 +120,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 // TODO to be removed
 fn display_table<E, F>(grid: &Grid2<E>, label0: &str, label1: &str, f: F) -> String
 where F: Fn(&E) -> String {
-    use yui::util::format::table;
+    use yui_core::util::format::table;
 
     let head = format!("{}\\{}", label1, label0);
     let cols = grid.support().map(|e| e.0).unique().sorted();
@@ -137,7 +137,7 @@ where F: Fn(&E) -> String {
 mod tests { 
     use yui_homology::SummandTrait;
     use yui_link::Link;
-    use yui::Ratio;
+    use yui_core::Ratio;
     use super::*;
 
     type R = Ratio<i64>;

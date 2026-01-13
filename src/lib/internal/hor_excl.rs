@@ -2,11 +2,11 @@ use std::collections::{HashSet, HashMap};
 
 use log::trace;
 use num_traits::{Zero, One};
-use yui::{Ring, RingOps, IndexList};
+use yui_core::{Ring, RingOps, IndexList};
 use yui_homology::utils::make_matrix;
 use yui_matrix::sparse::Trans;
-use yui::poly::Mono;
-use yui::bitseq::BitSeq;
+use yui_core::poly::Mono;
+use yui_core::bitseq::BitSeq;
 
 use super::base::{KRMono, KRPoly, KRGen, KRChain, KRPolyChain, sign_between, combine, decombine};
 use super::data::KRCubeData;
@@ -445,10 +445,10 @@ mod tests {
     use itertools::Itertools;
     use yui_link::Link;
     use yui_matrix::MatTrait;
-    use yui::poly::MultiVar;
-    use yui::Ratio;
-    use yui::util::macros::hashmap;
-    use yui::bitseq::BitSeq;
+    use yui_core::poly::MultiVar;
+    use yui_core::Ratio;
+    use yui_core::util::macros::hashmap;
+    use yui_core::bitseq::BitSeq;
 
     use crate::internal::data::KRCubeData;
     use crate::internal::hor_cube::KRHorCube;

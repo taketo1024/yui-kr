@@ -6,9 +6,9 @@ use log::info;
 use num_traits::One;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use yui::util::sync::SyncCounter;
-use yui::{EucRing, EucRingOps};
-use yui::bitseq::BitSeq;
+use yui_core::util::sync::SyncCounter;
+use yui_core::{EucRing, EucRingOps};
+use yui_core::bitseq::BitSeq;
 
 use super::base::{KRGen, KRPoly, KRMono, KRChain, KRPolyChain, sign_between, combine, decombine};
 use super::data::KRCubeData;
@@ -117,7 +117,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 #[cfg(test)]
 mod tests {
     use num_traits::One;
-    use yui::Ratio;
+    use yui_core::Ratio;
     use yui_link::Link;
     use super::*;
 

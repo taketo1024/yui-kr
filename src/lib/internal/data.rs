@@ -6,11 +6,11 @@ use itertools::{Itertools, izip};
 use num_integer::Integer;
 use num_traits::One;
 
-use yui::{Ring, RingOps, Sign, AddMon};
+use yui_core::{Ring, RingOps, Sign, AddMon};
 use yui_homology::{isize3, GridIter};
 use yui_link::util::seifert_graph;
 use yui_link::{Link, CrossingType, Crossing, Edge};
-use yui::bitseq::{BitSeq, Bit};
+use yui_core::bitseq::{BitSeq, Bit};
 
 use super::base::KRPoly;
 use super::hor_excl::KRHorExcl;
@@ -401,7 +401,7 @@ where I: IntoIterator<Item = (isize, isize)> {
 
 #[cfg(test)]
 mod tests {
-    use yui::Ratio;
+    use yui_core::Ratio;
     use yui_link::Link;
 
     use super::*;

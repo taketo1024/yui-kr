@@ -2,7 +2,7 @@ use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
 use delegate::delegate;
-use yui::{EucRing, EucRingOps};
+use yui_core::{EucRing, EucRingOps};
 use yui_homology::{isize2, isize3, GenericSummand, Grid1, GridIter, GridTrait, SummandTrait};
 use yui_link::{Link, Braid};
 
@@ -105,8 +105,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 #[cfg(test)]
 mod tests { 
     use yui_link::Braid;
-    use yui::Ratio;
-    use yui::util::macros::hashmap;
+    use yui_core::Ratio;
+    use yui_core::util::macros::hashmap;
     use super::*;
 
     type R = Ratio<i64>;

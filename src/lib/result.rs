@@ -4,7 +4,7 @@ use std::ops::RangeInclusive;
 use itertools::Itertools;
 use num_integer::Integer;
 use serde::ser::SerializeSeq;
-use yui::poly::{LPoly, LPoly2, LPoly3, Var3, Var2, Mono};
+use yui_core::poly::{LPoly, LPoly2, LPoly3, Var3, Var2, Mono};
 
 pub type QPoly = LPoly<'q', i32>;
 pub type QAPoly = LPoly2<'q', 'a', i32>;
@@ -130,7 +130,7 @@ impl KRHomologyStr {
         let j_range = range(polys.keys().map(|idx| idx.0)).step_by(2);
         let k_range = range(polys.keys().map(|idx| idx.1)).rev().step_by(2);
     
-        yui::util::format::table("k\\j", k_range, j_range, |&k, &j| { 
+        yui_core::util::format::table("k\\j", k_range, j_range, |&k, &j| { 
             if let Some(p) = polys.get(&(j, k)) { 
                 p.to_string()
             } else { 
@@ -146,7 +146,7 @@ impl KRHomologyStr {
             let j_range = range(indices.iter().map(|idx| idx.1)).rev().step_by(2);
         
             format!("Δ: {d}\n") + 
-            &yui::util::format::table("j\\i", j_range, i_range, |&j, &i| { 
+            &yui_core::util::format::table("j\\i", j_range, i_range, |&j, &i| { 
                 let k = d - (i + j);
                 if let Some(p) = self.0.get(&(i, j, k)) { 
                     if let Some(r) = p { r.to_string() } else { "?".to_string() }
@@ -198,7 +198,7 @@ where Itr: IntoIterator<Item = isize> {
 
 #[cfg(test)]
 mod tests {
-    use yui::hashmap;
+    use yui_core::hashmap;
     use super::*;
  
     #[test]

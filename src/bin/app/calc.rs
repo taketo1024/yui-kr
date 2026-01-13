@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use itertools::Itertools;
 use log::info;
-use yui::{EucRing, EucRingOps};
+use yui_core::{EucRing, EucRingOps};
 use yui_homology::{GridTrait, SummandTrait, isize3};
 use yui_link::Link;
 
