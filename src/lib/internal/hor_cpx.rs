@@ -128,7 +128,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 mod tests { 
     use yui_homology::{SummandTrait, ChainComplexTrait};
     use yui_link::Link;
-    use yui_core::Ratio;
+    use yui_core::num::Ratio;
 
     use super::*;
 

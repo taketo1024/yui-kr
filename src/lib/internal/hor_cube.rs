@@ -115,7 +115,7 @@ mod tests {
     use itertools::Itertools;
     use num_traits::{One, Zero};
     use yui_homology::{SummandTrait, ChainComplexTrait};
-    use yui_core::Ratio;
+    use yui_core::num::Ratio;
     use yui_link::Link;
     use yui_core::util::macros::hashmap;
     use super::*;

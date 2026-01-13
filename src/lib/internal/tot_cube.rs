@@ -117,7 +117,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 #[cfg(test)]
 mod tests {
     use num_traits::One;
-    use yui_core::Ratio;
+    use yui_core::num::Ratio;
     use yui_link::Link;
     use super::*;
 

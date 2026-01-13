@@ -401,7 +401,7 @@ where I: IntoIterator<Item = (isize, isize)> {
 
 #[cfg(test)]
 mod tests {
-    use yui_core::Ratio;
+    use yui_core::num::Ratio;
     use yui_link::Link;
 
     use super::*;

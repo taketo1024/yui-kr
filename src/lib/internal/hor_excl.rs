@@ -446,7 +446,7 @@ mod tests {
     use yui_link::Link;
     use yui_matrix::MatTrait;
     use yui_core::poly::MultiVar;
-    use yui_core::Ratio;
+    use yui_core::num::Ratio;
     use yui_core::util::macros::hashmap;
     use yui_core::bitseq::BitSeq;
 

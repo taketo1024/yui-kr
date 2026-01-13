@@ -137,7 +137,7 @@ where F: Fn(&E) -> String {
 mod tests { 
     use yui_homology::SummandTrait;
     use yui_link::Link;
-    use yui_core::Ratio;
+    use yui_core::num::Ratio;
     use super::*;
 
     type R = Ratio<i64>;
