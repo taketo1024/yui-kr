@@ -287,7 +287,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             let mut mons = vec![];
 
             resolved.traverse_edges((0, 0), |i, j| { 
-                let x = &resolved.data()[i];
+                let x = &resolved.node(i);
                 let e = x.edge(j);
                 let x_i = KRPoly::variable(i);
                 let p_i = match (Self::is_vert(x, signs[i]), j) {
@@ -324,7 +324,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         };
 
         (0 .. n).map(|i| {
-            let x = &resolved.data()[i];
+            let x = &resolved.node(i);
             let (a,b,c) = if Self::is_vert(x, signs[i]) { 
                 (3,2,0)
             } else { 
@@ -351,8 +351,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         ).collect::<HashSet<_>>();
 
         let n = link.count_crossings();
-        let s0 = link.ori_pres_state();
-        let mut data = link.data().clone();
+        let s0 = link.seifert_state();
+        let mut data = link.nodes().cloned().collect_vec();
 
         for i in 0..n { 
             if t.contains(&i) { 
