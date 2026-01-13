@@ -9,7 +9,7 @@ use num_traits::One;
 use yui_core::{Ring, RingOps, Sign, AddMon};
 use yui_homology::{isize3, GridIter};
 use yui_link::util::seifert_graph;
-use yui_link::{Link, CrossingType, Crossing, Edge};
+use yui_link::{Link, NodeType, Node, Edge};
 use yui_core::bitseq::{BitSeq, Bit};
 
 use super::base::KRPoly;
@@ -374,8 +374,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     //
     //    true        false
 
-    fn is_vert(x: &Crossing, sign: Sign) -> bool { 
-        use CrossingType::*;
+    fn is_vert(x: &Node, sign: Sign) -> bool { 
+        use NodeType::*;
         match (x.ctype(), sign.is_positive()) {
             (X, false) | (Xm, true)  | (V, _) => true,
             (X, true)  | (Xm, false) | (H, _) => false
