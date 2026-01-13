@@ -376,7 +376,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     fn is_vert(x: &Node, sign: Sign) -> bool { 
         use NodeType::*;
-        match (x.ctype(), sign.is_positive()) {
+        match (x.ntype(), sign.is_positive()) {
             (X, false) | (Xm, true)  | (V, _) => true,
             (X, true)  | (Xm, false) | (H, _) => false
         }
