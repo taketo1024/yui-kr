@@ -286,7 +286,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             let mut path = vec![];
             let mut mons = vec![];
 
-            resolved.traverse_edges((0, 0), |i, j| { 
+            resolved.traverse_from((0, 0), |i, j| { 
                 let x = &resolved.node(i);
                 let e = x.edge(j);
                 let x_i = KRPoly::variable(i);
@@ -299,12 +299,6 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
                 path.push(e);
                 mons.push(p_i);
             });
-
-            assert_eq!(path.len(), 2 * n + 1);
-            assert_eq!(path.first(), path.last());
-
-            path.pop();
-            mons.pop();
 
             (path, mons)
         };
