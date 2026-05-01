@@ -25,7 +25,7 @@ pub struct CliArgs {
     #[arg(short, long)]
     pub mirror: bool,
 
-    #[arg(short, long, default_value = "poincare")]
+    #[arg(short, long, default_value = "delta")]
     pub format: Output,
 
     #[arg(short = 'F', long)]
@@ -56,10 +56,10 @@ pub enum IntType {
 #[derive(ValueEnum, Clone, Copy, Default, Debug)]
 pub enum Output { 
     #[default]
-    Poincare,
-    PoincareTex,
     Delta,
     Table, 
+    Poincare,
+    PoincareTex,
 }
 
 #[derive(Debug, Display)]
