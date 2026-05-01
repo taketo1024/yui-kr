@@ -6,7 +6,7 @@ use num_traits::Zero;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{Grid1, GridTrait, Homology, Summand, SummandTrait};
+use yui_homology::{Grid1, GridIter, GridTrait, Homology, Summand, SummandTrait};
 use yui_matrix::sparse::SpVec;
 use yui_core::bitseq::BitSeq;
 
@@ -110,12 +110,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> GridTrait<isize> for KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Support = std::vec::IntoIter<isize>;
     type Item = Summand<KRGen, R>;
+    type Support<'a> = GridIter<'a, isize, Self::Item> where Self: 'a, R: 'a;
 
-    delegate! { 
-        to self.inner { 
-            fn support(&self) -> Self::Support;
+    delegate! {
+        to self.inner {
+            fn support(&self) -> Self::Support<'_>;
             fn is_supported(&self, i: isize) -> bool;
             fn get(&self, i: isize) -> &Self::Item;
             fn get_default(&self) -> &Self::Item;

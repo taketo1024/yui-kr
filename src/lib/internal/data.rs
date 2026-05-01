@@ -7,7 +7,7 @@ use num_integer::Integer;
 use num_traits::One;
 
 use yui_core::{Ring, RingOps, Sign, AddMon};
-use yui_homology::{isize3, GridIter};
+use yui_homology::isize3;
 use yui_link::util::seifert_graph;
 use yui_link::{Link, NodeType, Node, Edge};
 use yui_core::bitseq::{BitSeq, Bit};
@@ -35,15 +35,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 #[derive(Clone)]
 pub struct KRCubeData<R>
-where R: Ring, for<'x> &'x R: RingOps<R> { 
+where R: Ring, for<'x> &'x R: RingOps<R> {
     n_cross: usize,
-    writhe: isize, 
+    writhe: isize,
     n_seif: isize,
     root_grad: isize3,
     x_signs: Vec<Sign>,
     x_polys: Vec<KRCrossData<R>>,
     verts: HashMap<usize, Vec<BitSeq>>,
-    excl: HashMap<BitSeq, Arc<KRHorExcl<R>>>
+    excl: HashMap<BitSeq, Arc<KRHorExcl<R>>>,
+    support: HashSet<isize3>,
 }
 
 impl<R> KRCubeData<R> 
@@ -59,7 +60,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         data
     }
 
-    pub(crate) fn new_no_excl(link: &Link) -> Self { 
+    pub(crate) fn new_no_excl(link: &Link) -> Self {
         assert!(link.is_knot(), "only knots are supported.");
 
         let n = link.count_crossings();
@@ -71,7 +72,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let verts = BitSeq::generate(n).into_group_map_by(|b| b.weight());
         let excl = HashMap::new();
 
-        Self {
+        let mut data = Self {
             n_cross: n,
             writhe: w,
             n_seif: s,
@@ -79,8 +80,21 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             x_signs,
             x_polys,
             verts,
-            excl // empty
-        }
+            excl, // empty
+            support: HashSet::new(), // computed below
+        };
+        data.support = data.compute_support();
+        data
+    }
+
+    fn compute_support(&self) -> HashSet<isize3> {
+        let i_range = self.i_range().step_by(2);
+        let j_range = self.j_range().step_by(2);
+        let k_range = self.k_range().step_by(2);
+        cartesian!(i_range, j_range.clone(), k_range.clone())
+            .map(isize3::from)
+            .filter(|&idx| self.is_supported(idx))
+            .collect()
     }
 
     fn perform_excl(&mut self, excl_level: usize) {
@@ -180,29 +194,22 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.i_range()
     }
 
-    pub fn q_range(&self) -> RangeInclusive<isize> { 
-        range(self.support().filter_map(|idx| {
+    pub fn q_range(&self) -> RangeInclusive<isize> {
+        range(self.support().filter_map(|&idx| {
             self.to_inner_grad(idx).map(|g| g.0)
         }))
     }
 
-    pub fn hv_range(&self, q: isize) -> (RangeInclusive<isize>, RangeInclusive<isize>) { 
-        let hv = self.support().filter_map(|idx| {
+    pub fn hv_range(&self, q: isize) -> (RangeInclusive<isize>, RangeInclusive<isize>) {
+        let hv = self.support().filter_map(|&idx| {
             let inner = self.to_inner_grad(idx).unwrap();
             (inner.0 == q).then(|| (inner.1, inner.2))
         });
         range2(hv)
     }
 
-    pub fn support(&self) -> GridIter<isize3> {
-        let i_range = self.i_range().step_by(2);
-        let j_range = self.j_range().step_by(2);
-        let k_range = self.k_range().step_by(2);
-        let range = cartesian!(i_range, j_range.clone(), k_range.clone());
-        
-        range.map(isize3::from).filter(|&idx| 
-            self.is_supported(idx)
-        ).collect_vec().into_iter()
+    pub fn support(&self) -> std::collections::hash_set::Iter<'_, isize3> {
+        self.support.iter()
     }
 
     pub fn is_supported(&self, grad: isize3) -> bool { 

@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use delegate::delegate;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{isize2, isize3, GenericSummand, Grid1, GridIter, GridTrait, SummandTrait};
+use yui_homology::{isize2, isize3, GenericSummand, Grid1, GridTrait, SummandTrait};
 use yui_link::{Link, Braid};
 
 use crate::KRHomologyStr;
@@ -47,14 +47,14 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }
     }
 
-    pub fn structure(&self) -> KRHomologyStr { 
-        self.support().filter_map(|idx| {
+    pub fn structure(&self) -> KRHomologyStr {
+        self.support().filter_map(|&idx| {
             let h = self.get(idx);
             let r = h.rank();
 
-            if r > 0 { 
+            if r > 0 {
                 Some(((idx.0, idx.1, idx.2), r))
-            } else { 
+            } else {
                 None
             }
         }).collect()
@@ -69,26 +69,26 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 }
 
-impl<R> GridTrait<isize3> for KRHomology<R> 
+impl<R> GridTrait<isize3> for KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Support = GridIter<isize3>;
     type Item = GenericSummand<isize2, R>;
+    type Support<'a> = std::collections::hash_set::Iter<'a, isize3> where Self: 'a, R: 'a;
 
-    delegate! { 
-        to self.data { 
-            fn support(&self) -> Self::Support;
+    delegate! {
+        to self.data {
+            fn support(&self) -> Self::Support<'_>;
             fn is_supported(&self, idx: isize3) -> bool;
         }
     }
 
     fn get(&self, idx: isize3) -> &Self::Item {
-        if let Some(isize3(q, h, v)) = self.data.to_inner_grad(idx) { 
+        if let Some(isize3(q, h, v)) = self.data.to_inner_grad(idx) {
             &self.q_slices[q][(h, v)]
-        } else { 
+        } else {
             self.get_default()
         }
     }
-    
+
     fn get_default(&self) -> &Self::Item {
         self.q_slices.get_default().get(isize2(0, 0))
     }

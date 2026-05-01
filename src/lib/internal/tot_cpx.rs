@@ -229,12 +229,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> GridTrait<isize2> for KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Support = GridIter<isize2>;
     type Item = KRTotComplexSummand<R>;
+    type Support<'a> = GridIter<'a, isize2, Self::Item> where Self: 'a, R: 'a;
 
-    delegate! { 
-        to self.summands { 
-            fn support(&self) -> Self::Support;
+    delegate! {
+        to self.summands {
+            fn support(&self) -> Self::Support<'_>;
             fn is_supported(&self, i: isize2) -> bool;
             fn get(&self, i: isize2) -> &Self::Item;
             fn get_default(&self) -> &Self::Item;

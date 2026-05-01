@@ -17,30 +17,32 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<'a, R> KRTotComplexReducer<'a, R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub fn new(complex: &'a KRTotComplex<R>) -> Self { 
+    pub fn new(complex: &'a KRTotComplex<R>) -> Self {
         let reducer = ChainReducer::new(
-            complex.support(), 
+            complex.support().copied(),
             complex.d_deg()
         );
         let size_limit = usize::MAX;
         Self { complex, reducer, size_limit }
     }
 
-    pub fn reduce(&mut self) { 
+    pub fn reduce(&mut self) {
         info!("reduce C_tot (q: {})..", self.complex.q_deg());
 
-        for idx in self.complex.support() {
+        let support = self.reducer.support().to_vec();
+
+        for &idx in &support {
             self.setup(idx);
             self.reduce_at(idx, false);
         }
 
-        if self.reducer.is_done() { 
+        if self.reducer.is_done() {
             return;
         }
 
         info!("second run..");
 
-        for idx in self.complex.support() {
+        for &idx in &support {
             self.reduce_at(idx, true);
         }
     }

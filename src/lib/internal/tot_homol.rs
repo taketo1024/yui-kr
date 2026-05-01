@@ -96,12 +96,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> GridTrait<isize2> for KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Support = GridIter<isize2>;
     type Item = GenericSummand<isize2, R>;
+    type Support<'a> = GridIter<'a, isize2, Self::Item> where Self: 'a, R: 'a;
 
-    delegate! { 
+    delegate! {
         to self.inner {
-            fn support(&self) -> Self::Support;
+            fn support(&self) -> Self::Support<'_>;
             fn is_supported(&self, i: isize2) -> bool;
             fn get(&self, idx: isize2) -> &Self::Item;
             fn get_default(&self) -> &Self::Item;
