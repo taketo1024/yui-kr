@@ -42,7 +42,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             |idx| complex.compute_homology_at(idx, false)
         );
 
-        info!("H (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, inner.display_table("h", "v"));
+        info!("H (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, inner.display_table());
 
         Self { q, inner }
     }

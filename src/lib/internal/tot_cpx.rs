@@ -93,7 +93,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             |idx| Self::summand(&data, &cube, idx)
         );
 
-        info!("C (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, summands.display_table("h", "v"));
+        info!("C (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, summands.display_table());
 
         Self { q, data, cube, summands }
     }
