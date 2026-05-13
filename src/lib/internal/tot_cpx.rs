@@ -151,7 +151,13 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             self.vectorize_v(i, v, z_v)
         }).collect::<Vec<_>>();
 
-        SpVec::stack_vecs(vs)
+        Self::stack_vecs(vs)
+    }
+
+    fn stack_vecs<I>(vecs: I) -> SpVec<R> 
+    where I: IntoIterator<Item = SpVec<R>> { 
+        let init = SpVec::zero(0);
+        vecs.into_iter().fold(init, |res, v| SpVec::stack(res, v))
     }
 
     #[inline(never)] // for profilability
