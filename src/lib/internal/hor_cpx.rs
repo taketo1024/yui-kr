@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn no_red() { 
-        let l = Link::trefoil().mirror();
+        let l = Link::test_data("3_1").unwrap().mirror();
         let v = BitSeq::from([1,0,0]);
         let q = 0;
         
@@ -174,7 +174,7 @@ mod tests {
 
     #[test]
     fn excl_level1() { 
-        let l = Link::trefoil().mirror();
+        let l = Link::test_data("3_1").unwrap().mirror();
         let v = BitSeq::from([1,0,0]);
         let q = 0;
         
@@ -197,7 +197,7 @@ mod tests {
 
     #[test]
     fn excl_level2() { 
-        let l = Link::trefoil().mirror();
+        let l = Link::test_data("3_1").unwrap().mirror();
         let v = BitSeq::from([1,0,0]);
         let q = 0;
         
@@ -220,7 +220,7 @@ mod tests {
 
     #[test]
     fn excl_level1_red() { 
-        let l = Link::trefoil().mirror();
+        let l = Link::test_data("3_1").unwrap().mirror();
         let v = BitSeq::from([1,0,0]);
         let q = 0;
         
@@ -243,7 +243,7 @@ mod tests {
 
     #[test]
     fn excl_level2_red() { 
-        let l = Link::trefoil().mirror();
+        let l = Link::test_data("3_1").unwrap().mirror();
         let v = BitSeq::from([1,0,0]);
         let q = 0;
         

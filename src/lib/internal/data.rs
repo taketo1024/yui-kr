@@ -416,7 +416,7 @@ mod tests {
 
     #[test]
     fn grad_shift() { 
-        let l = Link::trefoil(); // (w, s) = (-3, 2)
+        let l = Link::test_data("3_1").unwrap(); // (w, s) = (-3, 2)
         let w = l.writhe() as isize;
         let s = l.seifert_circles().len() as isize;
         assert_eq!(KRCubeData::<i32>::l_grad_shift(w, s), isize3(4,-2,-4));
@@ -424,7 +424,7 @@ mod tests {
 
     #[test]
     fn grad_at() { 
-        let l = Link::trefoil();
+        let l = Link::test_data("3_1").unwrap();
         let data = KRCubeData::<R>::new_excl(&l, 0);
         let grad0 = data.root_grad();
         assert_eq!(grad0, isize3(4,-8,-4));
@@ -437,7 +437,7 @@ mod tests {
 
     #[test]
     fn resolve() { 
-        let l = Link::hopf_link();
+        let l = Link::test_data("L2a1").unwrap();
         let u = KRCubeData::<R>::resolve(&l);
         assert_eq!(u.n_components(), 1);
     }

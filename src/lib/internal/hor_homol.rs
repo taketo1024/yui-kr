@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn rank() { 
-        let l = Link::trefoil();
+        let l = Link::test_data("3_1").unwrap();
         let v = BitSeq::from([1,0,0]);
         let q = 0;
         let hml = make_hml(&l, q, v);
@@ -175,7 +175,7 @@ mod tests {
 
     #[test]
     fn vectorize() { 
-        let l = Link::trefoil().mirror();
+        let l = Link::test_data("3_1").unwrap().mirror();
         let v = BitSeq::from([1,0,0]);
         let q = 1;
         let hml = make_hml(&l, q, v);
