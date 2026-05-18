@@ -469,7 +469,7 @@ mod tests {
 
     #[test]
     fn init() { 
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -491,7 +491,7 @@ mod tests {
 
     #[test]
     fn find_excl_var() { 
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -509,7 +509,7 @@ mod tests {
 
     #[test]
     fn perform_excl() { 
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -542,7 +542,7 @@ mod tests {
 
     #[test]
     fn perform_excl_2() { 
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -574,7 +574,7 @@ mod tests {
 
     #[test]
     fn perform_excl_3() { 
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -611,7 +611,7 @@ mod tests {
 
     #[test]
     fn should_vanish_before() {
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let q = 0;
         let v = BitSeq::from_iter([0,0,1]);
 
@@ -628,7 +628,7 @@ mod tests {
 
     #[test]
     fn should_vanish() {
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -642,7 +642,7 @@ mod tests {
 
     #[test]
     fn should_reduce_before() {
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let q = 0;
         let v = BitSeq::from_iter([0,0,1]);
 
@@ -659,7 +659,7 @@ mod tests {
 
     #[test]
     fn should_reduce() {
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -675,7 +675,7 @@ mod tests {
 
     #[test]
     fn should_reduce_2() {
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -693,7 +693,7 @@ mod tests {
 
     #[test]
     fn reduce_gens() {
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let q = 0;
         let v = BitSeq::from_iter([0,0,1]);
 
@@ -724,7 +724,7 @@ mod tests {
 
     #[test]
     fn reduce_gens_2() {
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let q = 0;
         let v = BitSeq::from_iter([0,0,1]);
 
@@ -756,7 +756,7 @@ mod tests {
 
     #[test]
     fn forward() {
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -788,7 +788,7 @@ mod tests {
 
     #[test]
     fn forward_2() {
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -834,7 +834,7 @@ mod tests {
 
     #[test]
     fn backward() {
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -875,7 +875,7 @@ mod tests {
 
     #[test]
     fn backward_2() {
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -901,7 +901,7 @@ mod tests {
 
     #[test]
     fn backward_3() {
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
@@ -932,7 +932,7 @@ mod tests {
 
     #[test]
     fn trans_before() { 
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let q = 0;
         let v = BitSeq::from_iter([0,0,1]);
 
@@ -951,7 +951,7 @@ mod tests {
 
     #[test]
     fn trans() { 
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let q = 0;
         let v = BitSeq::from_iter([0,0,1]);
 
@@ -970,7 +970,7 @@ mod tests {
 
     #[test]
     fn trans_2() { 
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let q = 0;
         let v = BitSeq::from_iter([0,0,1]);
 

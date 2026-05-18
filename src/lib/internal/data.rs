@@ -8,8 +8,7 @@ use num_traits::One;
 
 use yui_core::{Ring, RingOps, Sign, AddMon};
 use yui_homology::isize3;
-use yui_link::util::seifert_graph;
-use yui_link::{Link, NodeType, Node, Edge};
+use yui_link::{Link, NodeType, Node, Edge, seifert_graph};
 use yui_core::bitseq::{BitSeq, Bit};
 
 use super::base::KRPoly;
@@ -63,7 +62,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub(crate) fn new_no_excl(link: &Link) -> Self {
         assert!(link.is_knot(), "only knots are supported.");
 
-        let n = link.count_crossings();
+        let n = link.n_crossings();
         let w = link.writhe() as isize;
         let s = link.seifert_circles().len() as isize;
         let x_signs = Self::collect_x_signs(link);
@@ -283,15 +282,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn collect_x_signs(link: &Link) -> Vec<Sign> {
-        link.collect_crossing_signs().iter().sorted_by_key(|(i, _)| *i).map(|(_, s)| *s).collect_vec()
+        link.crossings().map(|n| n.sign().unwrap()).collect_vec()
     }
 
     fn collect_x_polys(link: &Link) -> Vec<KRCrossData<R>> {
-        let n = link.count_crossings();
+        let n = link.n_crossings();
         let signs = Self::collect_x_signs(link);
         let resolved = Self::resolve(link);
 
-        assert_eq!(resolved.n_components(), 1); 
+        assert_eq!(resolved.n_comps(), 1); 
 
         let (path, mons) = { 
             let mut path = vec![];
@@ -355,7 +354,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             }
         ).collect::<HashSet<_>>();
 
-        let n = link.count_crossings();
+        let n = link.n_crossings();
         let s0 = link.seifert_state();
         let mut data = link.nodes().cloned().collect_vec();
 
@@ -363,10 +362,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             if t.contains(&i) { 
                 continue
             }
-            data[i].resolve(s0[i])
+            data[i] = data[i].resolve(s0[i])
         }
 
-        Link::new(data)
+        Link::from_nodes(data)
     }
 
     // is_vert: 
@@ -382,8 +381,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     fn is_vert(x: &Node, sign: Sign) -> bool { 
         use NodeType::*;
         match (x.ntype(), sign.is_positive()) {
-            (X, false) | (Xm, true)  | (V, _) => true,
-            (X, true)  | (Xm, false) | (H, _) => false
+            (XL, false) | (XR, true)  | (V, _) => true,
+            (XL, true)  | (XR, false) | (H, _) => false
         }
     }
 }
@@ -416,7 +415,7 @@ mod tests {
 
     #[test]
     fn grad_shift() { 
-        let l = Link::test_data("3_1").unwrap(); // (w, s) = (-3, 2)
+        let l = Link::test_data("3_1"); // (w, s) = (-3, 2)
         let w = l.writhe() as isize;
         let s = l.seifert_circles().len() as isize;
         assert_eq!(KRCubeData::<i32>::l_grad_shift(w, s), isize3(4,-2,-4));
@@ -424,7 +423,7 @@ mod tests {
 
     #[test]
     fn grad_at() { 
-        let l = Link::test_data("3_1").unwrap();
+        let l = Link::test_data("3_1");
         let data = KRCubeData::<R>::new_excl(&l, 0);
         let grad0 = data.root_grad();
         assert_eq!(grad0, isize3(4,-8,-4));
@@ -437,9 +436,9 @@ mod tests {
 
     #[test]
     fn resolve() { 
-        let l = Link::test_data("L2a1").unwrap();
+        let l = Link::test_data("L2a1");
         let u = KRCubeData::<R>::resolve(&l);
-        assert_eq!(u.n_components(), 1);
+        assert_eq!(u.n_comps(), 1);
     }
 
     #[test]
