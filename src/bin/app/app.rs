@@ -5,9 +5,8 @@ use derive_more::Display;
 use num_bigint::BigInt;
 use yui_core::{num::Ratio, EucRing, EucRingOps};
 use yui_core::tex::TeX;
-use yui_kr::KRHomologyStr;
+use yui_kr::{KRCalc, KRCalcMode, KRHomologyStr};
 use yui_link::{Braid, Link};
-use super::calc::{KRCalc, KRCalcMode};
 use super::utils::*;
 
 #[derive(Parser, Debug, Default)]
@@ -48,10 +47,10 @@ pub enum IntType {
 }
 
 #[derive(ValueEnum, Clone, Copy, Default, Debug)]
-pub enum Output { 
+pub enum Output {
     #[default]
     Delta,
-    Table, 
+    Table,
     Poincare,
     PoincareTex,
 }
