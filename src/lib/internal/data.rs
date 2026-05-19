@@ -1,7 +1,7 @@
 use std::collections::{HashSet, HashMap};
 use std::ops::RangeInclusive;
 use std::sync::Arc;
-use cartesian::{cartesian, TuplePrepend};
+use cartesian::cartesian;
 use itertools::{Itertools, izip};
 use num_integer::Integer;
 use num_traits::One;
