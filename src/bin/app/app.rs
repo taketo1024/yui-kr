@@ -28,17 +28,11 @@ pub struct CliArgs {
     #[arg(short, long, default_value = "delta")]
     pub format: Output,
 
-    #[arg(short = 'F', long)]
-    pub force_compute: bool,
-
     #[arg(short, long, default_value = "default")]
     pub compute_mode: KRCalcMode,
 
     #[arg(short, long)]
     pub limit: Option<usize>,
-
-    #[arg(short = 'p', long)]
-    pub save_progress: bool,
 
     #[arg(long)]
     pub debug: bool
@@ -125,23 +119,13 @@ impl App {
         Ok(output)
     }
 
-    pub fn compute(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> { 
-        let target = &self.args.target;
-        let file = File::Result(target);
-
-        if !self.args.force_compute && self.args.braid.is_none() && file.exists() { 
-            info!("result exists: {}", target);
-            let res: KRHomologyStr = file.read()?;
-            let res = if self.args.mirror { res.mirror() } else { res };
-            return Ok(res)
-        }
-        
+    pub fn compute(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> {
         let link = self.make_link()?;
 
-        let res = if link.writhe() > 0 { 
+        let res = if link.writhe() > 0 {
             info!("compute from mirror.");
             self.compute_kr_dispatch(&link.mirror())?.mirror()
-        } else { 
+        } else {
             self.compute_kr_dispatch(&link)?
         };
 
@@ -162,17 +146,8 @@ impl App {
         
         calc.mode = self.args.compute_mode;
 
-        if let Some(limit) = self.args.limit { 
+        if let Some(limit) = self.args.limit {
             calc.size_limit = limit;
-        }
-
-        if self.args.save_progress { 
-            if self.args.force_compute { 
-                calc.clear()?;
-            } else { 
-                calc.load_if_exists()?;
-            }
-            calc.save_progress = true;
         }
 
         calc.compute()?;

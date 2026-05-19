@@ -13,10 +13,9 @@ macro_rules! test {
 
             let answer: KRHomologyStr = load($name)?;
 
-            let args = CliArgs { 
-                target: $name.to_string(), 
+            let args = CliArgs {
+                target: $name.to_string(),
                 int_type: IntType::BigInt,
-                force_compute: true,
                 ..Default::default()
             };
 
