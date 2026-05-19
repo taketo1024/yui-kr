@@ -458,7 +458,7 @@ mod tests {
     type R = Ratio<i64>;
     type P = KRPoly<R>;
 
-    fn gen<const N: usize, const M: usize>(h: [usize; N], v: [usize; N], m: [usize; M]) -> KRGen {
+    fn kr_gen<const N: usize, const M: usize>(h: [usize; N], v: [usize; N], m: [usize; M]) -> KRGen {
         KRGen(BitSeq::from(h), BitSeq::from(v), MultiVar::from(m))
     }
 
@@ -636,8 +636,8 @@ mod tests {
 
         excl.perform_excl(0, 1, 1);
 
-        assert!( excl.should_drop(&gen([0,1,0], [0,0,1], [1,2,3]))); // h[0] = 0
-        assert!(!excl.should_drop(&gen([1,0,0], [0,0,1], [1,2,3])));
+        assert!( excl.should_drop(&kr_gen([0,1,0], [0,0,1], [1,2,3]))); // h[0] = 0
+        assert!(!excl.should_drop(&kr_gen([1,0,0], [0,0,1], [1,2,3])));
     }
 
     #[test]
@@ -765,24 +765,24 @@ mod tests {
         excl.perform_excl(0, 1, 1); // x1 -> -x2
 
         assert_eq!(
-            excl.forward_x(&gen([0,0,0], [0,0,1], [0,0,0])), 
+            excl.forward_x(&kr_gen([0,0,0], [0,0,1], [0,0,0])), 
             KRChain::zero()
         ); // vanish
         assert_eq!(
-            excl.forward_x(&gen([1,0,0], [0,0,1], [0,0,0])), 
-              KRChain::from(gen([1,0,0], [0,0,1], [0,0,0])) // 1: id
+            excl.forward_x(&kr_gen([1,0,0], [0,0,1], [0,0,0])), 
+              KRChain::from(kr_gen([1,0,0], [0,0,1], [0,0,0])) // 1: id
         );
         assert_eq!(
-            excl.forward_x(&gen([1,0,0], [0,0,1], [1,0,0])), 
-              KRChain::from(gen([1,0,0], [0,0,1], [1,0,0])) // x0: id
+            excl.forward_x(&kr_gen([1,0,0], [0,0,1], [1,0,0])), 
+              KRChain::from(kr_gen([1,0,0], [0,0,1], [1,0,0])) // x0: id
         );
         assert_eq!(
-            excl.forward_x(&gen([1,0,0], [0,0,1], [0,1,0])), 
-              KRChain::from((gen([1,0,0], [0,0,1], [0,0,1]), -R::one())) // x1 -> -x2
+            excl.forward_x(&kr_gen([1,0,0], [0,0,1], [0,1,0])), 
+              KRChain::from((kr_gen([1,0,0], [0,0,1], [0,0,1]), -R::one())) // x1 -> -x2
         );
         assert_eq!(
-            excl.forward_x(&gen([1,0,0], [0,0,1], [0,0,1])), 
-              KRChain::from(gen([1,0,0], [0,0,1], [0,0,1])) // x2: id
+            excl.forward_x(&kr_gen([1,0,0], [0,0,1], [0,0,1])), 
+              KRChain::from(kr_gen([1,0,0], [0,0,1], [0,0,1])) // x2: id
         );
     }
 
@@ -798,37 +798,37 @@ mod tests {
         excl.perform_excl(2, 2, 2); // x2 * x2 -> x0 * x2
 
         assert_eq!(
-            excl.forward_x(&gen([0,1,1], [0,0,1], [0,0,0])), 
+            excl.forward_x(&kr_gen([0,1,1], [0,0,1], [0,0,0])), 
             KRChain::zero()
         ); // vanish
         assert_eq!(
-            excl.forward_x(&gen([1,1,0], [0,0,1], [0,0,0])), 
+            excl.forward_x(&kr_gen([1,1,0], [0,0,1], [0,0,0])), 
             KRChain::zero()
         ); // vanish
 
         assert_eq!(
-            excl.forward_x(&gen([1,0,1], [0,0,1], [0,0,0])), 
-              KRChain::from(gen([1,0,1], [0,0,1], [0,0,0])) // 1: id
+            excl.forward_x(&kr_gen([1,0,1], [0,0,1], [0,0,0])), 
+              KRChain::from(kr_gen([1,0,1], [0,0,1], [0,0,0])) // 1: id
         );
         assert_eq!(
-            excl.forward_x(&gen([1,0,1], [0,0,1], [1,0,0])), 
-              KRChain::from(gen([1,0,1], [0,0,1], [1,0,0])) // x1: id
+            excl.forward_x(&kr_gen([1,0,1], [0,0,1], [1,0,0])), 
+              KRChain::from(kr_gen([1,0,1], [0,0,1], [1,0,0])) // x1: id
         );
         assert_eq!(
-            excl.forward_x(&gen([1,0,1], [0,0,1], [0,1,0])), 
-              KRChain::from((gen([1,0,1], [0,0,1], [0,0,1]), -R::one())) // x1 -> -x2
+            excl.forward_x(&kr_gen([1,0,1], [0,0,1], [0,1,0])), 
+              KRChain::from((kr_gen([1,0,1], [0,0,1], [0,0,1]), -R::one())) // x1 -> -x2
         );
         assert_eq!(
-            excl.forward_x(&gen([1,0,1], [0,0,1], [0,0,1])), 
-              KRChain::from(gen([1,0,1], [0,0,1], [0,0,1])) // x2: id
+            excl.forward_x(&kr_gen([1,0,1], [0,0,1], [0,0,1])), 
+              KRChain::from(kr_gen([1,0,1], [0,0,1], [0,0,1])) // x2: id
         );
         assert_eq!(
-            excl.forward_x(&gen([1,0,1], [0,0,1], [0,0,2])), 
-              KRChain::from(gen([1,0,1], [0,0,1], [1,0,1])) // x2^2 -> x0 x2
+            excl.forward_x(&kr_gen([1,0,1], [0,0,1], [0,0,2])), 
+              KRChain::from(kr_gen([1,0,1], [0,0,1], [1,0,1])) // x2^2 -> x0 x2
         );
         assert_eq!(
-            excl.forward_x(&gen([1,0,1], [0,0,1], [1,1,1])), 
-              KRChain::from((gen([1,0,1], [0,0,1], [2,0,1]), -R::one())) // x0x1x2 -> -x0^2 x2
+            excl.forward_x(&kr_gen([1,0,1], [0,0,1], [1,1,1])), 
+              KRChain::from((kr_gen([1,0,1], [0,0,1], [2,0,1]), -R::one())) // x0x1x2 -> -x0^2 x2
         );
     }
 
@@ -843,33 +843,33 @@ mod tests {
         excl.perform_excl(0, 1, 1); // x1 -> -x2
 
         assert_eq!(
-            excl.backward_x(&gen([1,0,0], [0,0,1], [0,0,0])), // 1 at [1,0,0]
+            excl.backward_x(&kr_gen([1,0,0], [0,0,1], [0,0,0])), // 1 at [1,0,0]
             KRChain::from_iter([
-                (gen([1,0,0], [0,0,1], [0,0,0]),  R::one()), //   1 at [1,0,0]
-                (gen([0,1,0], [0,0,1], [0,0,0]), -R::one()), //  -1 at [0,1,0]
-                (gen([0,0,1], [0,0,1], [0,0,1]), -R::one())  // -x2 at [0,0,1]
+                (kr_gen([1,0,0], [0,0,1], [0,0,0]),  R::one()), //   1 at [1,0,0]
+                (kr_gen([0,1,0], [0,0,1], [0,0,0]), -R::one()), //  -1 at [0,1,0]
+                (kr_gen([0,0,1], [0,0,1], [0,0,1]), -R::one())  // -x2 at [0,0,1]
             ])
         );
 
         assert_eq!(
-            excl.backward_x(&gen([1,1,0], [0,0,1], [0,0,0])), // 1 at [1,1,0]
+            excl.backward_x(&kr_gen([1,1,0], [0,0,1], [0,0,0])), // 1 at [1,1,0]
             KRChain::from_iter([
-                (gen([1,1,0], [0,0,1], [0,0,0]), R::one()), //   1 at [1,1,0]
-                (gen([0,1,1], [0,0,1], [0,0,1]), R::one())  //  x2 at [0,1,1]
+                (kr_gen([1,1,0], [0,0,1], [0,0,0]), R::one()), //   1 at [1,1,0]
+                (kr_gen([0,1,1], [0,0,1], [0,0,1]), R::one())  //  x2 at [0,1,1]
             ])
         );
 
         assert_eq!(
-            excl.backward_x(&gen([1,0,1], [0,0,1], [0,0,0])), 
+            excl.backward_x(&kr_gen([1,0,1], [0,0,1], [0,0,0])), 
             KRChain::from_iter([
-                (gen([1,0,1], [0,0,1], [0,0,0]),  R::one()), //  1 at [1,0,1]
-                (gen([0,1,1], [0,0,1], [0,0,0]), -R::one()), // -1 at [0,1,1]
+                (kr_gen([1,0,1], [0,0,1], [0,0,0]),  R::one()), //  1 at [1,0,1]
+                (kr_gen([0,1,1], [0,0,1], [0,0,0]), -R::one()), // -1 at [0,1,1]
             ])
         );
 
         assert_eq!(
-            excl.backward_x(&gen([1,1,1], [0,0,1], [0,0,0])), 
-               KRChain::from(gen([1,1,1], [0,0,1], [0,0,0])), //  id at [1,1,1]
+            excl.backward_x(&kr_gen([1,1,1], [0,0,1], [0,0,0])), 
+               KRChain::from(kr_gen([1,1,1], [0,0,1], [0,0,0])), //  id at [1,1,1]
         );
     }
 
@@ -885,17 +885,17 @@ mod tests {
         excl.perform_excl(1, 2, 1); // x2 -> 0
 
         assert_eq!(
-            excl.backward_x(&gen([1,1,0], [0,0,1], [0,0,0])), 
+            excl.backward_x(&kr_gen([1,1,0], [0,0,1], [0,0,0])), 
             KRChain::from_iter([
-                (gen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //     id at [1,1,0]
-                (gen([1,0,1], [0,0,1], [1,0,0]), -R::one()), //    -x0
-                (gen([1,0,1], [0,0,1], [0,0,1]),  R::one()), //    +x2 at [1,0,1]
-                (gen([0,1,1], [0,0,1], [1,0,0]),  R::one()), //     x0 at [0,1,1]
+                (kr_gen([1,1,0], [0,0,1], [0,0,0]),  R::one()), //     id at [1,1,0]
+                (kr_gen([1,0,1], [0,0,1], [1,0,0]), -R::one()), //    -x0
+                (kr_gen([1,0,1], [0,0,1], [0,0,1]),  R::one()), //    +x2 at [1,0,1]
+                (kr_gen([0,1,1], [0,0,1], [1,0,0]),  R::one()), //     x0 at [0,1,1]
             ])
         );
         assert_eq!(
-            excl.backward_x(&gen([1,1,1], [0,0,1], [0,0,0])), 
-               KRChain::from(gen([1,1,1], [0,0,1], [0,0,0]))
+            excl.backward_x(&kr_gen([1,1,1], [0,0,1], [0,0,0])), 
+               KRChain::from(kr_gen([1,1,1], [0,0,1], [0,0,0]))
         );
     }
 
@@ -911,15 +911,15 @@ mod tests {
         excl.perform_excl(2, 2, 2); // x2^2 -> x0 x2
 
         assert_eq!(
-            excl.backward_x(&gen([1,0,1], [0,0,1], [0,0,0])), 
+            excl.backward_x(&kr_gen([1,0,1], [0,0,1], [0,0,0])), 
             KRChain::from_iter([
-                (gen([1,0,1], [0,0,1], [0,0,0]),  R::one()),
-                (gen([0,1,1], [0,0,1], [0,0,0]), -R::one()),
+                (kr_gen([1,0,1], [0,0,1], [0,0,0]),  R::one()),
+                (kr_gen([0,1,1], [0,0,1], [0,0,0]), -R::one()),
             ])
         );
         assert_eq!(
-            excl.backward_x(&gen([1,1,1], [0,0,1], [0,0,0])), 
-               KRChain::from(gen([1,1,1], [0,0,1], [0,0,0]))
+            excl.backward_x(&kr_gen([1,1,1], [0,0,1], [0,0,0])), 
+               KRChain::from(kr_gen([1,1,1], [0,0,1], [0,0,0]))
         );
     }
 
