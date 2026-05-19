@@ -43,7 +43,7 @@ macro_rules! test {
 
             match res { 
                 Ok(res) => {
-                    assert_eq!(answer, res);
+                    assert_eq!(res, answer);
                     Ok(())
                 },
                 Err(e) => {
