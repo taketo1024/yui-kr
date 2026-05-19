@@ -1,33 +1,21 @@
-use yui_kr::KRHomologyStr;
 use yui_kr::result::QAPoly;
 
-#[path = "../src/bin/app/mod.rs"]
-#[allow(unused)]
-mod app;
+mod common;
 
 #[test]
 #[ignore]
-fn check_homfly() -> Result<(), Box<dyn std::error::Error>> { 
-    use app::utils::*;
+fn check_homfly() -> Result<(), Box<dyn std::error::Error>> {
+    let mut reader = common::load_csv("homfly")?;
 
-    let proj_dir = std::env!("CARGO_MANIFEST_DIR");
-    let data_dir = format!("{proj_dir}/data/");
-    let mut reader = csv::Reader::from_path(format!("{data_dir}/homfly.csv"))?;
-
-    for r in reader.records() { 
+    for r in reader.records() {
         let r = r?;
         let name = &r[0];
-        let file = File::Result(name);
-
-        if !file.exists() { 
-            panic!("result for {name} does not exist.");
-        }
 
         let data = &r[1];
         let data = data.replace(";", ",");
         let answer = parse_homfly(&data)?;
 
-        let result: KRHomologyStr = file.read()?;
+        let result = common::load_result(name)?;
         let poly = result.homfly_poly();
 
         assert_eq!(answer, poly);
