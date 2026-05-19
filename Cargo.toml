@@ -5,6 +5,7 @@ authors = ["Taketo Sano <taketo1024@gmail.com>"]
 description = "YUI-KR"
 license = "MIT"
 edition = "2024"
+rust-version = "1.85"
 
 [[bin]]
 name = "ykr"
