@@ -72,10 +72,14 @@ impl KRHomologyStr {
     }
 
     pub fn set(&mut self, idx: (isize, isize, isize), value: usize) {
+        let idx2 = (-idx.0, idx.1, idx.2 + 2 * idx.0);
+
         if value > 0 { 
-            self.0.insert(idx, Some(value));
+            self.0.insert(idx,  Some(value));
+            self.0.insert(idx2, Some(value));
         } else { 
             self.0.remove(&idx);
+            self.0.remove(&idx2);
         }
     }
 

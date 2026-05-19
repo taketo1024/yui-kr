@@ -3,10 +3,9 @@ use std::sync::Arc;
 use cartesian::cartesian;
 use delegate::delegate;
 
-use itertools::Itertools;
 use log::info;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{isize2, ChainComplexTrait, ComputeHomology, DisplayTable, GenericHomology2, GenericSummand, Grid2, GridIter, GridTrait};
+use yui_homology::{isize2, ComputeHomology, DisplayTable, GenericHomology2, GenericSummand, Grid2, GridIter, GridTrait};
 
 use super::tot_cpx::KRTotComplex;
 use super::base::extend_ends_bounded;
@@ -47,35 +46,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self { q, inner }
     }
 
-    pub fn try_partial(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>), size_limit: usize) -> Grid2<Option<GenericSummand<isize2, R>>> {
-        info!("H (q: {}, h: {:?}, v: {:?})..", q, range.0, range.1);
-
-        let support = cartesian!(
-            range.0.clone(), 
-            range.1.clone()
-        ).map(isize2::from);
-
-        let complex = Self::make_cpx(data, q, range.clone());
-        let complex = complex.reduced_with_limit(size_limit);
-
-        let d_deg = complex.d_deg();
-        let grid = Grid2::generate(
-            support,
-            |idx| (complex.rank(idx - d_deg) <= size_limit 
-                && complex.rank(idx)         <= size_limit 
-                && complex.rank(idx + d_deg) <= size_limit).then(|| 
-                    complex.compute_homology_at(idx, false)
-                )
-        );
-
-        info!("H (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, 
-            display_table(&grid, "h", "v", |h| h.as_ref().map(|h| h.to_string()).unwrap_or("?".to_string()))
-        );
-
-        grid
-    }
-
-    fn make_cpx(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> KRTotComplex<R> { 
+    pub(crate) fn make_cpx(data: Arc<KRCubeData<R>>, q: isize, range: (RangeInclusive<isize>, RangeInclusive<isize>)) -> KRTotComplex<R> { 
         let n = data.dim() as isize;
         let c_range = (
             range.0.clone(), 
@@ -115,20 +86,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn index(&self, index: (isize, isize)) -> &Self::Output { 
         self.get(index.into())
     }
-}
-
-// TODO to be removed
-fn display_table<E, F>(grid: &Grid2<E>, label0: &str, label1: &str, f: F) -> String
-where F: Fn(&E) -> String {
-    use yui_core::util::format::table;
-
-    let head = format!("{}\\{}", label1, label0);
-    let cols = grid.support().map(|e| e.0).unique().sorted();
-    let rows = grid.support().map(|e| e.1).unique().sorted().rev();
-
-    table(head, rows, cols, |&j, &i| {
-        f(grid.get(isize2(i, j)))
-    })
 }
 
 #[cfg(test)]

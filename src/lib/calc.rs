@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
+use cartesian::cartesian;
 use itertools::Itertools;
 use log::info;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{GridTrait, SummandTrait, isize3};
+use yui_homology::{ChainComplexTrait, ComputeHomology, SummandTrait, isize2, isize3};
 use yui_link::Link;
 
 use crate::internal::data::{KRCubeData, range2};
@@ -68,13 +69,26 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             assert_eq!(inner.0, q);
             (inner.1, inner.2)
         });
-        let hv_range = range2(hv);
-        let kr = KRTotHomol::try_partial(self.data.clone(), q, hv_range, self.size_limit);
+        let range = range2(hv);
 
-        for &idx in targets {
-            let inner = self.data.to_inner_grad(idx).unwrap();
-            if let Some(h) = kr.get((inner.1, inner.2).into()) {
-                self.result.set(idx.into(), h.rank());
+        let complex = KRTotHomol::make_cpx(self.data.clone(), q, range.clone());
+        let complex = complex.reduced_with_limit(self.size_limit);
+        let d_deg = complex.d_deg();
+        
+        let support = cartesian!(
+            range.0.clone(), 
+            range.1.clone()
+        ).map(isize2::from);
+
+        for idx in support { 
+            if 
+                complex.rank(idx - d_deg) <= self.size_limit && 
+                complex.rank(idx)         <= self.size_limit && 
+                complex.rank(idx + d_deg) <= self.size_limit
+            {
+                let res = complex.compute_homology_at(idx, false);
+                let grad = self.data.to_outer_grad(isize3(q, idx.0, idx.1));
+                self.result.set(grad.into(), res.rank());
             }
         }
 
