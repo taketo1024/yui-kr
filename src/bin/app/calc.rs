@@ -10,66 +10,38 @@ use yui_kr::internal::data::{KRCubeData, range2};
 use yui_kr::internal::tot_homol::KRTotHomol;
 use yui_kr::KRHomologyStr;
 
-use super::utils::File;
-
 #[derive(Clone, Copy, Default, Debug, clap::ValueEnum)]
-pub enum KRCalcMode { 
+pub enum KRCalcMode {
     #[default] Default, PerCol, PerItem
 }
 
-pub struct KRCalc<R> 
-where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    name: String,
+pub struct KRCalc<R>
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
     result: KRHomologyStr,
     pub mode: KRCalcMode,
     pub size_limit: usize,
-    pub save_progress: bool
 }
 
 impl<R> KRCalc<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub fn init(name: &str, l: &Link) -> Self { 
-        let name = name.to_owned();
+    pub fn init(l: &Link) -> Self {
         let data = Arc::new(KRCubeData::new(l));
         let result = data.support().map(|&idx| ((idx.0, idx.1, idx.2), None)).collect();
         let mode = KRCalcMode::default();
         let size_limit = usize::MAX;
-        let save_progress = false;
-        Self { name, data, result, mode, size_limit, save_progress }
+        Self { data, result, mode, size_limit }
     }
 
-    pub fn load_if_exists(&mut self) -> Result<(), Box<dyn std::error::Error>> { 
-        let file = File::Tmp(&self.name);
-        if file.exists() { 
-            self.result = file.read()?;
-        }
-        Ok(())
-    }
-
-    pub fn save_current(&self) -> Result<(), Box<dyn std::error::Error>> {
-        File::Tmp(&self.name).write(&self.result)?;
-        Ok(())
-    }
-
-    pub fn clear(&self) -> Result<(), Box<dyn std::error::Error>> { 
-        File::Tmp(&self.name).delete()?;
-        Ok(())
-    }
-
-    pub fn result(&self) -> &KRHomologyStr { 
+    pub fn result(&self) -> &KRHomologyStr {
         &self.result
     }
 
-    pub fn into_result(self) -> KRHomologyStr { 
+    pub fn into_result(self) -> KRHomologyStr {
         self.result
     }
 
-    pub fn compute(&mut self) -> Result<(), Box<dyn std::error::Error>> { 
-        if self.save_progress { 
-            self.save_current()?;
-        }
-
+    pub fn compute(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         info!("compute KRHomology.");
         info!("q-range: {:?}", self.data.q_range());
         
@@ -99,15 +71,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let hv_range = range2(hv);
         let kr = KRTotHomol::try_partial(self.data.clone(), q, hv_range, self.size_limit);
         
-        for &idx in targets { 
+        for &idx in targets {
             let inner = self.data.to_inner_grad(idx).unwrap();
-            if let Some(h) = kr.get((inner.1, inner.2).into()) { 
+            if let Some(h) = kr.get((inner.1, inner.2).into()) {
                 self.result.set(idx.into(), h.rank());
             }
-        }
-
-        if self.save_progress { 
-            self.save_current()?;
         }
 
         Ok(())

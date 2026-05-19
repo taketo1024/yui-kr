@@ -142,7 +142,7 @@ impl App {
 
     fn compute_kr<R>(&self, link: &Link) -> Result<KRHomologyStr, Box<dyn std::error::Error>>
     where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-        let mut calc = KRCalc::init(&self.args.target, link);
+        let mut calc = KRCalc::init(link);
         
         calc.mode = self.args.compute_mode;
 
