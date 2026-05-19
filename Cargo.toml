@@ -4,7 +4,7 @@ version = "0.3.0"
 authors = ["Taketo Sano <taketo1024@gmail.com>"]
 description = "YUI-KR"
 license = "MIT"
-edition = "2021"
+edition = "2024"
 
 [[bin]]
 name = "ykr"
@@ -40,11 +40,14 @@ serde = { version = "1.0.210", features = ["derive", "rc"] }
 serde_json = "1.0.128"
 regex = "1.10.6"
 cfg-if = "1.0.0"
-yui-core =     { git = "https://github.com/taketo1024/yui", version = "0.4.0", features = ["tex"] }
-yui-link =     { git = "https://github.com/taketo1024/yui", version = "0.4.0" }
-yui-matrix =   { git = "https://github.com/taketo1024/yui", version = "0.4.0" }
-yui-homology = { git = "https://github.com/taketo1024/yui", version = "0.4.0" }
-# yui  =         { path = "../yui/yui", features = ["tex"] }
-# yui-link =     { path = "../yui/yui-link" }
-# yui-matrix =   { path = "../yui/yui-matrix" }
-# yui-homology = { path = "../yui/yui-homology" }
+# yui-core =     { git = "https://github.com/taketo1024/yui", version = "0.4.0", features = ["tex"] }
+# yui-link =     { git = "https://github.com/taketo1024/yui", version = "0.4.0" }
+# yui-matrix =   { git = "https://github.com/taketo1024/yui", version = "0.4.0" }
+# yui-homology = { git = "https://github.com/taketo1024/yui", version = "0.4.0" }
+yui-core =     { path = "../yui/lib-core", features = ["tex"] }
+yui-link =     { path = "../yui/lib-link" }
+yui-matrix =   { path = "../yui/lib-matrix" }
+yui-homology = { path = "../yui/lib-homology" }
+
+[dev-dependencies]
+yui-link = { path = "../yui/lib-link", features = ["test-utils"] }

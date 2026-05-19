@@ -88,7 +88,6 @@ impl App {
 
     pub fn new_with(args: CliArgs) -> Self { 
         if args.debug { 
-            std::env::set_var("RUST_BACKTRACE", "1");
             Self::init_logger();
         }
         App { args }

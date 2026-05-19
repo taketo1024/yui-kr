@@ -270,7 +270,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let z = combine(z.clone());
 
         let dz = z.iter().flat_map(|(v, f)| { 
-            self.edge_polys.iter().filter(|(&i, _)|
+            self.edge_polys.iter().filter(|&(&i, _)|
                 v.0[i].is_zero()
             ).map(move |(&i, g)| {
                 let w = KRGen(v.0.edit(|b| b.set_1(i)), v.1, KRMono::one());
@@ -286,7 +286,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     fn d_step(&self, z: &KRPolyChain<R>, step: usize, after_excl: bool) -> KRPolyChain<R> { 
         let proc = &self.process[step];
         z.iter().flat_map(|(v, f)| { 
-            proc.edge_polys.iter().filter(|(&i, _)|
+            proc.edge_polys.iter().filter(|&(&i, _)|
                 v.0[i].is_zero()
             ).map(move |(&i, g)| {
                 let w = KRGen(v.0.edit(|b| b.set_1(i)), v.1, KRMono::one());
