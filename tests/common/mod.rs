@@ -23,6 +23,17 @@ pub fn load_csv(name: &str) -> Result<csv::Reader<std::fs::File>, Box<dyn std::e
     Ok(csv::Reader::from_path(path)?)
 }
 
+pub fn load_braid(name: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let mut reader = load_csv("braid")?;
+    for r in reader.records() {
+        let r = r?;
+        if &r[0] == name {
+            return Ok(r[1].to_string());
+        }
+    }
+    Err(format!("braid for {name} not found in data/braid.csv").into())
+}
+
 macro_rules! test {
     ($(#[$m:meta])* $test:ident, $name:literal) => {
         $(#[$m])*
@@ -31,9 +42,11 @@ macro_rules! test {
             use common::app::*;
 
             let answer = common::load_result($name)?;
+            let braid = common::load_braid($name)?;
 
             let args = CliArgs {
                 target: $name.to_string(),
+                braid: Some(braid),
                 int_type: IntType::BigInt,
                 ..Default::default()
             };
