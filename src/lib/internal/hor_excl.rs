@@ -305,14 +305,14 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     pub fn forward(&self, z: &KRChain<R>) -> KRChain<R> {
         // keep only non-vanishing gens. 
-        let z = z.filter_gens(|v| 
+        let z = z.filtered(|v| 
             !self.should_drop(v)
         );
 
         // reduce monomials. 
         if z.iter().any(|(v, _)| self.should_reduce(&v.2)) { 
             let z = combine(z);
-            let res = z.into_map_coeffs::<KRPoly<R>, _>(|f| self.reduce(f));
+            let res = z.map_coeffs::<KRPoly<R>, _>(|f| self.reduce(f));
             decombine(res)
         } else { 
             z
@@ -370,7 +370,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             self.send_back(&dz, i)
         };
 
-        let w = (diz + idz).into_map_coeffs::<KRPoly<R>, _>(|f| {
+        let w = (diz + idz).map_coeffs::<KRPoly<R>, _>(|f| {
             div(f, p, k)
         });
         
@@ -384,7 +384,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     fn send_back(&self, z: &KRPolyChain<R>, dir: usize) -> KRPolyChain<R> {
         let i = dir;
-        z.map::<_, KRPoly<R>, _>(|v, f| { 
+        z.map_ref::<_, KRPoly<R>, _>(|v, f| { 
             debug_assert!(v.0[i].is_one());
             let u = KRGen(v.0.edit(|b| b.set_0(i)), v.1, v.2.clone());
             let e = R::from_sign( sign_between(u.0, v.0) );
