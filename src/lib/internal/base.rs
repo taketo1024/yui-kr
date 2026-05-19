@@ -5,7 +5,7 @@ use derive_more::{Display, Debug};
 use itertools::{Itertools, FoldWhile};
 use num_traits::One;
 use yui_core::{Elem, Sign, PowMod2, GetSign, Ring, RingOps};
-use yui_core::lc::{Gen, Lc};
+use yui_core::lc::{LcKey, Lc};
 use yui_core::poly::{PolyN, MultiVar, MonoOrd};
 use yui_core::bitseq::{BitSeq, Bit};
 
@@ -47,7 +47,7 @@ impl Ord for KRGen {
     }
 }
 
-impl Gen for KRGen {}
+impl LcKey for KRGen {}
 
 pub(crate) fn sign_between(from: BitSeq, to: BitSeq) -> Sign { 
     use Bit::*;

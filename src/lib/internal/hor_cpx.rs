@@ -47,7 +47,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             let gens = cube.gens(i as usize).filter(|v| 
                 excl.should_remain(v)
             );
-            Summand::from_raw_gens(gens)
+            Summand::from_raw_generators(gens)
         });
         
         ChainComplex::new(summands, 1, move |i, e| {

@@ -102,7 +102,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let n = self.dim() as isize;
         let summands = Grid1::generate(0..=n, |i| { 
             let gens = self.gens(i as usize);
-            Summand::from_raw_gens(gens)
+            Summand::from_raw_generators(gens)
         });
         ChainComplex::new(summands, 1, move |_, z| {
             self.d(z)
