@@ -4,7 +4,7 @@ use std::ops::RangeInclusive;
 use derive_more::{Display, Debug};
 use itertools::{Itertools, FoldWhile};
 use num_traits::One;
-use yui_core::{Elem, Sign, PowMod2, GetSign, Ring, RingOps};
+use yui_core::{MathType, Sign, PowMod2, GetSign, Ring, RingOps};
 use yui_core::lc::{LcKey, Lc};
 use yui_core::poly::{PolyN, MultiVar, MonoOrd};
 use yui_core::bitseq::{BitSeq, Bit};
@@ -24,7 +24,7 @@ pub struct KRGen(
     pub KRMono
 );
 
-impl Elem for KRGen {
+impl MathType for KRGen {
     fn math_symbol() -> String {
         String::from("")
     }
