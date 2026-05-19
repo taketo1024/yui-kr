@@ -99,7 +99,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     fn perform_excl(&mut self, excl_level: usize) {
         let n = self.n_cross;
         self.excl = BitSeq::generate(n).map(|v| {
-            let excl = Arc::new( KRHorExcl::from(&self, v, excl_level) );
+            let excl = Arc::new( KRHorExcl::from(self, v, excl_level) );
             (v, excl)
         }).collect();
     }
@@ -126,7 +126,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     pub fn verts_of_weight(&self, k: usize) -> &[BitSeq] {
         if let Some(vs) = self.verts.get(&k) { 
-            &vs
+            vs
         } else {
             &[]
         }
@@ -202,7 +202,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn hv_range(&self, q: isize) -> (RangeInclusive<isize>, RangeInclusive<isize>) {
         let hv = self.support().filter_map(|&idx| {
             let inner = self.to_inner_grad(idx).unwrap();
-            (inner.0 == q).then(|| (inner.1, inner.2))
+            (inner.0 == q).then_some((inner.1, inner.2))
         });
         range2(hv)
     }

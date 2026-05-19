@@ -64,7 +64,7 @@ impl<'a> File<'a> {
     
     pub fn read<D>(&self) -> Result<D, Box<dyn std::error::Error>>
     where for<'de> D: serde::Deserialize<'de> { 
-        let str = std::fs::read_to_string(&self.path())?;
+        let str = std::fs::read_to_string(self.path())?;
         let data = serde_json::from_str::<D>(&str)?;
         Ok(data)
     }
@@ -74,7 +74,7 @@ impl<'a> File<'a> {
         let dir = self.dir();
         let dir_path = std::path::Path::new(&dir);
         if !dir_path.exists() { 
-            std::fs::create_dir(&dir_path)?;
+            std::fs::create_dir(dir_path)?;
         }
 
         if self.exists() { 
@@ -83,14 +83,14 @@ impl<'a> File<'a> {
             info!("write: {}", self.path());
         }    
         let json = serde_json::to_string(&data)?;
-        std::fs::write(&self.path(), &json)?;
+        std::fs::write(self.path(), &json)?;
         Ok(())
     }
 
     pub fn delete(&self) -> std::io::Result<()> { 
         if self.exists() { 
             info!("delete: {}", self.path());
-            std::fs::remove_file(&self.path())?;
+            std::fs::remove_file(self.path())?;
         }
         Ok(())
     }

@@ -31,7 +31,7 @@ impl<R> KRCalc<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn init(name: &str, l: &Link) -> Self { 
         let name = name.to_owned();
-        let data = Arc::new(KRCubeData::new(&l));
+        let data = Arc::new(KRCubeData::new(l));
         let result = data.support().map(|&idx| ((idx.0, idx.1, idx.2), None)).collect();
         let mode = KRCalcMode::default();
         let size_limit = usize::MAX;

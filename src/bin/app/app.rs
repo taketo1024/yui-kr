@@ -198,7 +198,7 @@ impl App {
 
     fn make_link(&self) -> Result<Link, Box<dyn std::error::Error>> { 
         let braid = if let Some(b) = &self.args.braid { 
-            let seq: Vec<i32> = serde_json::from_str(&b)?;
+            let seq: Vec<i32> = serde_json::from_str(b)?;
             Braid::from_iter(seq)
         } else { 
             let target = &self.args.target;

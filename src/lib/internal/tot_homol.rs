@@ -126,11 +126,9 @@ where F: Fn(&E) -> String {
     let cols = grid.support().map(|e| e.0).unique().sorted();
     let rows = grid.support().map(|e| e.1).unique().sorted().rev();
 
-    let str = table(head, rows, cols, |&j, &i| {
+    table(head, rows, cols, |&j, &i| {
         f(grid.get(isize2(i, j)))
-    });
-
-    str
+    })
 }
 
 #[cfg(test)]

@@ -163,7 +163,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     #[inline(never)] // for profilability
     pub fn vectorize_v(&self, i: isize, v: BitSeq, z_v: &KRChain<R>) -> SpVec<R> {
         let h_v = self.cube.vert(v);
-        h_v.vectorize(i, &z_v)
+        h_v.vectorize(i, z_v)
     }
 
     #[inline(never)] // for profilability

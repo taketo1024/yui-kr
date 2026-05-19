@@ -1,11 +1,15 @@
 use std::ops::RangeInclusive;
 use std::sync::Arc;
 
-use itertools::Itertools;
 use log::info;
 use num_traits::One;
-#[cfg(feature = "multithread")]
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+cfg_if::cfg_if! { 
+    if #[cfg(feature = "multithread")] {
+        use itertools::Itertools;
+        use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+    }
+}
+
 use yui_core::util::sync::SyncCounter;
 use yui_core::{EucRing, EucRingOps};
 use yui_core::bitseq::BitSeq;

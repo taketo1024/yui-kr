@@ -70,7 +70,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         // This is to reduce the input dim without `with_trans = true`.
         
         let d = if let Some(q) = self.reducer.matrix(idx) {
-            self.complex.d_matrix_for(idx, &q)
+            self.complex.d_matrix_for(idx, q)
         } else { 
             self.complex.d_matrix(idx)
         };

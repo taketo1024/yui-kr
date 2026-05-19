@@ -51,7 +51,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         });
         
         ChainComplex::new(summands, 1, move |i, e| {
-            if i + 1 <= *h_range.end() { 
+            if i < *h_range.end() { 
                 excl.d(e)
             } else { 
                 KRChain::zero()

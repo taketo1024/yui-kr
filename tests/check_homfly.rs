@@ -12,7 +12,7 @@ fn check_homfly() -> Result<(), Box<dyn std::error::Error>> {
 
     let proj_dir = std::env!("CARGO_MANIFEST_DIR");
     let data_dir = format!("{proj_dir}/data/");
-    let mut reader = csv::Reader::from_path(&format!("{data_dir}/homfly.csv"))?;
+    let mut reader = csv::Reader::from_path(format!("{data_dir}/homfly.csv"))?;
 
     for r in reader.records() { 
         let r = r?;
@@ -111,7 +111,7 @@ fn test_parse_homfly() {
     let m = P::mono;
 
     let s = "{0, 1, {1, 2, 2, -1}, {1, 1, 1}}";
-    let p = parse_homfly(&s).unwrap();
+    let p = parse_homfly(s).unwrap();
     assert_eq!(p, P::from_iter([
         (m( 2, 2), 1),
         (m( 0, 4), -1),

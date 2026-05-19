@@ -99,8 +99,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         });
 
         cands.max_by(|(i1, _), (i2, _)| { 
-            let p1 = self.edge_polys[&i1].nterms();
-            let p2 = self.edge_polys[&i2].nterms();
+            let p1 = self.edge_polys[i1].nterms();
+            let p2 = self.edge_polys[i2].nterms();
             // prefer smaller poly.
             Ord::cmp(&p1, &p2).reverse().then(
                 // prefer smaller index.
@@ -197,7 +197,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     fn is_free(&self, p: &KRPoly<R>) -> bool { 
         p.iter().all(|(x, _)| 
             x.deg().iter().all(|(k, _)| 
-                self.remain_vars.contains(&k)
+                self.remain_vars.contains(k)
             )
         )
     }
@@ -293,7 +293,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
                 let e = R::from_sign( sign_between(v.0, w.0) );
                 let h = if after_excl { 
                     let (p, k, _) = proc.divisor();
-                    let g = rem(g.clone(), &p, k);
+                    let g = rem(g.clone(), p, k);
                     self.reduce_upto(f * g * e, step + 1)
                 } else { 
                     self.reduce_upto(f * g * e, step)
@@ -326,7 +326,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     pub fn backward(&self, z: &KRChain<R>, is_cycle: bool) -> KRChain<R> {
         if is_cycle { 
             debug_assert_eq!(
-                self.d(&z), 
+                self.d(z), 
                 KRChain::zero()
             );
         }
