@@ -4,7 +4,7 @@ use std::ops::RangeInclusive;
 use derive_more::{Display, Debug};
 use itertools::{Itertools, FoldWhile};
 use num_traits::One;
-use yui_core::{MathType, Sign, PowMod2, GetSign, Ring, RingOps};
+use yui_core::{MathType, Sign, Ring, RingOps};
 use yui_core::lc::{LcKey, Lc};
 use yui_core::poly::{PolyN, MultiVar, MonoOrd};
 use yui_core::bitseq::{BitSeq, Bit};
@@ -64,7 +64,7 @@ pub(crate) fn sign_between(from: BitSeq, to: BitSeq) -> Sign {
         }
     ).into_inner() as u32;
 
-    (-1).pow_mod2(e).sign()
+    Sign::from_parity(e)
 }
 
 pub fn combine<R>(z: KRChain<R>) -> KRPolyChain<R>
