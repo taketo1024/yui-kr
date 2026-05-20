@@ -202,7 +202,7 @@ where Itr: IntoIterator<Item = isize> {
 
 #[cfg(test)]
 mod tests {
-    use yui_core::hashmap;
+    use maplit::hashmap;
     use super::*;
  
     #[test]

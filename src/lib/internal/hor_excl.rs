@@ -2,7 +2,8 @@ use std::collections::{HashSet, HashMap};
 
 use log::trace;
 use num_traits::{Zero, One};
-use yui_core::{Ring, RingOps, IndexList};
+use indexmap::IndexSet;
+use yui_core::{Ring, RingOps};
 use yui_homology::utils::make_matrix;
 use yui_matrix::sparse::Trans;
 use yui_core::poly::Mono;
@@ -392,7 +393,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         })
     }
 
-    pub fn trans_for(&self, from: &IndexList<KRGen>, to: &IndexList<KRGen>) -> Trans<R> {
+    pub fn trans_for(&self, from: &IndexSet<KRGen>, to: &IndexSet<KRGen>) -> Trans<R> {
         let fwd = make_matrix(from, to, |x| self.forward_x(x));
         let bwd = make_matrix(to, from, |x| self.backward_x(x));
         Trans::new(fwd, bwd)
@@ -443,11 +444,11 @@ mod tests {
     use std::sync::Arc;
 
     use itertools::Itertools;
+    use maplit::hashmap;
     use yui_link::Link;
     use yui_matrix::MatTrait;
     use yui_core::poly::MultiVar;
     use yui_core::num::Ratio;
-    use yui_core::util::macros::hashmap;
     use yui_core::bitseq::BitSeq;
 
     use crate::internal::data::KRCubeData;
@@ -925,8 +926,8 @@ mod tests {
 
     fn make_trans<R>(excl: &KRHorExcl<R>, gens: &Vec<KRGen>) -> Trans<R>
     where R: Ring, for<'x> &'x R: RingOps<R> { 
-        let from = IndexList::from_iter( gens.iter().cloned() );
-        let to = IndexList::from_iter( reduce(excl, gens) );
+        let from = IndexSet::from_iter( gens.iter().cloned() );
+        let to = IndexSet::from_iter( reduce(excl, gens) );
         excl.trans_for(&from, &to)
     }
 

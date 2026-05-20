@@ -104,9 +104,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 #[cfg(test)]
 mod tests { 
+    use maplit::hashmap;
     use yui_link::Braid;
     use yui_core::num::Ratio;
-    use yui_core::util::macros::hashmap;
     use super::*;
 
     type R = Ratio<i64>;

@@ -113,11 +113,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
+    use maplit::hashmap;
     use num_traits::{One, Zero};
     use yui_homology::{SummandTrait, ChainComplexTrait};
     use yui_core::num::Ratio;
     use yui_link::Link;
-    use yui_core::util::macros::hashmap;
     use super::*;
 
     type R = Ratio<i64>;
