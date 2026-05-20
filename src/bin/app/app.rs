@@ -4,7 +4,7 @@ use clap::{Parser, ValueEnum};
 use derive_more::Display;
 use num_bigint::BigInt;
 use yui_core::{num::Ratio, EucRing, EucRingOps};
-use yui_core::tex::TeX;
+use yui_core::TeX;
 use yui_kr::{KRCalc, KRCalcMode, KRHomologyStr};
 use yui_link::{Braid, Link};
 use super::utils::*;
