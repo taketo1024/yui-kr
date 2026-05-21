@@ -11,7 +11,7 @@ use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui_core::bitseq::BitSeq;
 use yui_core::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, rmod_str, ChainComplexTrait, ToTableString, GenericChainComplex2, Grid2, GridIter, GridTrait, SummandTrait};
+use yui_homology::{isize2, rmod_str, ToTableString, GenericChainComplexBase, GenericChainComplex2, Grid2, GridIter, GridTrait};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::{SpVec, SpMat};
 
@@ -28,24 +28,19 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> KRTotComplexSummand<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    fn new(gens: Vec<KRChain<R>>) -> Self { 
+    fn new(gens: Vec<KRChain<R>>) -> Self {
         Self { gens }
     }
 
-    pub fn gens(&self) -> &Vec<KRChain<R>> { 
+    pub fn gens(&self) -> &Vec<KRChain<R>> {
         &self.gens
     }
-}
 
-impl<R> SummandTrait for KRTotComplexSummand<R>
-where R: Ring, for<'x> &'x R: RingOps<R> {
-    type R = R;
-
-    fn rank(&self) -> usize {
+    pub fn rank(&self) -> usize {
         self.gens.len()
     }
 
-    fn tors(&self) -> &[R] {
+    pub fn tors(&self) -> &[R] {
         &[]
     }
 }
@@ -174,11 +169,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         ))
     }
 
-    pub(crate) fn d_matrix_for(&self, from: isize2, q: &SpMat<R>) -> SpMat<R> { 
-        assert_eq!(self.rank(from), q.n_rows());
+    pub(crate) fn d_matrix_for(&self, from: isize2, q: &SpMat<R>) -> SpMat<R> {
+        assert_eq!(self[from].rank(), q.n_rows());
 
         let to = from + self.d_deg();
-        let m = self.rank(to);
+        let m = self[to].rank();
         let n = q.n_cols();
 
         if m == 0 || n == 0 { 
@@ -248,6 +243,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 }
 
+impl<R> Index<isize2> for KRTotComplex<R>
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    type Output = KRTotComplexSummand<R>;
+
+    fn index(&self, index: isize2) -> &Self::Output {
+        self.get(index)
+    }
+}
+
 impl<R> Index<(isize, isize)> for KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = KRTotComplexSummand<R>;
@@ -257,27 +261,28 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 }
 
-impl<R> ChainComplexTrait<isize2> for KRTotComplex<R>
+impl<R> KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type R = R;
-    type Element = KRChain<R>;
-
-    fn rank(&self, i: isize2) -> usize {
-        self.get(i).rank()
-    }
-
-    fn d_deg(&self) -> isize2 {
+    pub fn d_deg(&self) -> isize2 {
         isize2(0, 1)
     }
 
-    fn d(&self, _i: isize2, z: &Self::Element) -> Self::Element {
+    pub fn d(&self, _i: isize2, z: &KRChain<R>) -> KRChain<R> {
         self.cube.d(z)
     }
 
-    fn d_matrix(&self, idx: isize2) -> SpMat<Self::R> {
-        let n = self.rank(idx);
+    pub fn d_matrix(&self, idx: isize2) -> SpMat<R> {
+        let n = self[idx].rank();
         let q = SpMat::id(n);
         self.d_matrix_for(idx, &q)
+    }
+
+    pub fn as_generic(&self) -> GenericChainComplexBase<isize2, R> {
+        GenericChainComplexBase::generate(
+            self.support().copied(),
+            self.d_deg(),
+            |i| self.d_matrix(i)
+        )
     }
 }
 
@@ -286,8 +291,7 @@ mod tests {
     use yui_link::Link;
     use yui_core::num::Ratio;
     
-    use yui_homology::{ChainComplexTrait, SummandTrait};
-    use super::*;
+        use super::*;
 
     type R = Ratio<i64>;
 
@@ -339,15 +343,15 @@ mod tests {
     }
 
     #[test]
-    fn complex() { 
+    fn complex() {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let c = make_cpx(&l, 0);
 
-        c.check_d_all();
+        c.as_generic().check_d_all();
 
         let c = make_cpx(&l, -4);
 
-        c.check_d_all();
+        c.as_generic().check_d_all();
     }
 
     #[test]

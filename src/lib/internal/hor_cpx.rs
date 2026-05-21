@@ -4,8 +4,7 @@ use delegate::delegate;
 
 use num_traits::Zero;
 use yui_core::{Ring, RingOps};
-use yui_homology::{ChainComplexTrait, GridTrait, GridIter, ChainComplex, Summand, Grid1};
-use yui_matrix::sparse::SpMat;
+use yui_homology::{GridTrait, GridIter, ChainComplex, Summand, Grid1};
 use yui_core::bitseq::BitSeq;
 
 // use log::info;
@@ -103,20 +102,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 }
 
 
-impl<R> ChainComplexTrait<isize> for KRHorComplex<R>
+impl<R> KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    type R = R;
-    type Element = KRChain<R>;
-
-    delegate! { 
-        to self.inner { 
-            fn rank(&self, i: isize) -> usize;
-            fn d_deg(&self) -> isize;
-            fn d_matrix(&self, i: isize) -> SpMat<Self::R>;
+    delegate! {
+        to self.inner {
+            pub fn d_deg(&self) -> isize;
         }
     }
 
-    fn d(&self, i: isize, z: &KRChain<R>) -> KRChain<R> { 
+    pub fn d(&self, i: isize, z: &KRChain<R>) -> KRChain<R> {
         let z_exc = self.excl.forward(z);
         let dz_exc = self.inner.d(i, &z_exc);
         let dz = self.excl.backward(&dz_exc, true);
@@ -126,8 +120,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 #[cfg(test)]
 mod tests { 
-    use yui_homology::{SummandTrait, ChainComplexTrait};
-    use yui_link::Link;
+        use yui_link::Link;
     use yui_core::num::Ratio;
 
     use super::*;
@@ -162,7 +155,7 @@ mod tests {
         assert_eq!(c[2].rank(), 51);
         assert_eq!(c[3].rank(), 28);
 
-        c.check_d_all();
+        c.inner.check_d_all();
 
         let h = c.inner.homology();
         
@@ -185,7 +178,7 @@ mod tests {
         assert_eq!(c[2].rank(), 10);
         assert_eq!(c[3].rank(), 7);
 
-        c.check_d_all();
+        c.inner.check_d_all();
 
         let h = c.inner.homology();
         
@@ -208,7 +201,7 @@ mod tests {
         assert_eq!(c[2].rank(), 2);
         assert_eq!(c[3].rank(), 2);
 
-        c.check_d_all();
+        c.inner.check_d_all();
 
         let h = c.inner.homology();
         
@@ -231,7 +224,7 @@ mod tests {
         assert_eq!(c[2].rank(), 2);
         assert_eq!(c[3].rank(), 2);
 
-        c.check_d_all();
+        c.inner.check_d_all();
 
         let h = c.inner.homology();
         
@@ -254,7 +247,7 @@ mod tests {
         assert_eq!(c[2].rank(), 2);
         assert_eq!(c[3].rank(), 2);
 
-        c.check_d_all();
+        c.inner.check_d_all();
 
         let h = c.inner.homology();
         

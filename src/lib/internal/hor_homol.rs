@@ -6,7 +6,7 @@ use num_traits::Zero;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{Grid1, GridIter, GridTrait, Homology, Summand, SummandTrait};
+use yui_homology::{Grid1, GridIter, GridTrait, Homology, Summand};
 use yui_matrix::sparse::SpVec;
 use yui_core::bitseq::BitSeq;
 

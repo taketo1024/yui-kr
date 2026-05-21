@@ -2,7 +2,7 @@ use log::info;
 use num_traits::Zero;
 use yui_core::{EucRing, EucRingOps};
 use yui_homology::utils::ChainReducer;
-use yui_homology::{isize2, ChainComplexTrait, ToTableString, GenericChainComplex2, GridTrait};
+use yui_homology::{isize2, ToTableString, GenericChainComplex2, GridTrait};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::SpMat;
 
@@ -50,12 +50,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn setup(&mut self, idx: isize2) {
         let to_idx = idx + self.complex.d_deg();
 
-        let size = { 
-            let m = self.complex.rank(to_idx);
-            let n = if let Some(q) = self.reducer.matrix(idx) { 
+        let size = {
+            let m = self.complex[to_idx].rank();
+            let n = if let Some(q) = self.reducer.matrix(idx) {
                 q.n_cols()
-            } else { 
-                self.complex.rank(idx)
+            } else {
+                self.complex[idx].rank()
             };
             (m, n)
         };

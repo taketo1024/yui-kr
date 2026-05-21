@@ -4,7 +4,7 @@ use cartesian::cartesian;
 use itertools::Itertools;
 use log::info;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{ChainComplexTrait, ComputeHomology, SummandTrait, isize2, isize3};
+use yui_homology::{isize2, isize3};
 use yui_link::Link;
 
 use crate::internal::data::{KRCubeData, range2};
@@ -81,12 +81,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         ).map(isize2::from);
 
         for idx in support { 
-            if 
-                complex.rank(idx - d_deg) <= self.size_limit && 
-                complex.rank(idx)         <= self.size_limit && 
-                complex.rank(idx + d_deg) <= self.size_limit
+            if
+                complex[idx - d_deg].rank() <= self.size_limit &&
+                complex[idx].rank()         <= self.size_limit &&
+                complex[idx + d_deg].rank() <= self.size_limit
             {
-                let res = complex.compute_homology_at(idx, false);
+                let res = complex.generic_homology_at(idx);
                 let grad = self.data.to_outer_grad(isize3(q, idx.0, idx.1));
                 self.result.set(grad.into(), res.rank());
             }

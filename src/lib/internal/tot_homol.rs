@@ -5,7 +5,7 @@ use delegate::delegate;
 
 use log::info;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{isize2, ComputeHomology, ToTableString, GenericHomology2, GenericSummand, Grid2, GridIter, GridTrait};
+use yui_homology::{isize2, ToTableString, GenericHomology2, GenericSummand, Grid2, GridIter, GridTrait};
 
 use super::tot_cpx::KRTotComplex;
 use super::base::extend_ends_bounded;
@@ -38,7 +38,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         let inner = Grid2::generate(
             support,
-            |idx| complex.compute_homology_at(idx, false)
+            |idx| complex.generic_homology_at(idx)
         );
 
         info!("H (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, inner.to_table_string());
@@ -90,7 +90,6 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 #[cfg(test)]
 mod tests { 
-    use yui_homology::SummandTrait;
     use yui_link::Link;
     use yui_core::num::Ratio;
     use super::*;

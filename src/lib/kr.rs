@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use delegate::delegate;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{isize2, isize3, GenericSummand, Grid1, GridTrait, SummandTrait};
+use yui_homology::{isize2, isize3, GenericSummand, Grid1, GridTrait};
 use yui_link::{Link, Braid};
 
 use crate::KRHomologyStr;
