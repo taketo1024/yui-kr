@@ -5,7 +5,7 @@ use delegate::delegate;
 
 use log::info;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{isize2, ToTableString, GenericHomology2, GenericSummand, Grid2, GridIter, GridTrait};
+use yui_homology::{isize2, ToTableString, GenericHomology2, GenericSummand, Grid2, GridIter};
 
 use super::tot_cpx::KRTotComplex;
 use super::base::extend_ends_bounded;
@@ -60,31 +60,31 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         )
     }
 
-    pub fn q_deg(&self) -> isize { 
+    pub fn q_deg(&self) -> isize {
         self.q
     }
-}
-
-impl<R> GridTrait<isize2> for KRTotHomol<R>
-where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Item = GenericSummand<isize2, R>;
-    type Support<'a> = GridIter<'a, isize2, Self::Item> where Self: 'a, R: 'a;
 
     delegate! {
         to self.inner {
-            fn support(&self) -> Self::Support<'_>;
-            fn is_supported(&self, i: isize2) -> bool;
-            fn get(&self, idx: isize2) -> &Self::Item;
-            fn get_default(&self) -> &Self::Item;
+            pub fn support(&self) -> GridIter<'_, isize2, GenericSummand<isize2, R>>;
+            pub fn is_supported(&self, i: isize2) -> bool;
         }
+    }
+}
+
+impl<R> Index<isize2> for KRTotHomol<R>
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    type Output = GenericSummand<isize2, R>;
+    fn index(&self, index: isize2) -> &Self::Output {
+        &self.inner[index]
     }
 }
 
 impl<R> Index<(isize, isize)> for KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = GenericSummand<isize2, R>;
-    fn index(&self, index: (isize, isize)) -> &Self::Output { 
-        self.get(index.into())
+    fn index(&self, index: (isize, isize)) -> &Self::Output {
+        &self[isize2::from(index)]
     }
 }
 

@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use delegate::delegate;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{isize2, isize3, GenericSummand, Grid1, GridTrait};
+use yui_homology::{isize2, isize3, GenericSummand, Grid1};
 use yui_link::{Link, Braid};
 
 use crate::KRHomologyStr;
@@ -49,8 +49,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     pub fn structure(&self) -> KRHomologyStr {
         self.support().filter_map(|&idx| {
-            let h = self.get(idx);
-            let r = h.rank();
+            let r = self[idx].rank();
 
             if r > 0 {
                 Some(((idx.0, idx.1, idx.2), r))
@@ -65,28 +64,25 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 }
 
-impl<R> GridTrait<isize3> for KRHomology<R>
+impl<R> KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Item = GenericSummand<isize2, R>;
-    type Support<'a> = std::collections::hash_set::Iter<'a, isize3> where Self: 'a, R: 'a;
-
     delegate! {
         to self.data {
-            fn support(&self) -> Self::Support<'_>;
-            fn is_supported(&self, idx: isize3) -> bool;
+            pub fn support(&self) -> std::collections::hash_set::Iter<'_, isize3>;
+            pub fn is_supported(&self, idx: isize3) -> bool;
         }
     }
+}
 
-    fn get(&self, idx: isize3) -> &Self::Item {
+impl<R> Index<isize3> for KRHomology<R>
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    type Output = GenericSummand<isize2, R>;
+    fn index(&self, idx: isize3) -> &Self::Output {
         if let Some(isize3(q, h, v)) = self.data.to_inner_grad(idx) {
             &self.q_slices[q][(h, v)]
         } else {
-            self.get_default()
+            &self.q_slices.get_default()[isize2(0, 0)]
         }
-    }
-
-    fn get_default(&self) -> &Self::Item {
-        self.q_slices.get_default().get(isize2(0, 0))
     }
 }
 
@@ -94,7 +90,7 @@ impl<R> Index<(isize, isize, isize)> for KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = GenericSummand<isize2, R>;
     fn index(&self, index: (isize, isize, isize)) -> &Self::Output {
-        self.get(index.into())
+        &self[isize3::from(index)]
     }
 }
 

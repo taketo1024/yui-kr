@@ -11,7 +11,7 @@ use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui_core::bitseq::BitSeq;
 use yui_core::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, rmod_str, ToTableString, GenericChainComplexBase, GenericChainComplex2, Grid2, GridIter, GridTrait};
+use yui_homology::{isize2, rmod_str, ToTableString, GenericChainComplexBase, GenericChainComplex2, Grid2, GridIter};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::{SpVec, SpMat};
 
@@ -118,7 +118,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     #[inline(never)] // for profilability
     pub fn vectorize(&self, idx: isize2, z: &KRChain<R>) -> SpVec<R> {
-        if self.get(idx).rank() == 0 {
+        if self[idx].rank() == 0 {
             return SpVec::zero(0)
         }
 
@@ -163,7 +163,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     #[inline(never)] // for profilability
     pub fn as_chain(&self, idx: isize2, v: &SpVec<R>) -> KRChain<R> { 
-        let gens = self.get(idx).gens();
+        let gens = self[idx].gens();
         KRChain::sum(v.iter().map(|(i, a)| 
             &gens[i] * a
         ))
@@ -213,6 +213,13 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         reducer.reduce();
         reducer.into_complex()
     }
+
+    delegate! {
+        to self.summands {
+            pub fn support(&self) -> GridIter<'_, isize2, KRTotComplexSummand<R>>;
+            pub fn is_supported(&self, i: isize2) -> bool;
+        }
+    }
 }
 
 fn decomp<R>(z: &KRChain<R>) -> HashMap<BitSeq, KRChain<R>>
@@ -224,31 +231,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     res.iter_mut().for_each(|(_, f)| f.clean());
 
-    res 
+    res
 }
 
-
-impl<R> GridTrait<isize2> for KRTotComplex<R>
-where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Item = KRTotComplexSummand<R>;
-    type Support<'a> = GridIter<'a, isize2, Self::Item> where Self: 'a, R: 'a;
-
-    delegate! {
-        to self.summands {
-            fn support(&self) -> Self::Support<'_>;
-            fn is_supported(&self, i: isize2) -> bool;
-            fn get(&self, i: isize2) -> &Self::Item;
-            fn get_default(&self) -> &Self::Item;
-        }
-    }
-}
 
 impl<R> Index<isize2> for KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = KRTotComplexSummand<R>;
 
     fn index(&self, index: isize2) -> &Self::Output {
-        self.get(index)
+        &self.summands[index]
     }
 }
 
@@ -257,7 +249,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = KRTotComplexSummand<R>;
 
     fn index(&self, index: (isize, isize)) -> &Self::Output {
-        self.get(index.into())
+        &self[isize2::from(index)]
     }
 }
 

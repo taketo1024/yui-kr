@@ -4,7 +4,7 @@ use delegate::delegate;
 
 use num_traits::Zero;
 use yui_core::{Ring, RingOps};
-use yui_homology::{GridTrait, GridIter, ChainComplex, Summand, Grid1};
+use yui_homology::{GridIter, ChainComplex, Summand, Grid1};
 use yui_core::bitseq::BitSeq;
 
 // use log::info;
@@ -68,44 +68,18 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         red
     }
 
-    pub fn q_deg(&self) -> isize { 
+    pub fn q_deg(&self) -> isize {
         self.q
     }
 
-    pub fn v_coords(&self) -> BitSeq { 
+    pub fn v_coords(&self) -> BitSeq {
         self.excl.v_coords()
     }
-}
-
-impl<R> GridTrait<isize> for KRHorComplex<R>
-where R: Ring, for<'x> &'x R: RingOps<R> {
-    type Item = Summand<KRGen, R>;
-    type Support<'a> = GridIter<'a, isize, Self::Item> where Self: 'a, R: 'a;
 
     delegate! {
         to self.inner {
-            fn support(&self) -> Self::Support<'_>;
-            fn is_supported(&self, i: isize) -> bool;
-            fn get(&self, i: isize) -> &Self::Item;
-            fn get_default(&self) -> &Self::Item;
-        }
-    }
-}
-
-impl<R> Index<isize> for KRHorComplex<R>
-where R: Ring, for<'x> &'x R: RingOps<R> {
-    type Output = Summand<KRGen, R>;
-
-    fn index(&self, i: isize) -> &Self::Output {
-        self.get(i)
-    }
-}
-
-
-impl<R> KRHorComplex<R>
-where R: Ring, for<'x> &'x R: RingOps<R> {
-    delegate! {
-        to self.inner {
+            pub fn support(&self) -> GridIter<'_, isize, Summand<KRGen, R>>;
+            pub fn is_supported(&self, i: isize) -> bool;
             pub fn d_deg(&self) -> isize;
         }
     }
@@ -115,6 +89,15 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let dz_exc = self.inner.d(i, &z_exc);
         let dz = self.excl.backward(&dz_exc, true);
         dz
+    }
+}
+
+impl<R> Index<isize> for KRHorComplex<R>
+where R: Ring, for<'x> &'x R: RingOps<R> {
+    type Output = Summand<KRGen, R>;
+
+    fn index(&self, i: isize) -> &Self::Output {
+        &self.inner[i]
     }
 }
 

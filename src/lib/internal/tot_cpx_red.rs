@@ -2,7 +2,7 @@ use log::info;
 use num_traits::Zero;
 use yui_core::{EucRing, EucRingOps};
 use yui_homology::utils::ChainReducer;
-use yui_homology::{isize2, ToTableString, GenericChainComplex2, GridTrait};
+use yui_homology::{isize2, ToTableString, GenericChainComplex2};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::SpMat;
 
