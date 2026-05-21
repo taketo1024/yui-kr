@@ -4,7 +4,7 @@ use delegate::delegate;
 
 use num_traits::Zero;
 use yui_core::{Ring, RingOps};
-use yui_homology::{GridIter, ChainComplex, Summand, Grid1};
+use yui_homology::{ChainComplex, Summand, GrMod1};
 use yui_core::bitseq::BitSeq;
 
 // use log::info;
@@ -42,7 +42,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     }
 
     fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>, h_range: RangeInclusive<isize>) -> ChainComplex<KRGen, R> { 
-        let summands = Grid1::generate(h_range.clone(), |i| { 
+        let summands = GrMod1::generate(h_range.clone(), |i| { 
             let gens = cube.gens(i as usize).filter(|v| 
                 excl.should_remain(v)
             );
@@ -78,7 +78,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     delegate! {
         to self.inner {
-            pub fn support(&self) -> GridIter<'_, isize, Summand<KRGen, R>>;
+            pub fn support(&self) -> impl Iterator<Item = &isize> + '_;
             pub fn is_supported(&self, i: isize) -> bool;
             pub fn d_deg(&self) -> isize;
         }

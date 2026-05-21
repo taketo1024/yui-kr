@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use num_traits::One;
 use yui_core::{Ring, RingOps};
-use yui_homology::{ChainComplex, Grid1, Summand};
+use yui_homology::{ChainComplex, GrMod1, Summand};
 use yui_core::bitseq::BitSeq;
 
 use super::base::{KRPoly, KRMono, KRGen, KRChain, KRPolyChain, sign_between, combine, decombine};
@@ -100,7 +100,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     pub fn into_complex(self) -> ChainComplex<KRGen, R> {
         let n = self.dim() as isize;
-        let summands = Grid1::generate(0..=n, |i| { 
+        let summands = GrMod1::generate(0..=n, |i| { 
             let gens = self.gens(i as usize);
             Summand::from_raw_generators(gens)
         });

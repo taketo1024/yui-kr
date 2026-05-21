@@ -4,14 +4,13 @@ use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
 use cartesian::cartesian;
-use delegate::delegate;
 use log::info;
 use num_traits::Zero;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui_core::bitseq::BitSeq;
 use yui_core::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, rmod_str, ToTableString, GenericChainComplexBase, GenericChainComplex2, Grid2, GridIter};
+use yui_homology::{isize2, rmod_str, GenericChainComplexBase, GenericChainComplex2, Grid2, ToTableString};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::{SpVec, SpMat};
 
@@ -57,7 +56,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
     q: isize,
     cube: KRTotCube<R>,
-    summands: Grid2<KRTotComplexSummand<R>>
+    summands: Grid2<KRTotComplexSummand<R>>,
 }
 
 impl<R> KRTotComplex<R>
@@ -83,10 +82,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         info!("setup summands..");
 
-        let summands = Grid2::generate(
-            support, 
-            |idx| Self::summand(&data, &cube, idx)
-        );
+        let summands: Grid2<KRTotComplexSummand<R>> = support
+            .map(|idx| (idx, Self::summand(&data, &cube, idx)))
+            .collect();
 
         info!("C (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, summands.to_table_string());
 
@@ -214,11 +212,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         reducer.into_complex()
     }
 
-    delegate! {
-        to self.summands {
-            pub fn support(&self) -> GridIter<'_, isize2, KRTotComplexSummand<R>>;
-            pub fn is_supported(&self, i: isize2) -> bool;
-        }
+    pub fn support(&self) -> impl Iterator<Item = &isize2> + '_ {
+        self.summands.keys()
+    }
+
+    pub fn is_supported(&self, i: isize2) -> bool {
+        self.summands.contains_key(i)
     }
 }
 

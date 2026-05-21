@@ -6,7 +6,7 @@ use num_traits::Zero;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{Grid1, GridIter, Homology, Summand};
+use yui_homology::{GrMod1, Homology, Summand};
 use yui_matrix::sparse::SpVec;
 use yui_core::bitseq::BitSeq;
 
@@ -41,7 +41,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         
         // info!("H_hor (q: {}, v: {:?})..", q, v_coords);
 
-        let inner = Grid1::generate(h_range, |i|
+        let inner = GrMod1::generate(h_range, |i|
             complex.homology_at(i)
         );
 
@@ -52,7 +52,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     pub fn zero(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq) -> Self { 
         let excl = data.excl(v_coords);
-        let inner = Grid1::default();
+        let inner = GrMod1::default();
         Self { q, excl, inner }
     }
 
@@ -109,7 +109,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     delegate! {
         to self.inner {
-            pub fn support(&self) -> GridIter<'_, isize, Summand<KRGen, R>>;
+            pub fn support(&self) -> impl Iterator<Item = &isize> + '_;
             pub fn is_supported(&self, i: isize) -> bool;
         }
     }

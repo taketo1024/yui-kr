@@ -13,28 +13,28 @@ use crate::internal::tot_homol::KRTotHomol;
 pub struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
-    q_slices: Grid1<KRTotHomol<R>>
+    q_slices: Grid1<KRTotHomol<R>>,
 }
 
-impl<R> KRHomology<R> 
-where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    pub fn from_braid(b: &Braid) -> Self { 
+impl<R> KRHomology<R>
+where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    pub fn from_braid(b: &Braid) -> Self {
         let l = b.closure();
         Self::from_link(&l)
     }
 
-    pub fn from_link(link: &Link) -> Self { 
+    pub fn from_link(link: &Link) -> Self {
         assert_eq!(link.n_comps(), 1, "only knots are supported.");
         let data = Arc::new(KRCubeData::new(link));
         Self::new(data)
     }
 
-    pub fn new(data: Arc<KRCubeData<R>>) -> Self { 
+    pub fn new(data: Arc<KRCubeData<R>>) -> Self {
         let q_range = data.q_range();
-        let q_slices = Grid1::generate(q_range, |q| {
+        let q_slices = q_range.map(|q| {
             let range = data.hv_range(q);
-            KRTotHomol::new_restr(data.clone(), q, range)
-        });
+            (q, KRTotHomol::new_restr(data.clone(), q, range))
+        }).collect();
         Self { data, q_slices }
     }
 
@@ -78,11 +78,8 @@ impl<R> Index<isize3> for KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = GenericSummand<isize2, R>;
     fn index(&self, idx: isize3) -> &Self::Output {
-        if let Some(isize3(q, h, v)) = self.data.to_inner_grad(idx) {
-            &self.q_slices[q][(h, v)]
-        } else {
-            &self.q_slices.get_default()[isize2(0, 0)]
-        }
+        let isize3(q, h, v) = self.data.to_inner_grad(idx).unwrap_or(isize3(0, 0, 0));
+        &self.q_slices[q][isize2(h, v)]
     }
 }
 

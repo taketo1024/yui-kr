@@ -5,7 +5,7 @@ use delegate::delegate;
 
 use log::info;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{isize2, ToTableString, GenericHomology2, GenericSummand, Grid2, GridIter};
+use yui_homology::{isize2, ToTableString, GenericHomology2, GenericSummand, GrMod2};
 
 use super::tot_cpx::KRTotComplex;
 use super::base::extend_ends_bounded;
@@ -36,7 +36,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let complex = Self::make_cpx(data, q, range.clone());
         let complex = complex.reduced();
 
-        let inner = Grid2::generate(
+        let inner = GrMod2::generate(
             support,
             |idx| complex.generic_homology_at(idx)
         );
@@ -66,9 +66,13 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     delegate! {
         to self.inner {
-            pub fn support(&self) -> GridIter<'_, isize2, GenericSummand<isize2, R>>;
+            pub fn support(&self) -> impl Iterator<Item = &isize2> + '_;
             pub fn is_supported(&self, i: isize2) -> bool;
         }
+    }
+
+    pub fn into_generic(self) -> GenericHomology2<R> { 
+        self.inner
     }
 }
 
