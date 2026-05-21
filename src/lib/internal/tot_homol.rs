@@ -5,7 +5,7 @@ use delegate::delegate;
 
 use log::info;
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{isize2, ToTableString, GenericHomology2, GenericSummand, GrMod2};
+use yui_homology::{isize2, ToTableString, GenericGrMod2, GenericSummand, GrMod2};
 
 use super::tot_cpx::KRTotComplex;
 use super::base::extend_ends_bounded;
@@ -15,7 +15,7 @@ use super::data::KRCubeData;
 pub struct KRTotHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     q: isize,
-    inner: GenericHomology2<R>
+    inner: GenericGrMod2<R>
 } 
 
 impl<R> KRTotHomol<R>
@@ -71,7 +71,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }
     }
 
-    pub fn into_generic(self) -> GenericHomology2<R> { 
+    pub fn into_generic(self) -> GenericGrMod2<R> { 
         self.inner
     }
 }

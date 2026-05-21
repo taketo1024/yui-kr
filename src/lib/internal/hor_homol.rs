@@ -6,7 +6,7 @@ use num_traits::Zero;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui_core::{EucRing, EucRingOps};
-use yui_homology::{GrMod1, Homology, Summand};
+use yui_homology::{GrMod1, Summand};
 use yui_matrix::sparse::SpVec;
 use yui_core::bitseq::BitSeq;
 
@@ -22,7 +22,7 @@ pub struct KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
     q: isize,
     excl: Arc<KRHorExcl<R>>,
-    inner: Homology<KRGen, R>
+    inner: GrMod1<KRGen, R>
 } 
 
 impl<R> KRHorHomol<R>

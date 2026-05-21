@@ -4,7 +4,7 @@ use delegate::delegate;
 
 use num_traits::Zero;
 use yui_core::{Ring, RingOps};
-use yui_homology::{ChainComplex, Summand, GrMod1};
+use yui_homology::{ChainComplex1, Summand, GrMod1};
 use yui_core::bitseq::BitSeq;
 
 // use log::info;
@@ -19,7 +19,7 @@ pub struct KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     q: isize,
     excl: Arc<KRHorExcl<R>>,
-    inner: ChainComplex<KRGen, R>
+    inner: ChainComplex1<KRGen, R>
 } 
 
 impl<R> KRHorComplex<R>
@@ -41,7 +41,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         Self { q, excl, inner }
     }
 
-    fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>, h_range: RangeInclusive<isize>) -> ChainComplex<KRGen, R> { 
+    fn make_cpx(excl: Arc<KRHorExcl<R>>, cube: KRHorCube<R>, h_range: RangeInclusive<isize>) -> ChainComplex1<KRGen, R> { 
         let summands = GrMod1::generate(h_range.clone(), |i| { 
             let gens = cube.gens(i as usize).filter(|v| 
                 excl.should_remain(v)
@@ -49,7 +49,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             Summand::from_raw_generators(gens)
         });
         
-        ChainComplex::new(summands, 1, move |i, e| {
+        ChainComplex1::new(summands, 1, move |i, e| {
             if i < *h_range.end() { 
                 excl.d(e)
             } else { 
@@ -58,7 +58,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         })
     }
 
-    pub fn reduced(&self) -> ChainComplex<KRGen, R> {
+    pub fn reduced(&self) -> ChainComplex1<KRGen, R> {
         // info!("reduce C_hor (q: {}, v: {:?})..", self.q, self.v_coords);
 
         let red = self.inner.reduced();

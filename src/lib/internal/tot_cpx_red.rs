@@ -108,7 +108,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn into_complex(self) -> GenericChainComplex2<R> { 
-        let red = self.reducer.into_complex();
+        let red = self.reducer.into_generic_complex();
 
         info!("reduced C (q: {})\n{}", self.complex.q_deg(), red.to_table_string());
         

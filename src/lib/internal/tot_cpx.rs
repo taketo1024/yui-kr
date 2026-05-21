@@ -10,7 +10,7 @@ use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui_core::bitseq::BitSeq;
 use yui_core::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, rmod_str, GenericChainComplexBase, GenericChainComplex2, Grid2, ToTableString};
+use yui_homology::{isize2, rmod_str, GenericChainComplex, GenericChainComplex2, Grid2, ToTableString};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::{SpVec, SpMat};
 
@@ -268,11 +268,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.d_matrix_for(idx, &q)
     }
 
-    pub fn as_generic(&self) -> GenericChainComplexBase<isize2, R> {
-        GenericChainComplexBase::generate(
-            self.support().copied(),
+    pub fn as_generic(&self) -> GenericChainComplex<isize2, R> {
+        GenericChainComplex::from_d_matrices(
             self.d_deg(),
-            |i| self.d_matrix(i)
+            self.support().map(|&i| (i, self.d_matrix(i)))
         )
     }
 }
