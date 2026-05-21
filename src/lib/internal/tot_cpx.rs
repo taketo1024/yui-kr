@@ -11,7 +11,7 @@ use num_traits::Zero;
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui_core::bitseq::BitSeq;
 use yui_core::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, rmod_str, ChainComplexTrait, DisplayTable, GenericChainComplex2, Grid2, GridIter, GridTrait, SummandTrait};
+use yui_homology::{isize2, rmod_str, ChainComplexTrait, ToTableString, GenericChainComplex2, Grid2, GridIter, GridTrait, SummandTrait};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::{SpVec, SpMat};
 
@@ -93,7 +93,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             |idx| Self::summand(&data, &cube, idx)
         );
 
-        info!("C (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, summands.display_table());
+        info!("C (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, summands.to_table_string());
 
         Self { q, data, cube, summands }
     }
@@ -175,11 +175,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub(crate) fn d_matrix_for(&self, from: isize2, q: &SpMat<R>) -> SpMat<R> { 
-        assert_eq!(self.rank(from), q.nrows());
+        assert_eq!(self.rank(from), q.n_rows());
 
         let to = from + self.d_deg();
         let m = self.rank(to);
-        let n = q.ncols();
+        let n = q.n_cols();
 
         if m == 0 || n == 0 { 
             return SpMat::zero((m, n))

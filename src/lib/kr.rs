@@ -60,12 +60,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }).collect()
     }
 
-    pub fn display_table(&self) -> String { 
+    pub fn to_table_string(&self) -> String { 
         self.structure().qpoly_table()
-    }
-
-    pub fn print_table(&self) { 
-        println!("{}", self.display_table())
     }
 }
 

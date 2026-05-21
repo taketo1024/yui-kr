@@ -2,7 +2,7 @@ use log::info;
 use num_traits::Zero;
 use yui_core::{EucRing, EucRingOps};
 use yui_homology::utils::ChainReducer;
-use yui_homology::{isize2, ChainComplexTrait, DisplayTable, GenericChainComplex2, GridTrait};
+use yui_homology::{isize2, ChainComplexTrait, ToTableString, GenericChainComplex2, GridTrait};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::SpMat;
 
@@ -53,7 +53,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let size = { 
             let m = self.complex.rank(to_idx);
             let n = if let Some(q) = self.reducer.matrix(idx) { 
-                q.ncols()
+                q.n_cols()
             } else { 
                 self.complex.rank(idx)
             };
@@ -96,7 +96,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         info!("d {idx} -> {to_idx}");
         info!("  size:    {:?}", d.shape());
 
-        if usize::max(d.nrows(), d.ncols()) > self.size_limit {
+        if usize::max(d.n_rows(), d.n_cols()) > self.size_limit {
             info!("  skipped.");
             return;
         }
@@ -110,7 +110,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     pub fn into_complex(self) -> GenericChainComplex2<R> { 
         let red = self.reducer.into_complex();
 
-        info!("reduced C (q: {})\n{}", self.complex.q_deg(), red.display_table());
+        info!("reduced C (q: {})\n{}", self.complex.q_deg(), red.to_table_string());
         
         red
     }
