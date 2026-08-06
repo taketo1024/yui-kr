@@ -421,11 +421,158 @@ mod tests {
     type P = KRPoly<R>;
 
     #[test]
-    fn grad_shift() { 
+    fn grad_shift() {
         let l = Link::test_data("3_1").mirror(); // (w, s) = (-3, 2)
         let w = l.writhe() as isize;
         let s = l.seifert_circles().len() as isize;
         assert_eq!(KRCubeData::<i32>::l_grad_shift(w, s), isize3(4,-2,-4));
+    }
+
+    #[test]
+    fn grad_shift_positive() {
+        let l = Link::test_data("3_1"); // (w, s) = (3, 2)
+        let w = l.writhe() as isize;
+        let s = l.seifert_circles().len() as isize;
+
+        assert_eq!((w, s), (3, 2));
+
+        // {-w + s - 1, w + s - 1, w - s + 1} [NS2024, (2.1)]
+        assert_eq!(KRCubeData::<i32>::l_grad_shift(w, s), isize3(-2, 4, 2));
+    }
+
+    // The grading shifts of Figure 1, read off the four corners of C(D_c).
+    // Bottom-left is (h,v) = (0,0), bottom-right (1,0), top-left (0,1),
+    // top-right (1,1).
+    #[test]
+    fn x_grad_shift_fig1() {
+        use Bit::{Bit0, Bit1};
+        use Sign::{Pos, Neg};
+
+        let f = KRCubeData::<i32>::x_grad_shift;
+
+        // positive crossing
+        assert_eq!(f(Pos, Bit0, Bit0), isize3( 2, -2, -2));
+        assert_eq!(f(Pos, Bit1, Bit0), isize3( 0,  0, -2));
+        assert_eq!(f(Pos, Bit0, Bit1), isize3( 0, -2,  0));
+        assert_eq!(f(Pos, Bit1, Bit1), isize3( 0,  0,  0));
+
+        // negative crossing
+        assert_eq!(f(Neg, Bit0, Bit0), isize3( 0, -2,  0));
+        assert_eq!(f(Neg, Bit1, Bit0), isize3( 0,  0,  0));
+        assert_eq!(f(Neg, Bit0, Bit1), isize3( 0, -2,  2));
+        assert_eq!(f(Neg, Bit1, Bit1), isize3(-2,  0,  2));
+    }
+
+    #[test]
+    fn root_grad_positive_trefoil() {
+        let l = Link::test_data("3_1");
+        let data = KRCubeData::<R>::new_no_excl(&l);
+
+        // l_grad_shift(3,2) + 3 * x_grad_shift(Pos, 0, 0)
+        //   = (-2,4,2) + 3*(2,-2,-2)
+        assert_eq!(data.root_grad(), isize3(4, -2, -4));
+    }
+
+    // The edge polynomials of Figure 1, in terms of
+    // x_ac = X_k - X_i and x_bc = X_l - X_i.
+    #[test]
+    fn edge_polys_fig1() {
+        for l in [
+            Link::test_data("3_1"),          // positive crossings
+            Link::test_data("3_1").mirror(), // negative crossings
+        ] {
+            let n = l.n_crossings();
+            let data = KRCubeData::<R>::new_no_excl(&l);
+
+            let zeros = BitSeq::zeros(n);
+            let ones  = BitSeq::ones(n);
+
+            for i in 0..n {
+                let p = data.x_poly(i);
+                let pos = data.x_sign(i).is_positive();
+
+                let x_ac = p.x_ac.clone();
+                let quad = &p.x_ac * &p.x_bc;
+
+                // horizontal: quadratic on the v = 0 row for a positive
+                // crossing, on the v = 1 row for a negative one.
+                let (h0, h1) = if pos {
+                    (quad.clone(), x_ac.clone())
+                } else {
+                    (x_ac.clone(), quad.clone())
+                };
+                assert_eq!(data.hor_edge_poly(zeros, i), h0);
+                assert_eq!(data.hor_edge_poly(ones,  i), h1);
+
+                // vertical: x_bc on the h = 0 column for a positive
+                // crossing, on the h = 1 column for a negative one.
+                let (v0, v1) = if pos {
+                    (p.x_bc.clone(), KRPoly::one())
+                } else {
+                    (KRPoly::one(), p.x_bc.clone())
+                };
+                assert_eq!(data.ver_edge_poly(zeros, i), v0);
+                assert_eq!(data.ver_edge_poly(ones,  i), v1);
+            }
+        }
+    }
+
+    #[test]
+    fn grad_roundtrip() {
+        let l = Link::test_data("3_1");
+        let data = KRCubeData::<R>::new_no_excl(&l);
+
+        for &idx in data.support() {
+            let inner = data.to_inner_grad(idx).unwrap();
+            let back = data.to_outer_grad(inner);
+
+            // only i ≤ 0 is kept; i > 0 folds by Prop 2.4.
+            let isize3(i, j, k) = idx;
+            let expect = if i <= 0 {
+                idx
+            } else {
+                isize3(-i, j, k + 2 * i)
+            };
+
+            assert_eq!(back, expect, "at {idx:?}");
+        }
+    }
+
+    #[test]
+    fn support_bounds() {
+        let l = Link::test_data("3_1");
+        let data = KRCubeData::<R>::new_no_excl(&l);
+
+        let n = l.n_crossings() as isize;
+        let w = l.writhe() as isize;
+        let s = l.seifert_circles().len() as isize;
+
+        // Morton bound [NS2024, Prop 2.6] / MFW inequality [Prop 2.3]
+        assert_eq!(data.i_range(), -n + s - 1 ..= n - s + 1);
+        assert_eq!(data.k_range(), -n + s - 1 ..= n - s + 1);
+        assert_eq!(data.j_range(), w - s + 1 ..= w + s - 1);
+
+        let isize3(i0, j0, k0) = data.root_grad();
+
+        assert!(data.support().count() > 0);
+
+        for &isize3(i, j, k) in data.support() {
+            assert!(data.i_range().contains(&i), "i at {:?}", (i,j,k));
+            assert!(data.j_range().contains(&j), "j at {:?}", (i,j,k));
+            assert!(data.k_range().contains(&k), "k at {:?}", (i,j,k));
+            assert!(data.k_range().contains(&(k + 2 * i)), "k+2i at {:?}", (i,j,k));
+            assert!((i - i0).is_even() && (j - j0).is_even() && (k - k0).is_even());
+        }
+    }
+
+    #[test]
+    fn range_of_values() {
+        assert_eq!(range(Vec::<isize>::new()), 0..=0);
+        assert_eq!(range(vec![3, -1, 5]), -1..=5);
+        assert_eq!(range(vec![2]), 2..=2);
+
+        assert_eq!(range2(Vec::<(isize, isize)>::new()), (0..=0, 0..=0));
+        assert_eq!(range2(vec![(1, 2), (-3, 4)]), (-3..=1, 2..=4));
     }
 
     #[test]
