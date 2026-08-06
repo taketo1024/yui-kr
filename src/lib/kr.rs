@@ -14,6 +14,7 @@ pub struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
     q_slices: Grid1<KRTotHomol<R>>,
+    zero: GenericSummand<isize2, R>,
 }
 
 impl<R> KRHomology<R>
@@ -35,7 +36,8 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             let range = data.hv_range(q);
             (q, KRTotHomol::new_restr(data.clone(), q, range))
         }).collect();
-        Self { data, q_slices }
+        let zero = GenericSummand::zero();
+        Self { data, q_slices, zero }
     }
 
     delegate! { 
@@ -78,8 +80,10 @@ impl<R> Index<isize3> for KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = GenericSummand<isize2, R>;
     fn index(&self, idx: isize3) -> &Self::Output {
-        let isize3(q, h, v) = self.data.to_inner_grad(idx).unwrap_or(isize3(0, 0, 0));
-        &self.q_slices[q][isize2(h, v)]
+        match self.data.to_inner_grad(idx) {
+            Some(isize3(q, h, v)) => &self.q_slices[q][isize2(h, v)],
+            None => &self.zero
+        }
     }
 }
 
