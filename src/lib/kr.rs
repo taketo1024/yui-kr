@@ -24,6 +24,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self::from_link(&l)
     }
 
+    /// note: H(D) is defined for any diagram, but is an invariant of the knot
+    /// only when D is a braid closure [NS2024, Remark 2.2]. A minimal-crossing
+    /// diagram may give a different answer -- 5_2 is such a case [NS2024, §5].
     pub fn from_link(link: &Link) -> Self {
         assert_eq!(link.n_comps(), 1, "only knots are supported.");
         let data = Arc::new(KRCubeData::new(link));
