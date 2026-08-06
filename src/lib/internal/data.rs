@@ -6,9 +6,10 @@ use itertools::{Itertools, izip};
 use num_integer::Integer;
 use num_traits::One;
 
-use yui_core::{Ring, RingOps, Sign, AddMon};
+use yui_core::abst::{Ring, RingOps, AddMon};
+use yui_core::num::Sign;
 use yui_homology::isize3;
-use yui_link::{Link, NodeType, Node, Edge, seifert_graph};
+use yui_link::{Link, NodeType, Node, Edge, Slot};
 use yui_core::bitseq::{BitSeq, Bit};
 
 use super::base::KRPoly;
@@ -296,13 +297,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             let mut path = vec![];
             let mut mons = vec![];
 
-            resolved.traverse_from((0, 0), |i, j| { 
+            resolved.traverse_from((0, Slot::SW), |i, j| {
                 let x = &resolved.node(i);
                 let e = x.edge(j);
                 let x_i = KRPoly::variable(i);
                 let p_i = match (Self::is_vert(x, signs[i]), j) {
-                    (true, 0) | (false, 3) =>  x_i,
-                    (true, 1) | (false, 0) => -x_i,
+                    (true, Slot::SW) | (false, Slot::NW) =>  x_i,
+                    (true, Slot::SE) | (false, Slot::SW) => -x_i,
                     _ => panic!()
                 };
 
@@ -329,10 +330,10 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
         (0 .. n).map(|i| {
             let x = &resolved.node(i);
-            let (a,b,c) = if Self::is_vert(x, signs[i]) { 
-                (3,2,0)
-            } else { 
-                (2,1,3)
+            let (a,b,c) = if Self::is_vert(x, signs[i]) {
+                (Slot::NW, Slot::NE, Slot::SW)
+            } else {
+                (Slot::NE, Slot::SE, Slot::NW)
             };
 
             let x_ac = traverse(x.edge(c), x.edge(a));
@@ -346,7 +347,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         use petgraph::algo::min_spanning_tree;
         use petgraph::data::Element::Edge as GraphEdge;
 
-        let g = seifert_graph(link);
+        let g = link.seifert_graph();
         let t = min_spanning_tree(&g).filter_map(|e| 
             match e { 
                 GraphEdge { weight: x, ..} => Some(x),
@@ -380,7 +381,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     fn is_vert(x: &Node, sign: Sign) -> bool { 
         use NodeType::*;
-        match (x.ntype(), sign.is_positive()) {
+        match (x.node_type(), sign.is_positive()) {
             (XL, false) | (XR, true)  | (V, _) => true,
             (XL, true)  | (XR, false) | (H, _) => false
         }
@@ -415,7 +416,7 @@ mod tests {
 
     #[test]
     fn grad_shift() { 
-        let l = Link::test_data("3_1"); // (w, s) = (-3, 2)
+        let l = Link::test_data("3_1").mirror(); // (w, s) = (-3, 2)
         let w = l.writhe() as isize;
         let s = l.seifert_circles().len() as isize;
         assert_eq!(KRCubeData::<i32>::l_grad_shift(w, s), isize3(4,-2,-4));
@@ -423,7 +424,7 @@ mod tests {
 
     #[test]
     fn grad_at() { 
-        let l = Link::test_data("3_1");
+        let l = Link::test_data("3_1").mirror();
         let data = KRCubeData::<R>::new_excl(&l, 0);
         let grad0 = data.root_grad();
         assert_eq!(grad0, isize3(4,-8,-4));
