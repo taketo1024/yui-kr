@@ -21,7 +21,7 @@ $ ykr <TARGET> [OPTIONS]
 
 ## Usage 
 
-```
+```text
 Usage: ykr <TARGET> [OPTIONS]
 
 Arguments:
@@ -41,17 +41,17 @@ Options:
 
 ## Examples 
 
-```
+```text
 $ ykr 3_1
 q⁻²a² + t⁻²q²a² + t⁻³a⁴
 ```
 
-```
+```text
 $ ykr 5_1 -b '[1,1,1,1,1]'
 q⁻⁴a⁴ + t⁻²a⁴ + t⁻³q⁻²a⁶ + t⁻⁴q⁴a⁴ + t⁻⁵q²a⁶
 ```
 
-```
+```text
 $ ykr 4_1 -f delta
 Δ: 0
  j\i  -2  0  2 
@@ -60,7 +60,7 @@ $ ykr 4_1 -f delta
  -2   .   1  .
  ```
 
-```
+```text
 $ ykr 11a_263 -f delta
 Δ: 6
  j\i  -2  0  2 
@@ -85,4 +85,4 @@ Computations are peformed for all prime knots with up to 11 crossings. The braid
 * [JSON](results/) (Machine friendly)
 
 ## License
-`yui-kr` is released under the [MIT license](LICENSE).
+`yui-kr` is released under the [MIT license](https://github.com/taketo1024/yui-kr/blob/main/LICENSE).
