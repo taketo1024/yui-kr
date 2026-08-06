@@ -5,7 +5,7 @@ authors = ["Taketo Sano <taketo1024@gmail.com>"]
 description = "YUI-KR"
 license = "MIT"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 
 [[bin]]
 name = "ykr"
@@ -24,9 +24,9 @@ debug = true
 overflow-checks = true
 
 [dependencies]
-num-bigint = "0.4.6"
+num-bigint = "0.5.1"
 num-traits = "0.2.19"
-itertools = "0.14.0"
+itertools = "0.15.0"
 indexmap = { version = "2.14.0", features = ["serde"] }
 petgraph = "0.8.3"
 derive_more = { version = "2.1.1", features = ["display", "debug"] }
@@ -47,10 +47,11 @@ cfg-if = "1.0.4"
 # yui-link =     { git = "https://github.com/taketo1024/yui", version = "0.4.0" }
 # yui-matrix =   { git = "https://github.com/taketo1024/yui", version = "0.4.0" }
 # yui-homology = { git = "https://github.com/taketo1024/yui", version = "0.4.0" }
-yui-core =     { path = "../yui/lib-core", features = ["tex"] }
+yui-core =     { path = "../yui/lib-core" }
 yui-link =     { path = "../yui/lib-link" }
 yui-matrix =   { path = "../yui/lib-matrix" }
 yui-homology = { path = "../yui/lib-homology" }
 
 [dev-dependencies]
 yui-link = { path = "../yui/lib-link", features = ["test-utils"] }
+yui-homology = { path = "../yui/lib-homology", features = ["test-utils"] }
