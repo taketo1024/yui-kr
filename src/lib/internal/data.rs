@@ -62,6 +62,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     pub(crate) fn new_no_excl(link: &Link) -> Self {
         assert!(link.is_knot(), "only knots are supported.");
+        assert!(link.n_crossings() > 0, "0-crossing diagrams are not supported.");
 
         let n = link.n_crossings();
         let w = link.writhe() as isize;
