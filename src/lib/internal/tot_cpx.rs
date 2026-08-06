@@ -389,4 +389,33 @@ mod tests {
         assert_eq!(c[(3, 2)].rank(), 0);
         assert_eq!(c[(3, 3)].rank(), 0);
     }
+
+    // `decomp` splits a chain by v-coords; the parts must partition it.
+    #[test]
+    fn decomp_partitions() {
+        use crate::internal::base::{KRGen, KRMono};
+
+        let h = BitSeq::from([1,0,0]);
+        let v0 = BitSeq::from([0,0,0]);
+        let v1 = BitSeq::from([0,1,0]);
+        let x = |i, d| KRMono::from((i, d));
+
+        let z = KRChain::<R>::from_iter([
+            (KRGen(h, v0, x(0, 1)),  R::from(2)),
+            (KRGen(h, v0, x(1, 1)), -R::from(3)),
+            (KRGen(h, v1, x(2, 1)),  R::from(5)),
+        ]);
+
+        let d = decomp(&z);
+
+        assert_eq!(d.len(), 2);
+        assert_eq!(d[&v0].nterms(), 2);
+        assert_eq!(d[&v1].nterms(), 1);
+
+        // each part is supported on its own v, and the parts sum back to z.
+        for (v, part) in d.iter() {
+            assert!(part.iter().all(|(g, _)| &g.1 == v));
+        }
+        assert_eq!(KRChain::sum(d.values().cloned()), z);
+    }
 }
