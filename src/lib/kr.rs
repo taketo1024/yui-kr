@@ -228,13 +228,13 @@ mod tests {
     }
 
     #[test]
-    fn b6_3() { 
+    fn b6_3() {
         let b = Braid::from([1,1,-2,1,-2,-2]);
         let h = KRHomology::<R>::from_braid(&b);
         let s = h.structure();
 
         assert_eq!(s.total_rank(), 13);
-        assert_eq!(s, KRHomologyStr::from(hashmap!{ 
+        assert_eq!(s, KRHomologyStr::from(hashmap!{
             (4,0,-4)  => 1,
             (2,-2,0)  => 1,
             (0,0,0)   => 3,
@@ -247,5 +247,94 @@ mod tests {
             (2,0,-2)  => 1,
             (-2,-2,4) => 1
         }));
+    }
+
+    // H^{i,j,k} ≅ H^{-i,j,k+2i} [NS2024, Prop 2.4].
+    //
+    // Only i ≤ 0 is ever computed -- `to_inner_grad` folds the rest -- so
+    // asserting the symmetry on `structure()` would be circular. Instead
+    // rebuild the i > 0 half from its own inner grading, which always lands
+    // in a different (q, h, v) cell, and for some targets in a q-slice that
+    // was never built at all.
+    #[test]
+    fn prop_2_4_independent() {
+        let l = Braid::from([1,1,1]).closure();
+        let data = Arc::new( KRCubeData::<R>::new(&l) );
+        let h = KRHomology::new(data.clone());
+
+        let isize3(i0, j0, k0) = data.root_grad();
+        let folded = h.q_range();
+
+        let targets = data.support()
+            .filter(|idx| idx.0 > 0)
+            .copied()
+            .collect::<Vec<_>>();
+
+        assert!(!targets.is_empty());
+
+        let mut unbuilt = 0;
+
+        for idx in targets {
+            let isize3(i, j, k) = idx;
+
+            // the unfolded inner grading, bypassing to_inner_grad.
+            let q = ((i - i0) - (j - j0)) / 2;
+            let (a, b) = ((j - j0) / 2, (k - k0) / 2);
+
+            if !folded.contains(&q) {
+                unbuilt += 1;
+            }
+
+            let direct = KRTotHomol::new_restr(data.clone(), q, (a..=a, b..=b));
+
+            assert_eq!(direct[(a, b)].rank(), h[idx].rank(), "at {idx:?}");
+        }
+
+        // at least one slice lay outside the computed q-range, so the check
+        // is not merely reading back what KRHomology already built.
+        assert!(unbuilt > 0);
+    }
+
+    // H^{i,j,k}(m(K)) ≅ H^{-i,-j,-k}(K) [NS2024, Prop 2.5].
+    // The mirror braid builds a different complex throughout -- opposite
+    // signs, shifts, edge polys and exclusions -- so this cross-checks the
+    // whole sign-convention stack.
+    #[test]
+    fn mirror_duality_3_1() {
+        let s  = KRHomology::<R>::from_braid(&Braid::from([ 1, 1, 1])).structure();
+        let ms = KRHomology::<R>::from_braid(&Braid::from([-1,-1,-1])).structure();
+
+        assert_eq!(ms, s.mirror());
+    }
+
+    #[test]
+    fn mirror_duality_5_2() {
+        let s  = KRHomology::<R>::from_braid(&Braid::from([ 1, 1, 1, 2,-1, 2])).structure();
+        let ms = KRHomology::<R>::from_braid(&Braid::from([-1,-1,-1,-2, 1,-2])).structure();
+
+        assert_eq!(ms, s.mirror());
+    }
+
+    #[test]
+    fn amphichiral_4_1() {
+        let s  = KRHomology::<R>::from_braid(&Braid::from([ 1,-2, 1,-2])).structure();
+        let ms = KRHomology::<R>::from_braid(&Braid::from([-1, 2,-1, 2])).structure();
+
+        assert_eq!(ms, s.mirror()); // Prop 2.5
+        assert_eq!(ms, s);          // 4_1 is amphichiral
+    }
+
+    #[test]
+    fn index_out_of_support() {
+        let h = KRHomology::<R>::from_braid(&Braid::from([1,1,1]));
+
+        // gradings of the wrong parity have no inner index at all.
+        for idx in [(1,0,0), (1,1,1), (0,1,0), (3,0,0), (100,100,100)] {
+            let idx = isize3::from(idx);
+            assert!(!h.is_supported(idx));
+            assert_eq!(h[idx].rank(), 0, "at {idx:?}");
+        }
+
+        assert_eq!(h[(0,4,-2)].rank(), 1);
     }
 }
