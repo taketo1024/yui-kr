@@ -1,3 +1,9 @@
+//! [`App`]: the `ykr` command itself — parses [`CliArgs`], builds the knot,
+//! runs the computation and formats the result.
+//!
+//! A precomputed result under `results/` is loaded in preference to computing,
+//! unless `--force-compute` is given.
+
 use itertools::Itertools;
 use log::{info, error};
 use clap::{Parser, ValueEnum};
@@ -10,6 +16,7 @@ use yui_kr::{KRCalc, KRCalcMode, KRHomologyStr};
 use yui_link::{Braid, Link};
 use super::utils::*;
 
+/// Command-line arguments; see the crate docs for the usage text.
 #[derive(Parser, Debug, Default)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
@@ -38,24 +45,32 @@ pub struct CliArgs {
     pub debug: bool
 }
 
+/// The integer type underlying the coefficient field `ℚ`. Wider types cost
+/// speed but avoid overflow on larger knots.
 #[derive(ValueEnum, Clone, Copy, Default, Debug)]
 #[clap(rename_all="lower")]
-pub enum IntType { 
+pub enum IntType {
     #[default]
-    I64, 
-    I128, 
+    I64,
+    I128,
     BigInt
 }
 
+/// How the result is printed.
 #[derive(ValueEnum, Clone, Copy, Default, Debug)]
 pub enum Output {
+    /// One `(i, j)`-table per Δ-grading.
     #[default]
     Delta,
+    /// A `(j, k)`-table of polynomials in `q`.
     Table,
+    /// The Poincaré polynomial in `t, q, a`.
     Poincare,
+    /// The same, as TeX.
     PoincareTex,
 }
 
+/// An error carrying a message for the user.
 #[derive(Debug, Display)]
 pub struct AppErr(pub(crate) String);
 impl std::error::Error for AppErr {}
@@ -70,17 +85,20 @@ macro_rules! err {
 
 pub(crate) use err;
 
+/// The `ykr` application.
 pub struct App {
     args: CliArgs
 }
 
-impl App { 
-    pub fn new() -> Self { 
+impl App {
+    /// Builds the app from the process arguments.
+    pub fn new() -> Self {
         let args = CliArgs::parse();
         Self::new_with(args)
     }
 
-    pub fn new_with(args: CliArgs) -> Self { 
+    /// Builds the app from `args`, for tests and batch runs.
+    pub fn new_with(args: CliArgs) -> Self {
         if args.debug { 
             Self::init_logger();
         }
@@ -97,7 +115,8 @@ impl App {
         ).unwrap()
     }
 
-    pub fn run(&self) -> Result<String, Box<dyn std::error::Error>> { 
+    /// Runs the computation and returns the formatted result.
+    pub fn run(&self) -> Result<String, Box<dyn std::error::Error>> {
         info!("args: {:?}", self.args);
 
         let n_threads = std::thread::available_parallelism().map(|x| x.get()).unwrap_or(1);
