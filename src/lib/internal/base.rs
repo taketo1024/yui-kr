@@ -96,8 +96,11 @@ pub(crate) fn extend_ends_bounded(r: RangeInclusive<isize>, d: isize, bound: Ran
 }
 
 #[cfg(test)]
-mod tests { 
+mod tests {
+    use yui_core::num::Ratio;
     use super::*;
+
+    type R = Ratio<i64>;
 
     #[test]
     fn edge_sign() {
@@ -119,10 +122,59 @@ mod tests {
         assert_eq!(e, Neg);
 
         let e = sign_between(
-            BitSeq::from([0,1,0]), 
+            BitSeq::from([0,1,0]),
             BitSeq::from([1,1,0]));
         assert_eq!(e, Pos);
     }
 
+    // Every 2-face of the cube must anti-commute, which is what makes d² = 0.
+    #[test]
+    fn edge_sign_square() {
+        let n = 4;
 
+        for u in <BitSeq>::generate(n) {
+            let zeros = (0..n).filter(|&i| u[i].is_zero()).collect_vec();
+
+            for [&i, &j] in zeros.iter().array_combinations() {
+                let ui  = u.edit(|b| b.set_1(i));
+                let uj  = u.edit(|b| b.set_1(j));
+                let uij = u.edit(|b| { b.set_1(i); b.set_1(j) });
+
+                let via_i = sign_between(u, ui) * sign_between(ui, uij);
+                let via_j = sign_between(u, uj) * sign_between(uj, uij);
+
+                assert_eq!(via_i, -via_j, "at {u:?}, ({i}, {j})");
+            }
+        }
+    }
+
+    #[test]
+    fn combine_decombine() {
+        let h = BitSeq::from([1,0,0]);
+        let v = BitSeq::from([0,1,0]);
+        let x = |i, d| KRMono::from((i, d));
+
+        // two monomials sharing (h, v), one on a different h.
+        let z = KRChain::<R>::from_iter([
+            (KRGen(h, v, x(0, 1)),  R::from(2)),
+            (KRGen(h, v, x(1, 2)), -R::from(3)),
+            (KRGen(v, v, x(0, 1)),  R::from(5)),
+        ]);
+
+        assert_eq!(decombine(combine(z.clone())), z);
+
+        // combine merges the monomials sharing (h, v) into one polynomial.
+        let c = combine(z);
+        assert_eq!(c.nterms(), 2);
+        assert!(c.iter().all(|(w, _)| w.2.is_one()));
+    }
+
+    #[test]
+    fn extend_ends() {
+        assert_eq!(extend_ends_bounded(2..=3, 1, 0..=5), 1..=4);
+        assert_eq!(extend_ends_bounded(0..=2, 2, 0..=5), 0..=4); // clamped below
+        assert_eq!(extend_ends_bounded(3..=5, 2, 0..=5), 1..=5); // clamped above
+        assert_eq!(extend_ends_bounded(0..=5, 1, 0..=5), 0..=5); // clamped both
+        assert_eq!(extend_ends_bounded(2..=2, 0, 0..=5), 2..=2); // no extension
+    }
 }
