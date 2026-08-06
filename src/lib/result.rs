@@ -222,8 +222,97 @@ mod tests {
         assert_eq!(s.non_determined().collect_vec(), vec![&(2,6,-4)]);
     }
 
+    // H(3_1) = Q{-2,2,2} + Q{0,4,-2} + Q{2,2,-2}  [NS2024, §4]
+    fn trefoil() -> KRHomologyStr {
+        KRHomologyStr::from(hashmap!{
+            (0, 4,-2) => 1_usize,
+            (-2,2, 2) => 1,
+            (2, 2,-2) => 1
+        })
+    }
+
     #[test]
-    fn serialize_non_determined() { 
+    fn set_maintains_pairing() {
+        let mut s = KRHomologyStr::from(HashMap::<(isize, isize, isize), usize>::new());
+
+        // set also writes the Prop 2.4 reflection (-i, j, k + 2i).
+        s.set((2, 2, -2), 1);
+        assert_eq!(s.get((2, 2, -2)), Some(1));
+        assert_eq!(s.get((-2, 2, 2)), Some(1));
+
+        // i = 0 is its own reflection.
+        s.set((0, 4, -2), 3);
+        assert_eq!(s.get((0, 4, -2)), Some(3));
+        assert_eq!(s.total_rank(), 5);
+
+        // setting 0 clears both.
+        s.set((2, 2, -2), 0);
+        assert_eq!(s.get((2, 2, -2)), Some(0));
+        assert_eq!(s.get((-2, 2, 2)), Some(0));
+        assert_eq!(s.total_rank(), 3);
+    }
+
+    #[test]
+    fn get_semantics() {
+        let s = KRHomologyStr::from(hashmap!{
+            (0, 0, 0) => Some(2),
+            (2, 0, 0) => None
+        });
+
+        assert_eq!(s.get((0, 0, 0)), Some(2)); // determined
+        assert_eq!(s.get((2, 0, 0)), None);    // non-determined
+        assert_eq!(s.get((4, 4, 4)), Some(0)); // absent means zero
+        assert!(!s.is_determined());
+    }
+
+    #[test]
+    fn mirror_involution() {
+        let s = trefoil();
+        let m = s.mirror();
+
+        // (i, j, k) ↦ (-i, -j, -k)  [NS2024, Prop 2.5]
+        assert_eq!(m.get((0, -4, 2)), Some(1));
+        assert_eq!(m.get((2, -2, -2)), Some(1));
+        assert_eq!(m.get((-2, -2, 2)), Some(1));
+
+        assert_eq!(m.mirror(), s);
+        assert_eq!(m.total_rank(), s.total_rank());
+    }
+
+    #[test]
+    fn delta_and_thin() {
+        let s = trefoil();
+
+        // Δ = i + j + k is 2 on every generator, so 3_1 is KR-thin.
+        assert_eq!(s.delta(), vec![2]);
+        assert!(s.is_thin());
+
+        let mut t = s.clone();
+        t.set((0, 0, 0), 1);
+
+        assert_eq!(t.delta(), vec![0, 2]);
+        assert!(!t.is_thin());
+    }
+
+    #[test]
+    fn homfly_poly_trefoil() {
+        let m = QAPoly::mono;
+
+        // P(q, a) = Σ (-1)^{(k-j)/2} q^i a^j  [NS2024, Thm 3]
+        //         = q^{-2} a^2 + q^2 a^2 - a^4,
+        // which is the HOMFLY polynomial of the right-handed trefoil,
+        // 2a^2 - a^4 + a^2 z^2 with z = q - q^{-1}.
+        let expect = QAPoly::from_iter([
+            (m(-2, 2),  1),
+            (m( 2, 2),  1),
+            (m( 0, 4), -1)
+        ]);
+
+        assert_eq!(trefoil().homfly_poly(), expect);
+    }
+
+    #[test]
+    fn serialize_non_determined() {
         let s = KRHomologyStr::from(hashmap!{             
             (0,4,0)  => Some(1),
             (-2,6,0) => Some(1),
