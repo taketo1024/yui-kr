@@ -1,3 +1,10 @@
+//! [`KRCubeData`]: everything read off the diagram once, up front.
+//!
+//! Crossing signs, the edge polynomials `x_ac` and `x_bc` of Figure 1, the
+//! grading shifts of (2.1) and Figure 1, the a-priori support from the Morton
+//! and MFW bounds, and the per-vertex exclusion data. Every later stage
+//! borrows this and computes nothing about the diagram itself.
+
 use std::collections::{HashSet, HashMap};
 use std::ops::RangeInclusive;
 use std::sync::Arc;

@@ -1,3 +1,8 @@
+//! [`KRTotHomol`]: the homology of the vertical complex at one `q`-slice.
+//!
+//! This is `ℋ'(D)` in the inner grading `(q, h, v)`; the shift of (2.1) to the
+//! outer grading `(i, j, k)` is applied by [`KRHomology`](crate::KRHomology).
+
 use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 use cartesian::cartesian;

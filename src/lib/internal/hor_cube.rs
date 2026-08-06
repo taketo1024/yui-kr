@@ -1,3 +1,10 @@
+//! [`KRHorCube`]: the horizontal cube `C_H(D, v)` at a fixed `q` and vertex
+//! `v`, an `n`-dimensional cube complex with differential `d_H`.
+//!
+//! Slicing by `q` is what makes this finitely generated: at each vertex `h`
+//! the generators are the monomials of one fixed degree `q + |h| + (i₀ - i)/2`,
+//! and there are none when that degree is negative.
+
 use std::sync::Arc;
 
 use num_traits::One;

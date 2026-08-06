@@ -1,3 +1,9 @@
+//! [`KRHorComplex`]: the horizontal cube of [`hor_cube`](super::hor_cube) with
+//! the exclusion of [`hor_excl`](super::hor_excl) already applied.
+//!
+//! Only the generators surviving the exclusion are kept, and the differential
+//! is `d_H` followed by reduction modulo the excluded variables.
+
 use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 use delegate::delegate;

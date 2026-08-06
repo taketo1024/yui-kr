@@ -1,3 +1,13 @@
+//! Exclusion of variables [NS2024, §3.3]: the step that makes the computation
+//! feasible.
+//!
+//! When an edge polynomial is monic of degree 1 or 2 in some variable `x_k`,
+//! the horizontal complex deformation-retracts onto a much smaller one
+//! [Ras15, Lemma 3.8] — half the cube is discarded and the generators
+//! containing `x_k` (or `x_k²`) are dropped. [`KRHorExcl::forward`] and
+//! [`KRHorExcl::backward`] are the maps `φ` and `ψ` of that retract, which
+//! carry chains between the original complex and the reduced one.
+
 use std::collections::{HashSet, HashMap};
 
 use log::trace;

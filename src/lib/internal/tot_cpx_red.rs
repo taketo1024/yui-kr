@@ -1,3 +1,11 @@
+//! [`KRTotComplexReducer`]: reduces the vertical complex before its homology
+//! is taken, keeping the differentials small.
+//!
+//! Each differential is built against the previous reduction rather than the
+//! full basis, so the matrices stay narrow. `size_limit` caps how large a
+//! matrix may get; anything above it is left unreduced, which
+//! [`KRCalc`](crate::KRCalc) then reports as non-determined instead of zero.
+
 use log::info;
 use num_traits::Zero;
 use yui_core::abst::{EucRing, EucRingOps};

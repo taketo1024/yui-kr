@@ -1,3 +1,10 @@
+//! The generators and chains every stage is written in terms of.
+//!
+//! A generator [`KRGen`] is a cube vertex `(h, v)` together with a monomial in
+//! the edge ring; a chain is a linear combination of these. [`combine`] and
+//! [`decombine`] move between an `R`-chain and the polynomial-coefficient form
+//! `KRPolyChain`, in which the cube differentials are easiest to apply.
+
 use std::iter::zip;
 use std::ops::RangeInclusive;
 

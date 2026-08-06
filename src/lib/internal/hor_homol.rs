@@ -1,3 +1,11 @@
+//! [`KRHorHomol`]: the horizontal homology `H(D, v)`, one vertex of the
+//! vertical cube.
+//!
+//! Besides the ranks it keeps the maps between a homology class and its
+//! representative chain in the original complex —
+//! [`vectorize`](KRHorHomol::vectorize) and [`as_chain`](KRHorHomol::as_chain)
+//! — which is what lets `d_V` be induced in [`tot_cpx`](super::tot_cpx).
+
 use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 

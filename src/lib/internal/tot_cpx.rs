@@ -1,3 +1,10 @@
+//! [`KRTotComplex`]: the vertical complex `C_V(D) = ⊕_v H(D, v)`, bigraded by
+//! the cube weights `(|h|, |v|)`.
+//!
+//! Its generators are homology classes, so the induced differential is the
+//! composite `φ ∘ d_V ∘ ψ` [NS2024, §3.3]: lift a class to a representative
+//! chain, apply the cube differential, and project back.
+
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::ops::{Index, RangeInclusive};

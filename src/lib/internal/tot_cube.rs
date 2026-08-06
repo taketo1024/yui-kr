@@ -1,3 +1,9 @@
+//! [`KRTotCube`]: the vertical cube, whose vertex at `v` is the horizontal
+//! homology `H(D, v)` and whose differential is `d_V`.
+//!
+//! Building it computes every [`KRHorHomol`] of the slice, which is the bulk
+//! of the work and is done in parallel under the `multithread` feature.
+
 use std::ops::RangeInclusive;
 use std::sync::Arc;
 
