@@ -3,7 +3,7 @@ use std::sync::Arc;
 use delegate::delegate;
 
 use num_traits::Zero;
-use yui_core::{Ring, RingOps};
+use yui_core::abst::{Ring, RingOps};
 use yui_homology::{ChainComplex1, Summand, GrMod1};
 use yui_core::bitseq::BitSeq;
 

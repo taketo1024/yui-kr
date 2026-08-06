@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use num_traits::One;
-use yui_core::{Ring, RingOps};
+use yui_core::abst::{Ring, RingOps};
 use yui_homology::{ChainComplex1, GrMod1, Summand};
 use yui_core::bitseq::BitSeq;
 

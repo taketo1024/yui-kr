@@ -5,7 +5,7 @@ use delegate::delegate;
 use num_traits::Zero;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use yui_core::{EucRing, EucRingOps};
+use yui_core::abst::{EucRing, EucRingOps};
 use yui_homology::{GrMod1, Summand};
 use yui_matrix::sparse::SpVec;
 use yui_core::bitseq::BitSeq;

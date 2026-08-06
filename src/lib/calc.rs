@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cartesian::cartesian;
 use itertools::Itertools;
 use log::info;
-use yui_core::{EucRing, EucRingOps};
+use yui_core::abst::{EucRing, EucRingOps};
 use yui_homology::{isize2, isize3};
 use yui_link::Link;
 

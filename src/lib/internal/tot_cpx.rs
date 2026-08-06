@@ -9,7 +9,7 @@ use num_traits::Zero;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
 use yui_core::bitseq::BitSeq;
-use yui_core::{EucRing, EucRingOps, Ring, RingOps, AddMon};
+use yui_core::abst::{EucRing, EucRingOps, Ring, RingOps, AddMon};
 use yui_homology::{isize2, rmod_str, GenericChainComplex, GenericChainComplex2, Grid2, ToTableString};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::{SpVec, SpMat};
@@ -223,14 +223,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 fn decomp<R>(z: &KRChain<R>) -> HashMap<BitSeq, KRChain<R>>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    let mut res = z.iter().fold(HashMap::new(), |mut res, (v, r)| {
-        res.entry(v.1).or_insert(KRChain::zero()).add_pair_ref((v, r));
+    z.iter().fold(HashMap::new(), |mut res, (v, r)| {
+        res.entry(v.1).or_insert(KRChain::zero()).add_pair_ref((v, r.clone()));
         res
-    });
-
-    res.iter_mut().for_each(|(_, f)| f.clean());
-
-    res
+    })
 }
 
 

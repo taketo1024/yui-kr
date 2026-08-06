@@ -2,7 +2,7 @@ use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
 use delegate::delegate;
-use yui_core::{EucRing, EucRingOps};
+use yui_core::abst::{EucRing, EucRingOps};
 use yui_homology::{isize2, isize3, GenericSummand, Grid1};
 use yui_link::{Link, Braid};
 

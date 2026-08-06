@@ -4,7 +4,7 @@ use cartesian::cartesian;
 use delegate::delegate;
 
 use log::info;
-use yui_core::{EucRing, EucRingOps};
+use yui_core::abst::{EucRing, EucRingOps};
 use yui_homology::{isize2, ToTableString, GenericGrMod2, GenericSummand, GrMod2};
 
 use super::tot_cpx::KRTotComplex;

@@ -3,7 +3,7 @@ use std::collections::{HashSet, HashMap};
 use log::trace;
 use num_traits::{Zero, One};
 use indexmap::IndexSet;
-use yui_core::{Ring, RingOps};
+use yui_core::abst::{Ring, RingOps};
 use yui_homology::utils::make_matrix;
 use yui_matrix::sparse::Trans;
 use yui_core::poly::Mono;

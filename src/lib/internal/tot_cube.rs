@@ -11,7 +11,7 @@ cfg_if::cfg_if! {
 }
 
 use yui_core::util::sync::SyncCounter;
-use yui_core::{EucRing, EucRingOps};
+use yui_core::abst::{EucRing, EucRingOps};
 use yui_core::bitseq::BitSeq;
 
 use super::base::{KRGen, KRPoly, KRMono, KRChain, KRPolyChain, sign_between, combine, decombine};
@@ -37,13 +37,13 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let (h_range, v_range) = range;
 
         let total = if log::log_enabled!(log::Level::Info) { 
-            BitSeq::generate(n).filter(|v| 
+            <BitSeq>::generate(n).filter(|v|
                 v_range.contains(&(v.weight() as isize))
             ).count()
         } else { 
             0
         };
-        let counter = SyncCounter::new();
+        let counter = SyncCounter::new(0);
 
         info!("setup cube.. (total: {total})");
 
@@ -89,7 +89,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn vert(&self, v_coords: BitSeq) -> &KRHorHomol<R> {
-        let i = v_coords.as_u64() as usize;
+        let i = v_coords.as_u128() as usize;
         &self.verts[i]
     }
 
