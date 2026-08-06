@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn mon_deg() { 
-        let l = Link::test_data("3_1");
+        let l = Link::test_data("3_1").mirror();
 
         let v = BitSeq::from([0,0,0]);
         let h = BitSeq::from([0,0,0]);
@@ -236,7 +236,7 @@ mod tests {
 
     #[test]
     fn vert_gens() {
-        let l = Link::test_data("3_1");
+        let l = Link::test_data("3_1").mirror();
         let v = BitSeq::from([0,0,0]);
         let q = 0;
 
@@ -256,7 +256,7 @@ mod tests {
 
     #[test]
     fn vert_gens_empty() {
-        let l = Link::test_data("3_1");
+        let l = Link::test_data("3_1").mirror();
         let v = BitSeq::from([0,0,0]);
         let q = -4;
 
@@ -269,7 +269,7 @@ mod tests {
 
     #[test]
     fn gens() {
-        let l = Link::test_data("3_1");
+        let l = Link::test_data("3_1").mirror();
         let v = BitSeq::from([0,0,0]);
         let q = 0;
         let cube = make_cube(&l, q, v);
@@ -283,7 +283,7 @@ mod tests {
 
     #[test]
     fn as_complex() { 
-        let l = Link::test_data("3_1");
+        let l = Link::test_data("3_1").mirror();
         let v = BitSeq::from([1,0,0]);
         let q = 0;
         let cube = make_cube(&l, q, v);
@@ -311,7 +311,7 @@ mod tests {
 
     #[test]
     fn homology() { 
-        let l = Link::test_data("3_1");
+        let l = Link::test_data("3_1").mirror();
         let v = BitSeq::from([1,0,0]);
         let q = 0;
         let cube = make_cube(&l, q, v);
@@ -324,7 +324,7 @@ mod tests {
         assert_eq!(h[2].rank(), 1);
         assert_eq!(h[3].rank(), 1);
 
-        let l = Link::test_data("3_1").mirror();
+        let l = Link::test_data("3_1");
         let v = BitSeq::from([1,0,0]);
         let q = 1;
         let cube = make_cube(&l, q, v);
