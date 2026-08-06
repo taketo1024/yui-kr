@@ -72,6 +72,8 @@ impl KRHomologyStr {
     }
 
     pub fn set(&mut self, idx: (isize, isize, isize), value: usize) {
+        // note: the reflected index holds the same value by the symmetry
+        // H^{i,j,k} ≅ H^{-i,j,k+2i} [NS2024, Prop 2.4].
         let idx2 = (-idx.0, idx.1, idx.2 + 2 * idx.0);
 
         if value > 0 { 

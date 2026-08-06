@@ -226,12 +226,17 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
             && i_range.contains(&i)
             && j_range.contains(&j)
             && k_range.contains(&k)
+            // note: H^{i,j,k} ≅ H^{-i,j,k+2i} [NS2024, Prop 2.4], so the
+            // reflected index must be in range too.
             && k_range.contains(&(k + 2 * i))
     }
 
-    pub fn to_inner_grad(&self, grad: isize3) -> Option<isize3> { 
+    pub fn to_inner_grad(&self, grad: isize3) -> Option<isize3> {
         let isize3(i, j, k) = grad;
-        if i > 0 { 
+
+        // note: only i ≤ 0 is computed; the rest is recovered by the symmetry
+        // H^{i,j,k} ≅ H^{-i,j,k+2i} [NS2024, Prop 2.4].
+        if i > 0 {
             return self.to_inner_grad(isize3(-i, j, k + 2 * i))
         }
 
