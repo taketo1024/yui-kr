@@ -988,4 +988,63 @@ mod tests {
         assert_eq!(t.forward_mat().shape(), (2, 26));
         assert!((t.forward_mat() * t.backward_mat()).is_id());
     }
+
+    // φψ = id on the reduced complex [Ras15, Lemma 3.8], checked on every
+    // surviving generator rather than only through the matrix form.
+    #[test]
+    fn forward_backward_id() {
+        let l = Link::test_data("3_1").mirror();
+        let q = 0;
+        let n = l.n_crossings();
+
+        for v in <BitSeq>::generate(n) {
+            let data = KRCubeData::<R>::new_no_excl(&l);
+            let excl = KRHorExcl::from(&data, v, 2);
+            let cube = KRHorCube::new(Arc::new(data), q, v);
+
+            for i in 0..=n {
+                let gens = cube.gens(i).collect_vec();
+
+                for x in reduce(&excl, &gens) {
+                    let z = excl.backward_x(&x);
+                    assert_eq!(
+                        excl.forward(&z),
+                        KRChain::from(x.clone()),
+                        "v: {v}, i: {i}, x: {x}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn div_rem_linear() {
+        let x = P::variable;
+
+        let p = x(1);
+        let f = &x(1) * &x(1) + &x(1) * &x(2) + x(0);
+
+        let (q, r) = div_rem(f.clone(), &p, 1);
+
+        assert_eq!(q, &x(1) + &x(2));
+        assert_eq!(r, x(0)); // free of x1
+        assert_eq!(&q * &p + &r, f);
+
+        assert_eq!(rem(f.clone(), &p, 1), r);
+        assert_eq!(div(&q * &p, &p, 1), q);
+    }
+
+    #[test]
+    fn div_rem_quadratic() {
+        let x = P::variable;
+
+        let p = &x(2) * &x(2) - x(0); // monic of degree 2 in x2
+        let f = &x(2) * &x(2) * &x(2);
+
+        let (q, r) = div_rem(f.clone(), &p, 2);
+
+        assert_eq!(q, x(2));
+        assert_eq!(r, &x(0) * &x(2)); // degree in x2 dropped below 2
+        assert_eq!(&q * &p + &r, f);
+    }
 }
