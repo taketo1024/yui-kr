@@ -1,3 +1,6 @@
+//! [`KRHomology`]: the reduced HOMFLY homology `ℋ(K)` of a knot, computed in
+//! full and indexed by the triple grading `(i, j, k)`.
+
 use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
@@ -10,6 +13,11 @@ use crate::KRHomologyStr;
 use crate::internal::data::KRCubeData;
 use crate::internal::tot_homol::KRTotHomol;
 
+/// The reduced HOMFLY homology of a knot, computed for every grading at once.
+///
+/// Indexing by `(i, j, k)` gives the summand `ℋ^{i,j,k}`, which is zero
+/// outside [`support`](Self::support). Use [`KRCalc`](crate::KRCalc) instead
+/// when the computation needs to be bounded or resumed.
 pub struct KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
@@ -19,11 +27,15 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    /// Computes `ℋ` of the closure of `b`. This is the preferred entry point,
+    /// since the closure of a braid is what makes `ℋ(D)` an invariant.
     pub fn from_braid(b: &Braid) -> Self {
         let l = b.closure();
         Self::from_link(&l)
     }
 
+    /// Computes `ℋ(D)` for the diagram `D` of a knot.
+    ///
     /// note: H(D) is defined for any diagram, but is an invariant of the knot
     /// only when D is a braid closure [NS2024, Remark 2.2]. A minimal-crossing
     /// diagram may give a different answer -- 5_2 is such a case [NS2024, §5].
@@ -33,6 +45,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self::new(data)
     }
 
+    /// Computes every `q`-slice of the cube `data`.
     pub fn new(data: Arc<KRCubeData<R>>) -> Self {
         let q_range = data.q_range();
         let q_slices = q_range.map(|q| {
@@ -43,8 +56,10 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self { data, q_slices, zero }
     }
 
-    delegate! { 
-        to self.data { 
+    // i, k: Morton bound [NS2024, Prop 2.6]; j: MFW inequality [Prop 2.3].
+    // q indexes the slices of C(D) the computation actually runs over.
+    delegate! {
+        to self.data {
             pub fn i_range(&self) -> RangeInclusive<isize>;
             pub fn j_range(&self) -> RangeInclusive<isize>;
             pub fn k_range(&self) -> RangeInclusive<isize>;
@@ -52,6 +67,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }
     }
 
+    /// The ranks at every grading where `ℋ` is non-zero.
     pub fn structure(&self) -> KRHomologyStr {
         self.support().filter_map(|&idx| {
             let r = self[idx].rank();
@@ -64,13 +80,16 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         }).collect()
     }
 
-    pub fn to_table_string(&self) -> String { 
+    /// The `(j, k)`-table of Poincaré polynomials in `q`.
+    pub fn to_table_string(&self) -> String {
         self.structure().qpoly_table()
     }
 }
 
 impl<R> KRHomology<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    // The gradings not excluded a priori by the bounds above; `ℋ` vanishes
+    // outside, but may also vanish at any of these.
     delegate! {
         to self.data {
             pub fn support(&self) -> std::collections::hash_set::Iter<'_, isize3>;

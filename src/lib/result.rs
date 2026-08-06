@@ -1,3 +1,6 @@
+//! [`KRHomologyStr`]: the computed ranks of `ℋ`, and the invariants read off
+//! them -- the HOMFLY polynomial, the Poincaré polynomial and the Δ-slices.
+
 use std::collections::HashMap;
 use std::ops::RangeInclusive;
 
@@ -6,10 +9,19 @@ use num_integer::Integer;
 use serde::ser::SerializeSeq;
 use yui_core::poly::{LPoly, LPoly2, LPoly3, Var3, Var2, Mono};
 
+/// Laurent polynomials in `q`.
 pub type QPoly = LPoly<'q', i32>;
+/// Laurent polynomials in `q, a` — the HOMFLY polynomial lives here.
 pub type QAPoly = LPoly2<'q', 'a', i32>;
+/// Laurent polynomials in `t, q, a` — the Poincaré polynomial lives here.
 pub type TQAPoly = LPoly3<'t', 'q', 'a', i32>;
 
+/// `dim ℋ^{i,j,k}` at each grading, as far as it is known.
+///
+/// A grading maps to `Some(r)` once computed, and to `None` while it is still
+/// non-determined — a partial run leaves the gradings it skipped in the latter
+/// state, so they are not mistaken for zero. Gradings absent from the table
+/// are known to be zero; see [`get`](Self::get).
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct KRHomologyStr(HashMap<(isize, isize, isize), Option<usize>>);
 
@@ -46,7 +58,8 @@ impl KRHomologyStr {
         self.0.iter()
     }
 
-    pub fn is_determined(&self) -> bool { 
+    /// Whether every grading in the table has been computed.
+    pub fn is_determined(&self) -> bool {
         self.0.values().all(Option::is_some)
     }
 
@@ -60,17 +73,21 @@ impl KRHomologyStr {
         )
     }
 
+    /// `Some(r)` if the rank at `idx` is known, `None` if not yet computed.
+    /// An absent grading is a known zero, so it gives `Some(0)`.
     pub fn get(&self, idx: (isize, isize, isize)) -> Option<usize> {
         // Some(Some(r)) -> Some(r) // determined
         // Some(None)    -> None    // non-determined
         // None          -> Some(0) // determined
-        if let Some(e) = self.0.get(&idx) { 
+        if let Some(e) = self.0.get(&idx) {
             e.to_owned()
         } else { 
             Some(0)
         }
     }
 
+    /// Records the rank at `idx`, and at its Prop 2.4 reflection.
+    /// A value of `0` removes both rather than storing them.
     pub fn set(&mut self, idx: (isize, isize, isize), value: usize) {
         // note: the reflected index holds the same value by the symmetry
         // H^{i,j,k} ≅ H^{-i,j,k+2i} [NS2024, Prop 2.4].
@@ -85,23 +102,29 @@ impl KRHomologyStr {
         }
     }
 
-    pub fn mirror(&self) -> KRHomologyStr { 
+    /// `ℋ(m(K))` from `ℋ(K)`, by `(i, j, k) ↦ (-i, -j, -k)`
+    /// [NS2024, Prop 2.5].
+    pub fn mirror(&self) -> KRHomologyStr {
         self.iter().map(|(idx, &v)| ((-idx.0, -idx.1, -idx.2), v)).collect()
     }
-    
-    pub fn total_rank(&self) -> usize { 
+
+    /// The total dimension over all determined gradings.
+    pub fn total_rank(&self) -> usize {
         self.iter_determined().map(|(_, r)| r).sum()
     }
 
-    pub fn delta(&self) -> Vec<isize> { 
+    /// The Δ-gradings `Δ = i + j + k` that carry generators, in order.
+    pub fn delta(&self) -> Vec<isize> {
         self.indices().map(|(i, j, k)| i + j + k).unique().sorted().collect_vec()
     }
 
-    pub fn is_thin(&self) -> bool { 
+    /// Whether `ℋ` sits in a single Δ-grading, i.e. `K` is KR-thin.
+    pub fn is_thin(&self) -> bool {
         self.delta().len() <= 1
     }
 
-    pub fn poincare_poly(&self) -> TQAPoly { 
+    /// `Σ t^{(k-j)/2} qⁱ aʲ dim ℋ^{i,j,k}`.
+    pub fn poincare_poly(&self) -> TQAPoly {
         self.iter_determined().map(|(idx, &r)| { 
             let &(i, j, k) = idx;
             let x = Var3::from(((k - j)/2, i, j));
@@ -110,7 +133,9 @@ impl KRHomologyStr {
         }).collect()
     }
     
-    pub fn homfly_poly(&self) -> QAPoly { 
+    /// The HOMFLY polynomial `P(K)(q, a)`, as the graded Euler characteristic
+    /// `Σ (-1)^{(k-j)/2} qⁱ aʲ dim ℋ^{i,j,k}` [NS2024, Thm 3].
+    pub fn homfly_poly(&self) -> QAPoly {
         self.poincare_poly().into_iter().map(|(x, r)|{
             let (t, i, j) = x.deg();
             let x = Var2::from((i, j)); // q^i a^j
@@ -119,6 +144,7 @@ impl KRHomologyStr {
         }).collect::<QAPoly>()
     }
     
+    /// A `(j, k)`-table whose entries are the Poincaré polynomials in `q`.
     pub fn qpoly_table(&self) -> String {
         let polys = self.iter_determined().into_group_map_by(|(idx, _)|
             (idx.1, idx.2) // (j, k)
@@ -145,6 +171,8 @@ impl KRHomologyStr {
         })
     }
 
+    /// One `(i, j)`-table per Δ-grading, with `k = Δ - i - j` and `?` for the
+    /// gradings still non-determined. This is the form used in [NS2024, §4].
     pub fn delta_table(&self) -> String {
         range(self.delta()).step_by(2).map(|d| { 
             let indices = self.indices().filter(|(i, j, k)| i + j + k == d).collect_vec();

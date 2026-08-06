@@ -1,3 +1,6 @@
+//! [`KRCalc`]: the same computation as [`KRHomology`](crate::KRHomology), but
+//! run grading by grading so that it can be bounded and resumed.
+
 use std::sync::Arc;
 
 use cartesian::cartesian;
@@ -11,21 +14,40 @@ use crate::internal::data::{KRCubeData, range2};
 use crate::internal::tot_homol::KRTotHomol;
 use crate::KRHomologyStr;
 
+/// How finely the targets are grouped before each complex is built.
+///
+/// Coarser groups share work between gradings; finer ones keep each complex
+/// smaller, which matters when memory is the binding constraint.
 #[derive(Clone, Copy, Default, Debug, clap::ValueEnum)]
 pub enum KRCalcMode {
-    #[default] Default, PerCol, PerItem
+    /// One complex per `q`-slice.
+    #[default] Default,
+    /// One per `(q, h)`.
+    PerCol,
+    /// One per `(q, h, v)`.
+    PerItem
 }
 
+/// An incremental computation of `ℋ(K)`.
+///
+/// Unlike [`KRHomology`](crate::KRHomology), the result is built up grading by
+/// grading into a [`KRHomologyStr`], so a run can be capped by
+/// [`size_limit`](Self::size_limit) and continued later — gradings that were
+/// skipped stay recorded as non-determined rather than as zero.
 pub struct KRCalc<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
     result: KRHomologyStr,
+    /// Grouping of targets; see [`KRCalcMode`].
     pub mode: KRCalcMode,
+    /// Skip any differential whose matrix exceeds this many rows or columns.
+    /// Gradings that depend on a skipped matrix are left non-determined.
     pub size_limit: usize,
 }
 
 impl<R> KRCalc<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
+    /// Sets up the computation, with every supported grading non-determined.
     pub fn init(l: &Link) -> Self {
         let data = Arc::new(KRCubeData::new(l));
         let result = data.support().map(|&idx| ((idx.0, idx.1, idx.2), None)).collect();
@@ -34,6 +56,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self { data, result, mode, size_limit }
     }
 
+    /// The result so far, including any gradings still non-determined.
     pub fn result(&self) -> &KRHomologyStr {
         &self.result
     }
@@ -42,6 +65,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.result
     }
 
+    /// Computes every grading still non-determined, in `q`-order.
     pub fn compute(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         info!("compute KRHomology.");
         info!("q-range: {:?}", self.data.q_range());
