@@ -1,3 +1,65 @@
+//! Computes the reduced HOMFLY homology `ℋ(K)` of a knot `K`, following
+//! K. Nakagane and T. Sano, *"Computations of HOMFLY homology"*,
+//! [arXiv:2111.00388](https://arxiv.org/abs/2111.00388).
+//!
+//! `ℋ(K)` is the triply graded homology of Khovanov and Rozansky. Its graded
+//! Euler characteristic is the HOMFLY polynomial,
+//!
+//! ```text
+//! P(K)(q, a) = Σ (-1)^{(k-j)/2} qⁱ aʲ dim ℋ^{i,j,k}(K).
+//! ```
+//!
+//! # Example
+//!
+//! ```
+//! use yui_core::num::Ratio;
+//! use yui_kr::KRHomology;
+//! use yui_link::Braid;
+//!
+//! let b = Braid::from([1, 1, 1]);   // the trefoil 3_1
+//! let h = KRHomology::<Ratio<i64>>::from_braid(&b);
+//!
+//! assert_eq!(h[(0, 4, -2)].rank(), 1);
+//! assert_eq!(h.structure().total_rank(), 3);
+//! ```
+//!
+//! # How the computation is organized
+//!
+//! For a diagram `D` with `n` crossings, `C(D) = ⊗_c C(D_c)` is a double
+//! complex with a horizontal and a vertical differential, `d_H` and `d_V`.
+//! It is infinitely generated over `ℚ`, so the computation proceeds by slices:
+//!
+//! 1. Slice `C(D)` by the `q`-grading, leaving finitely generated pieces.
+//! 2. At each vertex `v ∈ {0,1}ⁿ` of the vertical cube, form the horizontal
+//!    cube complex and take its homology `H(D, v)`.
+//! 3. Assemble the vertical complex `C_V(D) = ⊕_v H(D, v)` with the induced
+//!    differential, and take its homology.
+//! 4. Shift the gradings to obtain `ℋ(D)`.
+//!
+//! Step 2 is where the cost lies, so the horizontal complexes are first
+//! shrunk by *exclusion of variables* before their homology is taken.
+//! [`internal`] holds these stages; see its docs for the module map.
+//!
+//! # Entry points
+//!
+//! - [`KRHomology`] — computes everything at once, and is indexed by `(i, j, k)`.
+//! - [`KRCalc`] — computes grading by grading, so a run can be bounded,
+//!   interrupted and resumed. This is what the `ykr` binary drives.
+//! - [`KRHomologyStr`] — the result as a table of ranks, with the HOMFLY
+//!   polynomial, Δ-slices and (de)serialization.
+//!
+//! # Scope
+//!
+//! Only knots are supported, not links with several components.
+//!
+//! `ℋ(D)` is defined for any diagram, but is an invariant of the knot only
+//! when `D` is a braid closure — see [NS2024, Remark 2.2], and §5 for a
+//! minimal-crossing diagram of `5_2` that gives a different answer. Prefer
+//! [`KRHomology::from_braid`].
+//!
+//! Coefficients are taken in a field; `ℚ` (as `Ratio<i64>` or
+//! `Ratio<BigInt>`) is what the paper and the published results use.
+
 pub mod kr;
 pub mod calc;
 pub mod internal;
