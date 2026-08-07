@@ -104,6 +104,7 @@ pub(crate) fn extend_ends_bounded(r: RangeInclusive<isize>, d: isize, bound: Ran
 
 #[cfg(test)]
 mod tests {
+    use yui_core::bitseq::BitSeq64;
     use yui_core::num::Ratio;
     use super::*;
 
@@ -139,7 +140,7 @@ mod tests {
     fn edge_sign_square() {
         let n = 4;
 
-        for u in <BitSeq>::generate(n) {
+        for u in BitSeq64::generate(n) {
             let zeros = (0..n).filter(|&i| u[i].is_zero()).collect_vec();
 
             for [&i, &j] in zeros.iter().array_combinations() {

@@ -459,7 +459,7 @@ mod tests {
     use yui_matrix::MatTrait;
     use yui_core::poly::MultiVar;
     use yui_core::num::Ratio;
-    use yui_core::bitseq::BitSeq;
+    use yui_core::bitseq::{BitSeq, BitSeq64};
 
     use crate::internal::data::KRCubeData;
     use crate::internal::hor_cube::KRHorCube;
@@ -1007,7 +1007,7 @@ mod tests {
         let q = 0;
         let n = l.n_crossings();
 
-        for v in <BitSeq>::generate(n) {
+        for v in BitSeq64::generate(n) {
             let data = KRCubeData::<R>::new_no_excl(&l);
             let excl = KRHorExcl::from(&data, v, 2);
             let cube = KRHorCube::new(Arc::new(data), q, v);
