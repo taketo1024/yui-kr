@@ -5,7 +5,7 @@ authors = ["Taketo Sano <taketo1024@gmail.com>"]
 description = "YUI-KR"
 license = "MIT"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.89"   # floor set by yui-matrix / nalgebra 0.35
 
 [[bin]]
 name = "ykr"
@@ -43,15 +43,11 @@ serde = { version = "1.0.228", features = ["derive", "rc"] }
 serde_json = "1.0.149"
 regex = "1.12.3"
 cfg-if = "1.0.4"
-# yui-core =     { git = "https://github.com/taketo1024/yui", version = "0.4.0", features = ["tex"] }
-# yui-link =     { git = "https://github.com/taketo1024/yui", version = "0.4.0" }
-# yui-matrix =   { git = "https://github.com/taketo1024/yui", version = "0.4.0" }
-# yui-homology = { git = "https://github.com/taketo1024/yui", version = "0.4.0" }
-yui-core =     { path = "../yui/lib-core" }
-yui-link =     { path = "../yui/lib-link" }
-yui-matrix =   { path = "../yui/lib-matrix" }
-yui-homology = { path = "../yui/lib-homology" }
+# `path` is used for local builds, `version` when published.
+yui-core =     { version = "0.5.0", path = "../yui/lib-core" }
+yui-link =     { version = "0.5.0", path = "../yui/lib-link" }
+yui-matrix =   { version = "0.5.0", path = "../yui/lib-matrix" }
+yui-homology = { version = "0.5.0", path = "../yui/lib-homology" }
 
 [dev-dependencies]
-yui-link = { path = "../yui/lib-link", features = ["test-utils"] }
-yui-homology = { path = "../yui/lib-homology" }
+yui-link = { version = "0.5.0", path = "../yui/lib-link", features = ["test-utils"] }
