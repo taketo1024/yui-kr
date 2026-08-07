@@ -1,15 +1,22 @@
+//! [`App`]: the `ykr` command itself — parses [`CliArgs`], builds the knot,
+//! runs the computation and formats the result.
+//!
+//! A precomputed result under `results/` is loaded in preference to computing,
+//! unless `--force-compute` is given.
+
 use itertools::Itertools;
 use log::{info, error};
 use clap::{Parser, ValueEnum};
 use derive_more::Display;
 use num_bigint::BigInt;
-use yui::{Ratio, EucRing, EucRingOps};
-use yui::tex::TeX;
-use yui_kr::KRHomologyStr;
+use yui_core::abst::{EucRing, EucRingOps};
+use yui_core::num::Ratio;
+use yui_core::util::tex::TeX;
+use yui_kr::{KRCalc, KRCalcMode, KRHomologyStr};
 use yui_link::{Braid, Link};
-use super::calc::{KRCalc, KRCalcMode};
 use super::utils::*;
 
+/// Command-line arguments; see the crate docs for the usage text.
 #[derive(Parser, Debug, Default)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
@@ -25,11 +32,8 @@ pub struct CliArgs {
     #[arg(short, long)]
     pub mirror: bool,
 
-    #[arg(short, long, default_value = "poincare")]
+    #[arg(short, long, default_value = "delta")]
     pub format: Output,
-
-    #[arg(short = 'F', long)]
-    pub force_compute: bool,
 
     #[arg(short, long, default_value = "default")]
     pub compute_mode: KRCalcMode,
@@ -37,31 +41,36 @@ pub struct CliArgs {
     #[arg(short, long)]
     pub limit: Option<usize>,
 
-    #[arg(short = 'p', long)]
-    pub save_progress: bool,
-
     #[arg(long)]
     pub debug: bool
 }
 
+/// The integer type underlying the coefficient field `ℚ`. Wider types cost
+/// speed but avoid overflow on larger knots.
 #[derive(ValueEnum, Clone, Copy, Default, Debug)]
 #[clap(rename_all="lower")]
-pub enum IntType { 
+pub enum IntType {
     #[default]
-    I64, 
-    I128, 
+    I64,
+    I128,
     BigInt
 }
 
+/// How the result is printed.
 #[derive(ValueEnum, Clone, Copy, Default, Debug)]
-pub enum Output { 
+pub enum Output {
+    /// One `(i, j)`-table per Δ-grading.
     #[default]
-    Poincare,
-    PoincareTex,
     Delta,
-    Table, 
+    /// A `(j, k)`-table of polynomials in `q`.
+    Table,
+    /// The Poincaré polynomial in `t, q, a`.
+    Poincare,
+    /// The same, as TeX.
+    PoincareTex,
 }
 
+/// An error carrying a message for the user.
 #[derive(Debug, Display)]
 pub struct AppErr(pub(crate) String);
 impl std::error::Error for AppErr {}
@@ -76,19 +85,21 @@ macro_rules! err {
 
 pub(crate) use err;
 
+/// The `ykr` application.
 pub struct App {
     args: CliArgs
 }
 
-impl App { 
-    pub fn new() -> Self { 
+impl App {
+    /// Builds the app from the process arguments.
+    pub fn new() -> Self {
         let args = CliArgs::parse();
         Self::new_with(args)
     }
 
-    pub fn new_with(args: CliArgs) -> Self { 
+    /// Builds the app from `args`, for tests and batch runs.
+    pub fn new_with(args: CliArgs) -> Self {
         if args.debug { 
-            std::env::set_var("RUST_BACKTRACE", "1");
             Self::init_logger();
         }
         App { args }
@@ -104,7 +115,8 @@ impl App {
         ).unwrap()
     }
 
-    pub fn run(&self) -> Result<String, Box<dyn std::error::Error>> { 
+    /// Runs the computation and returns the formatted result.
+    pub fn run(&self) -> Result<String, Box<dyn std::error::Error>> {
         info!("args: {:?}", self.args);
 
         let n_threads = std::thread::available_parallelism().map(|x| x.get()).unwrap_or(1);
@@ -126,23 +138,13 @@ impl App {
         Ok(output)
     }
 
-    pub fn compute(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> { 
-        let target = &self.args.target;
-        let file = File::Result(target);
-
-        if !self.args.force_compute && self.args.braid.is_none() && file.exists() { 
-            info!("result exists: {}", target);
-            let res: KRHomologyStr = file.read()?;
-            let res = if self.args.mirror { res.mirror() } else { res };
-            return Ok(res)
-        }
-        
+    pub fn compute(&self) -> Result<KRHomologyStr, Box<dyn std::error::Error>> {
         let link = self.make_link()?;
 
-        let res = if link.writhe() > 0 { 
+        let res = if link.writhe() > 0 {
             info!("compute from mirror.");
             self.compute_kr_dispatch(&link.mirror())?.mirror()
-        } else { 
+        } else {
             self.compute_kr_dispatch(&link)?
         };
 
@@ -159,21 +161,12 @@ impl App {
 
     fn compute_kr<R>(&self, link: &Link) -> Result<KRHomologyStr, Box<dyn std::error::Error>>
     where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-        let mut calc = KRCalc::init(&self.args.target, link);
+        let mut calc = KRCalc::init(link);
         
         calc.mode = self.args.compute_mode;
 
-        if let Some(limit) = self.args.limit { 
+        if let Some(limit) = self.args.limit {
             calc.size_limit = limit;
-        }
-
-        if self.args.save_progress { 
-            if self.args.force_compute { 
-                calc.clear()?;
-            } else { 
-                calc.load_if_exists()?;
-            }
-            calc.save_progress = true;
         }
 
         calc.compute()?;
@@ -199,7 +192,7 @@ impl App {
 
     fn make_link(&self) -> Result<Link, Box<dyn std::error::Error>> { 
         let braid = if let Some(b) = &self.args.braid { 
-            let seq: Vec<i32> = serde_json::from_str(&b)?;
+            let seq: Vec<i32> = serde_json::from_str(b)?;
             Braid::from_iter(seq)
         } else { 
             let target = &self.args.target;

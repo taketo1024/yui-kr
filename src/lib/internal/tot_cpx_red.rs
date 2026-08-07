@@ -1,8 +1,16 @@
+//! [`KRTotComplexReducer`]: reduces the vertical complex before its homology
+//! is taken, keeping the differentials small.
+//!
+//! Each differential is built against the previous reduction rather than the
+//! full basis, so the matrices stay narrow. `size_limit` caps how large a
+//! matrix may get; anything above it is left unreduced, which
+//! [`KRCalc`](crate::KRCalc) then reports as non-determined instead of zero.
+
 use log::info;
 use num_traits::Zero;
-use yui::{EucRing, EucRingOps};
-use yui_homology::utils::ChainReducer;
-use yui_homology::{isize2, ChainComplexTrait, DisplayTable, GenericChainComplex2, GridTrait};
+use yui_core::abst::{EucRing, EucRingOps};
+use yui_homology::algo::ChainReducer;
+use yui_homology::{isize2, ToTableString, GenericChainComplex2};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::SpMat;
 
@@ -17,30 +25,32 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<'a, R> KRTotComplexReducer<'a, R> 
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    pub fn new(complex: &'a KRTotComplex<R>) -> Self { 
+    pub fn new(complex: &'a KRTotComplex<R>) -> Self {
         let reducer = ChainReducer::new(
-            complex.support(), 
+            complex.support().copied(),
             complex.d_deg()
         );
         let size_limit = usize::MAX;
         Self { complex, reducer, size_limit }
     }
 
-    pub fn reduce(&mut self) { 
+    pub fn reduce(&mut self) {
         info!("reduce C_tot (q: {})..", self.complex.q_deg());
 
-        for idx in self.complex.support() {
+        let support = self.reducer.support().to_vec();
+
+        for &idx in &support {
             self.setup(idx);
             self.reduce_at(idx, false);
         }
 
-        if self.reducer.is_done() { 
+        if self.reducer.is_done() {
             return;
         }
 
         info!("second run..");
 
-        for idx in self.complex.support() {
+        for &idx in &support {
             self.reduce_at(idx, true);
         }
     }
@@ -48,12 +58,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     fn setup(&mut self, idx: isize2) {
         let to_idx = idx + self.complex.d_deg();
 
-        let size = { 
-            let m = self.complex.rank(to_idx);
-            let n = if let Some(q) = self.reducer.matrix(idx) { 
-                q.ncols()
-            } else { 
-                self.complex.rank(idx)
+        let size = {
+            let m = self.complex[to_idx].rank();
+            let n = if let Some(q) = self.reducer.matrix(idx) {
+                q.n_cols()
+            } else {
+                self.complex[idx].rank()
             };
             (m, n)
         };
@@ -68,7 +78,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         // This is to reduce the input dim without `with_trans = true`.
         
         let d = if let Some(q) = self.reducer.matrix(idx) {
-            self.complex.d_matrix_for(idx, &q)
+            self.complex.d_matrix_for(idx, q)
         } else { 
             self.complex.d_matrix(idx)
         };
@@ -94,7 +104,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         info!("d {idx} -> {to_idx}");
         info!("  size:    {:?}", d.shape());
 
-        if usize::max(d.nrows(), d.ncols()) > self.size_limit {
+        if usize::max(d.n_rows(), d.n_cols()) > self.size_limit {
             info!("  skipped.");
             return;
         }
@@ -106,9 +116,9 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     pub fn into_complex(self) -> GenericChainComplex2<R> { 
-        let red = self.reducer.into_complex();
+        let red = self.reducer.into_generic_complex();
 
-        info!("reduced C (q: {})\n{}", self.complex.q_deg(), red.display_table("h", "v"));
+        info!("reduced C (q: {})\n{}", self.complex.q_deg(), red.to_table_string());
         
         red
     }

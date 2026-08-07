@@ -1,17 +1,23 @@
+//! [`KRTotComplex`]: the vertical complex `C_V(D) = ⊕_v H(D, v)`, bigraded by
+//! the cube weights `(|h|, |v|)`.
+//!
+//! Its generators are homology classes, so the induced differential is the
+//! composite `φ ∘ d_V ∘ ψ` [NS2024, §3.3]: lift a class to a representative
+//! chain, apply the cube differential, and project back.
+
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::ops::{Index, RangeInclusive};
 use std::sync::Arc;
 
 use cartesian::cartesian;
-use delegate::delegate;
 use log::info;
 use num_traits::Zero;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
-use yui::bitseq::BitSeq;
-use yui::{EucRing, EucRingOps, Ring, RingOps, AddMon};
-use yui_homology::{isize2, rmod_str, ChainComplexTrait, DisplayTable, GenericChainComplex2, Grid2, GridIter, GridTrait, SummandTrait};
+use yui_link::State;
+use yui_core::abst::{EucRing, EucRingOps, Ring, RingOps, AddMon};
+use yui_homology::{isize2, rmod_str, GenericChainComplex, GenericChainComplex2, Grid2, ToTableString};
 use yui_matrix::MatTrait;
 use yui_matrix::sparse::{SpVec, SpMat};
 
@@ -28,24 +34,19 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> KRTotComplexSummand<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    fn new(gens: Vec<KRChain<R>>) -> Self { 
+    fn new(gens: Vec<KRChain<R>>) -> Self {
         Self { gens }
     }
 
-    pub fn gens(&self) -> &Vec<KRChain<R>> { 
+    pub fn gens(&self) -> &Vec<KRChain<R>> {
         &self.gens
     }
-}
 
-impl<R> SummandTrait for KRTotComplexSummand<R>
-where R: Ring, for<'x> &'x R: RingOps<R> {
-    type R = R;
-
-    fn rank(&self) -> usize {
+    pub fn rank(&self) -> usize {
         self.gens.len()
     }
 
-    fn tors(&self) -> &[R] {
+    pub fn tors(&self) -> &[R] {
         &[]
     }
 }
@@ -62,7 +63,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     data: Arc<KRCubeData<R>>,
     q: isize,
     cube: KRTotCube<R>,
-    summands: Grid2<KRTotComplexSummand<R>>
+    summands: Grid2<KRTotComplexSummand<R>>,
 }
 
 impl<R> KRTotComplex<R>
@@ -88,12 +89,11 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         info!("setup summands..");
 
-        let summands = Grid2::generate(
-            support, 
-            |idx| Self::summand(&data, &cube, idx)
-        );
+        let summands: Grid2<KRTotComplexSummand<R>> = support
+            .map(|idx| (idx, Self::summand(&data, &cube, idx)))
+            .collect();
 
-        info!("C (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, summands.display_table("h", "v"));
+        info!("C (q: {}, h: {:?}, v: {:?})\n{}", q, range.0, range.1, summands.to_table_string());
 
         Self { q, data, cube, summands }
     }
@@ -123,7 +123,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
     #[inline(never)] // for profilability
     pub fn vectorize(&self, idx: isize2, z: &KRChain<R>) -> SpVec<R> {
-        if self.get(idx).rank() == 0 {
+        if self[idx].rank() == 0 {
             return SpVec::zero(0)
         }
 
@@ -151,29 +151,35 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
             self.vectorize_v(i, v, z_v)
         }).collect::<Vec<_>>();
 
-        SpVec::stack_vecs(vs)
+        Self::stack_vecs(vs)
+    }
+
+    fn stack_vecs<I>(vecs: I) -> SpVec<R> 
+    where I: IntoIterator<Item = SpVec<R>> { 
+        let init = SpVec::zero(0);
+        vecs.into_iter().fold(init, |res, v| SpVec::stack(res, v))
     }
 
     #[inline(never)] // for profilability
-    pub fn vectorize_v(&self, i: isize, v: BitSeq, z_v: &KRChain<R>) -> SpVec<R> {
+    pub fn vectorize_v(&self, i: isize, v: State, z_v: &KRChain<R>) -> SpVec<R> {
         let h_v = self.cube.vert(v);
-        h_v.vectorize(i, &z_v)
+        h_v.vectorize(i, z_v)
     }
 
     #[inline(never)] // for profilability
     pub fn as_chain(&self, idx: isize2, v: &SpVec<R>) -> KRChain<R> { 
-        let gens = self.get(idx).gens();
+        let gens = self[idx].gens();
         KRChain::sum(v.iter().map(|(i, a)| 
             &gens[i] * a
         ))
     }
 
-    pub(crate) fn d_matrix_for(&self, from: isize2, q: &SpMat<R>) -> SpMat<R> { 
-        assert_eq!(self.rank(from), q.nrows());
+    pub(crate) fn d_matrix_for(&self, from: isize2, q: &SpMat<R>) -> SpMat<R> {
+        assert_eq!(self[from].rank(), q.n_rows());
 
         let to = from + self.d_deg();
-        let m = self.rank(to);
-        let n = q.ncols();
+        let m = self[to].rank();
+        let n = q.n_cols();
 
         if m == 0 || n == 0 { 
             return SpMat::zero((m, n))
@@ -212,33 +218,31 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         reducer.reduce();
         reducer.into_complex()
     }
+
+    pub fn support(&self) -> impl Iterator<Item = &isize2> + '_ {
+        self.summands.keys()
+    }
+
+    pub fn is_supported(&self, i: isize2) -> bool {
+        self.summands.contains_key(i)
+    }
 }
 
-fn decomp<R>(z: &KRChain<R>) -> HashMap<BitSeq, KRChain<R>>
+fn decomp<R>(z: &KRChain<R>) -> HashMap<State, KRChain<R>>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    let mut res = z.iter().fold(HashMap::new(), |mut res, (v, r)| {
-        res.entry(v.1).or_insert(KRChain::zero()).add_pair_ref((v, r));
+    z.iter().fold(HashMap::new(), |mut res, (v, r)| {
+        res.entry(v.1).or_insert(KRChain::zero()).add_pair_ref((v, r.clone()));
         res
-    });
-
-    res.iter_mut().for_each(|(_, f)| f.clean());
-
-    res 
+    })
 }
 
 
-impl<R> GridTrait<isize2> for KRTotComplex<R>
+impl<R> Index<isize2> for KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type Support = GridIter<isize2>;
-    type Item = KRTotComplexSummand<R>;
+    type Output = KRTotComplexSummand<R>;
 
-    delegate! { 
-        to self.summands { 
-            fn support(&self) -> Self::Support;
-            fn is_supported(&self, i: isize2) -> bool;
-            fn get(&self, i: isize2) -> &Self::Item;
-            fn get_default(&self) -> &Self::Item;
-        }
+    fn index(&self, index: isize2) -> &Self::Output {
+        &self.summands[index]
     }
 }
 
@@ -247,41 +251,40 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     type Output = KRTotComplexSummand<R>;
 
     fn index(&self, index: (isize, isize)) -> &Self::Output {
-        self.get(index.into())
+        &self[isize2::from(index)]
     }
 }
 
-impl<R> ChainComplexTrait<isize2> for KRTotComplex<R>
+impl<R> KRTotComplex<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> {
-    type R = R;
-    type Element = KRChain<R>;
-
-    fn rank(&self, i: isize2) -> usize {
-        self.get(i).rank()
-    }
-
-    fn d_deg(&self) -> isize2 {
+    pub fn d_deg(&self) -> isize2 {
         isize2(0, 1)
     }
 
-    fn d(&self, _i: isize2, z: &Self::Element) -> Self::Element {
+    pub fn d(&self, _i: isize2, z: &KRChain<R>) -> KRChain<R> {
         self.cube.d(z)
     }
 
-    fn d_matrix(&self, idx: isize2) -> SpMat<Self::R> {
-        let n = self.rank(idx);
+    pub fn d_matrix(&self, idx: isize2) -> SpMat<R> {
+        let n = self[idx].rank();
         let q = SpMat::id(n);
         self.d_matrix_for(idx, &q)
+    }
+
+    pub fn as_generic(&self) -> GenericChainComplex<isize2, R> {
+        GenericChainComplex::from_d_matrices(
+            self.d_deg(),
+            self.support().map(|&i| (i, self.d_matrix(i)))
+        )
     }
 }
 
 #[cfg(test)]
 mod tests { 
     use yui_link::Link;
-    use yui::Ratio;
+    use yui_core::num::Ratio;
     
-    use yui_homology::{ChainComplexTrait, SummandTrait};
-    use super::*;
+        use super::*;
 
     type R = Ratio<i64>;
 
@@ -333,15 +336,15 @@ mod tests {
     }
 
     #[test]
-    fn complex() { 
+    fn complex() {
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
         let c = make_cpx(&l, 0);
 
-        c.check_d_all();
+        c.as_generic().check_d_all();
 
         let c = make_cpx(&l, -4);
 
-        c.check_d_all();
+        c.as_generic().check_d_all();
     }
 
     #[test]
@@ -392,5 +395,34 @@ mod tests {
         assert_eq!(c[(3, 1)].rank(), 1);
         assert_eq!(c[(3, 2)].rank(), 0);
         assert_eq!(c[(3, 3)].rank(), 0);
+    }
+
+    // `decomp` splits a chain by v-coords; the parts must partition it.
+    #[test]
+    fn decomp_partitions() {
+        use crate::internal::base::{KRGen, KRMono};
+
+        let h = State::from([1,0,0]);
+        let v0 = State::from([0,0,0]);
+        let v1 = State::from([0,1,0]);
+        let x = |i, d| KRMono::from((i, d));
+
+        let z = KRChain::<R>::from_iter([
+            (KRGen(h, v0, x(0, 1)),  R::from(2)),
+            (KRGen(h, v0, x(1, 1)), -R::from(3)),
+            (KRGen(h, v1, x(2, 1)),  R::from(5)),
+        ]);
+
+        let d = decomp(&z);
+
+        assert_eq!(d.len(), 2);
+        assert_eq!(d[&v0].nterms(), 2);
+        assert_eq!(d[&v1].nterms(), 1);
+
+        // each part is supported on its own v, and the parts sum back to z.
+        for (v, part) in d.iter() {
+            assert!(part.iter().all(|(g, _)| &g.1 == v));
+        }
+        assert_eq!(KRChain::sum(d.values().cloned()), z);
     }
 }

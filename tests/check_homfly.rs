@@ -1,33 +1,21 @@
-use yui_kr::KRHomologyStr;
 use yui_kr::result::QAPoly;
 
-#[path = "../src/bin/app/mod.rs"]
-#[allow(unused)]
-mod app;
+mod common;
 
 #[test]
 #[ignore]
-fn check_homfly() -> Result<(), Box<dyn std::error::Error>> { 
-    use app::utils::*;
+fn check_homfly() -> Result<(), Box<dyn std::error::Error>> {
+    let mut reader = common::load_csv("homfly")?;
 
-    let proj_dir = std::env!("CARGO_MANIFEST_DIR");
-    let data_dir = format!("{proj_dir}/data/");
-    let mut reader = csv::Reader::from_path(&format!("{data_dir}/homfly.csv"))?;
-
-    for r in reader.records() { 
+    for r in reader.records() {
         let r = r?;
         let name = &r[0];
-        let file = File::Result(name);
-
-        if !file.exists() { 
-            panic!("result for {name} does not exist.");
-        }
 
         let data = &r[1];
         let data = data.replace(";", ",");
         let answer = parse_homfly(&data)?;
 
-        let result: KRHomologyStr = file.read()?;
+        let result = common::load_result(name)?;
         let poly = result.homfly_poly();
 
         assert_eq!(answer, poly);
@@ -49,7 +37,7 @@ pub fn parse_homfly(s: &str) -> Result<QAPoly, Box<dyn std::error::Error>> {
     use regex::Regex;
     use std::str::FromStr;
     use num_traits::Pow;
-    use yui::AddMon;
+    use yui_core::abst::AddMon;
 
     type P = QAPoly;
 
@@ -111,7 +99,7 @@ fn test_parse_homfly() {
     let m = P::mono;
 
     let s = "{0, 1, {1, 2, 2, -1}, {1, 1, 1}}";
-    let p = parse_homfly(&s).unwrap();
+    let p = parse_homfly(s).unwrap();
     assert_eq!(p, P::from_iter([
         (m( 2, 2), 1),
         (m( 0, 4), -1),

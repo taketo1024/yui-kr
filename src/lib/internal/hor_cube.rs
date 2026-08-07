@@ -1,9 +1,16 @@
+//! [`KRHorCube`]: the horizontal cube `C_H(D, v)` at a fixed `q` and vertex
+//! `v`, an `n`-dimensional cube complex with differential `d_H`.
+//!
+//! Slicing by `q` is what makes this finitely generated: at each vertex `h`
+//! the generators are the monomials of one fixed degree `q + |h| + (i₀ - i)/2`,
+//! and there are none when that degree is negative.
+
 use std::sync::Arc;
 
 use num_traits::One;
-use yui::{Ring, RingOps};
-use yui_homology::{ChainComplex, Grid1, Summand};
-use yui::bitseq::BitSeq;
+use yui_core::abst::{Ring, RingOps};
+use yui_homology::{ChainComplex1, GrMod1, Summand};
+use yui_link::State;
 
 use super::base::{KRPoly, KRMono, KRGen, KRChain, KRPolyChain, sign_between, combine, decombine};
 use super::data::KRCubeData;
@@ -12,12 +19,12 @@ pub struct KRHorCube<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
     data: Arc<KRCubeData<R>>,
     q: isize,
-    v_coords: BitSeq,
+    v_coords: State,
 } 
 
 impl<R> KRHorCube<R> 
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    pub fn new(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq) -> Self {
+    pub fn new(data: Arc<KRCubeData<R>>, q: isize, v_coords: State) -> Self {
         assert_eq!(v_coords.len(), data.dim());
         Self {
             data,
@@ -38,7 +45,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.data.as_ref()
     }
 
-    fn mon_deg(&self, h_coords: BitSeq) -> isize { 
+    fn mon_deg(&self, h_coords: State) -> isize { 
         let i0 = self.data.root_grad().0;
         let i  = self.data.grad_at(h_coords, self.v_coords).0; // <= i0
         let h = h_coords.weight() as isize;
@@ -46,7 +53,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.q + h + (i0 - i) / 2
     }
 
-    pub fn vert_gens(&self, h_coords: BitSeq) -> impl Iterator<Item = KRGen> + '_ {
+    pub fn vert_gens(&self, h_coords: State) -> impl Iterator<Item = KRGen> + '_ {
         let deg = self.mon_deg(h_coords);
         
         let gens = if deg >= 0 {
@@ -98,13 +105,13 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.d(&KRChain::from(e.clone()))
     }
 
-    pub fn into_complex(self) -> ChainComplex<KRGen, R> {
+    pub fn into_complex(self) -> ChainComplex1<KRGen, R> {
         let n = self.dim() as isize;
-        let summands = Grid1::generate(0..=n, |i| { 
+        let summands = GrMod1::generate(0..=n, |i| { 
             let gens = self.gens(i as usize);
-            Summand::from_raw_gens(gens)
+            Summand::from_raw_generators(gens)
         });
-        ChainComplex::new(summands, 1, move |_, z| {
+        ChainComplex1::new(summands, 1, move |_, z| {
             self.d(z)
         })
     }
@@ -113,17 +120,16 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
+    use maplit::hashmap;
     use num_traits::{One, Zero};
-    use yui_homology::{SummandTrait, ChainComplexTrait};
-    use yui::Ratio;
+        use yui_core::num::Ratio;
     use yui_link::Link;
-    use yui::util::macros::hashmap;
     use super::*;
 
     type R = Ratio<i64>;
     type P = KRPoly<R>;
 
-    fn make_cube(l: &Link, q: isize, v: BitSeq) -> KRHorCube<R> {
+    fn make_cube(l: &Link, q: isize, v: State) -> KRHorCube<R> {
         let data = KRCubeData::<R>::new_no_excl(l);
         let rc = Arc::new(data);
         
@@ -132,42 +138,42 @@ mod tests {
 
     #[test]
     fn mon_deg() { 
-        let l = Link::trefoil();
+        let l = Link::test_data("3_1").mirror();
 
-        let v = BitSeq::from([0,0,0]);
-        let h = BitSeq::from([0,0,0]);
+        let v = State::from([0,0,0]);
+        let h = State::from([0,0,0]);
         let q = 0;
 
         let cube = make_cube(&l, q, v);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 0);
 
-        let v = BitSeq::from([0,0,0]);
-        let h = BitSeq::from([0,0,0]);
+        let v = State::from([0,0,0]);
+        let h = State::from([0,0,0]);
         let q = 1;
 
         let cube = make_cube(&l, q, v);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 1);
 
-        let v = BitSeq::from([1,0,0]);
-        let h = BitSeq::from([0,0,0]);
+        let v = State::from([1,0,0]);
+        let h = State::from([0,0,0]);
         let q = 0;
 
         let cube = make_cube(&l, q, v);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 0);
 
-        let v = BitSeq::from([0,0,0]);
-        let h = BitSeq::from([1,0,0]);
+        let v = State::from([0,0,0]);
+        let h = State::from([1,0,0]);
         let q = 0;
 
         let cube = make_cube(&l, q, v);
         let deg = cube.mon_deg(h);
         assert_eq!(deg, 1);
 
-        let v = BitSeq::from([1,0,0]);
-        let h = BitSeq::from([1,0,0]);
+        let v = State::from([1,0,0]);
+        let h = State::from([1,0,0]);
         let q = 0;
 
         let cube = make_cube(&l, q, v);
@@ -181,7 +187,7 @@ mod tests {
 
         // p: neg, v: 0, h: 0 -> 1
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
-        let v = BitSeq::from([0,0,0]);
+        let v = State::from([0,0,0]);
         let q = 0;
         let cube = make_cube(&l, q, v);
 
@@ -189,7 +195,7 @@ mod tests {
         assert_eq!(p, -&x(1) - &x(2));
 
         // p: neg, v: 1, h: 0 -> 1
-        let v = BitSeq::from([1,0,0]);
+        let v = State::from([1,0,0]);
         let q = 0;
         let cube = make_cube(&l, q, v);
 
@@ -203,32 +209,32 @@ mod tests {
         let x = |i| KRMono::from((i, 1));
 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
-        let v = BitSeq::from([0,0,0]);
+        let v = State::from([0,0,0]);
         let q = 0;
         let cube = make_cube(&l, q, v);
 
-        let h = BitSeq::from([0,0,0]);
+        let h = State::from([0,0,0]);
         let z = KRGen(h, v, one.clone());
         let ys = cube.d_x(&z);
 
         assert_eq!(ys, hashmap!{
-            KRGen(BitSeq::from([1,0,0]), v, x(1)) => -R::one(),
-            KRGen(BitSeq::from([1,0,0]), v, x(2)) => -R::one(),
-            KRGen(BitSeq::from([0,1,0]), v, x(1)) =>  R::one(),
-            KRGen(BitSeq::from([0,0,1]), v, x(2)) =>  R::one()
+            KRGen(State::from([1,0,0]), v, x(1)) => -R::one(),
+            KRGen(State::from([1,0,0]), v, x(2)) => -R::one(),
+            KRGen(State::from([0,1,0]), v, x(1)) =>  R::one(),
+            KRGen(State::from([0,0,1]), v, x(2)) =>  R::one()
         }.into());
 
-        let h = BitSeq::from([0,1,0]);
+        let h = State::from([0,1,0]);
         let z = KRGen(h, v, one.clone());
         let ys = cube.d_x(&z);
 
         assert_eq!(ys, hashmap! {
-            KRGen(BitSeq::from([1,1,0]), v, x(1)) => -R::one(),
-            KRGen(BitSeq::from([1,1,0]), v, x(2)) => -R::one(),
-            KRGen(BitSeq::from([0,1,1]), v, x(2)) => -R::one()
+            KRGen(State::from([1,1,0]), v, x(1)) => -R::one(),
+            KRGen(State::from([1,1,0]), v, x(2)) => -R::one(),
+            KRGen(State::from([0,1,1]), v, x(2)) => -R::one()
         }.into());
 
-        let h = BitSeq::from([1,1,1]);
+        let h = State::from([1,1,1]);
         let z = KRGen(h, v, one.clone());
         let ys = cube.d_x(&z);
 
@@ -237,18 +243,18 @@ mod tests {
 
     #[test]
     fn vert_gens() {
-        let l = Link::trefoil();
-        let v = BitSeq::from([0,0,0]);
+        let l = Link::test_data("3_1").mirror();
+        let v = State::from([0,0,0]);
         let q = 0;
 
         let cube = make_cube(&l, q, v);
-        let h = BitSeq::from([0, 0, 0]);
+        let h = State::from([0, 0, 0]);
         let gens = cube.vert_gens(h).collect_vec();
 
         assert_eq!(gens.len(), 1);
         assert!(gens.iter().all(|x| x.0 == h));
 
-        let h = BitSeq::from([1, 0, 0]);
+        let h = State::from([1, 0, 0]);
         let gens = cube.vert_gens(h).collect_vec();
 
         assert_eq!(gens.len(), 3);
@@ -257,12 +263,12 @@ mod tests {
 
     #[test]
     fn vert_gens_empty() {
-        let l = Link::trefoil();
-        let v = BitSeq::from([0,0,0]);
+        let l = Link::test_data("3_1").mirror();
+        let v = State::from([0,0,0]);
         let q = -4;
 
         let cube = make_cube(&l, q, v);
-        let h = BitSeq::from([0, 0, 0]);
+        let h = State::from([0, 0, 0]);
         let gens = cube.vert_gens(h).collect_vec();
 
         assert_eq!(gens.len(), 0);
@@ -270,8 +276,8 @@ mod tests {
 
     #[test]
     fn gens() {
-        let l = Link::trefoil();
-        let v = BitSeq::from([0,0,0]);
+        let l = Link::test_data("3_1").mirror();
+        let v = State::from([0,0,0]);
         let q = 0;
         let cube = make_cube(&l, q, v);
 
@@ -284,8 +290,8 @@ mod tests {
 
     #[test]
     fn as_complex() { 
-        let l = Link::trefoil();
-        let v = BitSeq::from([1,0,0]);
+        let l = Link::test_data("3_1").mirror();
+        let v = State::from([1,0,0]);
         let q = 0;
         let cube = make_cube(&l, q, v);
         let c = cube.into_complex();
@@ -297,7 +303,7 @@ mod tests {
 
         c.check_d_all();
 
-        let v = BitSeq::from([1,0,0]);
+        let v = State::from([1,0,0]);
         let q = 1;
         let cube = make_cube(&l.mirror(), q, v);
         let c = cube.into_complex();
@@ -312,8 +318,8 @@ mod tests {
 
     #[test]
     fn homology() { 
-        let l = Link::trefoil();
-        let v = BitSeq::from([1,0,0]);
+        let l = Link::test_data("3_1").mirror();
+        let v = State::from([1,0,0]);
         let q = 0;
         let cube = make_cube(&l, q, v);
 
@@ -325,8 +331,8 @@ mod tests {
         assert_eq!(h[2].rank(), 1);
         assert_eq!(h[3].rank(), 1);
 
-        let l = Link::trefoil().mirror();
-        let v = BitSeq::from([1,0,0]);
+        let l = Link::test_data("3_1");
+        let v = State::from([1,0,0]);
         let q = 1;
         let cube = make_cube(&l, q, v);
         let c = cube.into_complex();
