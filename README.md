@@ -1,5 +1,8 @@
 # yui-kr (結)
 
+[![build](https://github.com/taketo1024/yui-kr/actions/workflows/test.yml/badge.svg)](https://github.com/taketo1024/yui-kr/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A program that computes the reduced HOMFLY homology of knots.   
 See: K. Nakagane, T. Sano *"Computations of HOMFLY homology"*, [arXiv:2111.00388](https://arxiv.org/abs/2111.00388).
 
