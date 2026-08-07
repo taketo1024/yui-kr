@@ -43,11 +43,11 @@ serde = { version = "1.0.228", features = ["derive", "rc"] }
 serde_json = "1.0.149"
 regex = "1.12.3"
 cfg-if = "1.0.4"
-# `path` is used for local builds, `version` when published.
-yui-core =     { version = "0.5.0", path = "../yui/lib-core" }
-yui-link =     { version = "0.5.0", path = "../yui/lib-link" }
-yui-matrix =   { version = "0.5.0", path = "../yui/lib-matrix" }
-yui-homology = { version = "0.5.0", path = "../yui/lib-homology" }
+# To build against a local yui checkout, see `.cargo/config.toml` (README > Development).
+yui-core =     "0.5.0"
+yui-link =     "0.5.0"
+yui-matrix =   "0.5.0"
+yui-homology = "0.5.0"
 
 [dev-dependencies]
-yui-link = { version = "0.5.0", path = "../yui/lib-link", features = ["test-utils"] }
+yui-link = { version = "0.5.0", features = ["test-utils"] }

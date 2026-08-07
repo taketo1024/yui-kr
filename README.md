@@ -84,5 +84,21 @@ Computations are peformed for all prime knots with up to 11 crossings. The braid
 * [PDF](results.pdf) (Human friendly)
 * [JSON](results/) (Machine friendly)
 
+## Development
+
+`yui-kr` builds against the published [`yui`](https://github.com/taketo1024/yui) crates, so a plain clone needs nothing else. To build against a local `yui` checkout instead, create `.cargo/config.toml` (untracked):
+
+```toml
+[patch.crates-io]
+yui-core     = { path = "../yui/lib-core" }
+yui-link     = { path = "../yui/lib-link" }
+yui-matrix   = { path = "../yui/lib-matrix" }
+yui-homology = { path = "../yui/lib-homology" }
+```
+
+Paths are relative to this directory, and the local crate versions must match the requirements in `Cargo.toml`. Delete the file to go back to the published crates.
+
+Note that while the patch is active, `cargo build` rewrites `Cargo.lock` to drop the registry sources for the four `yui` crates. That change should not be committed — the tracked lockfile is the one resolved against crates.io.
+
 ## License
 `yui-kr` is released under the [MIT license](https://github.com/taketo1024/yui-kr/blob/main/LICENSE).

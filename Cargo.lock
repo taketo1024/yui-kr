@@ -1197,6 +1197,8 @@ checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
 [[package]]
 name = "yui-core"
 version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c902367f1bf64df36315c693ed3a7ecae12abfb62c0523ed31bf22777f0f71b"
 dependencies = [
  "auto-impl-ops",
  "delegate",
@@ -1220,6 +1222,8 @@ dependencies = [
 [[package]]
 name = "yui-homology"
 version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ec53f0cabcaaf37e9ea8fbf42ce0d395d24ff6b18b391df32e5be8776645bd1"
 dependencies = [
  "ahash",
  "cfg-if",
@@ -1266,6 +1270,8 @@ dependencies = [
 [[package]]
 name = "yui-link"
 version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3813b0b3d3b9d3d0fa7748e21fd2a7bd045ec0f036782ec2309e6cc319ff66fa"
 dependencies = [
  "auto-impl-ops",
  "delegate",
@@ -1282,6 +1288,8 @@ dependencies = [
 [[package]]
 name = "yui-matrix"
 version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "821d04c3a201e200be6f5f092ce969a98c725b1feee51e6ce986149c72726bdf"
 dependencies = [
  "auto-impl-ops",
  "cfg-if",
