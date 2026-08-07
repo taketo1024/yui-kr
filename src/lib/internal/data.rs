@@ -16,8 +16,8 @@ use num_traits::One;
 use yui_core::abst::{Ring, RingOps, AddMon};
 use yui_core::num::Sign;
 use yui_homology::isize3;
-use yui_link::{Link, NodeType, Node, Edge, Slot};
-use yui_core::bitseq::{BitSeq, Bit};
+use yui_link::{Link, NodeType, Node, Edge, Slot, State};
+use yui_core::bitseq::Bit;
 
 use super::base::KRPoly;
 use super::hor_excl::KRHorExcl;
@@ -49,8 +49,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
     root_grad: isize3,
     x_signs: Vec<Sign>,
     x_polys: Vec<KRCrossData<R>>,
-    verts: HashMap<usize, Vec<BitSeq>>,
-    excl: HashMap<BitSeq, Arc<KRHorExcl<R>>>,
+    verts: HashMap<usize, Vec<State>>,
+    excl: HashMap<State, Arc<KRHorExcl<R>>>,
     support: HashSet<isize3>,
 }
 
@@ -76,8 +76,8 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         let s = link.seifert_circles().len() as isize;
         let x_signs = Self::collect_x_signs(link);
         let x_polys = Self::collect_x_polys(link);
-        let root_grad = Self::grad(n, w, s, &x_signs, BitSeq::zeros(n), BitSeq::zeros(n));
-        let verts = BitSeq::generate(n).into_group_map_by(|b| b.weight());
+        let root_grad = Self::grad(n, w, s, &x_signs, State::zeros(n), State::zeros(n));
+        let verts = State::generate(n).into_group_map_by(|b| b.weight());
         let excl = HashMap::new();
 
         let mut data = Self {
@@ -107,7 +107,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
     fn perform_excl(&mut self, excl_level: usize) {
         let n = self.n_cross;
-        self.excl = BitSeq::generate(n).map(|v| {
+        self.excl = State::generate(n).map(|v| {
             let excl = Arc::new( KRHorExcl::from(self, v, excl_level) );
             (v, excl)
         }).collect();
@@ -129,11 +129,11 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         &self.x_polys[i]
     }
 
-    pub fn excl(&self, v_coods: BitSeq) -> Arc<KRHorExcl<R>> { 
+    pub fn excl(&self, v_coods: State) -> Arc<KRHorExcl<R>> { 
         Arc::clone( &self.excl[&v_coods] )
     }
 
-    pub fn verts_of_weight(&self, k: usize) -> &[BitSeq] {
+    pub fn verts_of_weight(&self, k: usize) -> &[State] {
         if let Some(vs) = self.verts.get(&k) { 
             vs
         } else {
@@ -141,7 +141,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    fn grad(n: usize, w: isize, s: isize, x_signs: &Vec<Sign>, h_coords: BitSeq, v_coords: BitSeq) -> isize3 { 
+    fn grad(n: usize, w: isize, s: isize, x_signs: &Vec<Sign>, h_coords: State, v_coords: State) -> isize3 { 
         assert_eq!(h_coords.len(), n);
         assert_eq!(v_coords.len(), n);
 
@@ -180,7 +180,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    pub fn grad_at(&self, h_coords: BitSeq, v_coords: BitSeq) -> isize3 { 
+    pub fn grad_at(&self, h_coords: State, v_coords: State) -> isize3 { 
         Self::grad(self.n_cross, self.writhe, self.n_seif, &self.x_signs, h_coords, v_coords)
     }
 
@@ -269,7 +269,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         isize3(i, j, k)
     }
 
-    pub fn hor_edge_poly(&self, v_coords: BitSeq, i: usize) -> KRPoly<R> {
+    pub fn hor_edge_poly(&self, v_coords: State, i: usize) -> KRPoly<R> {
         use Bit::{Bit0, Bit1};
 
         let sign = self.x_sign(i);
@@ -282,7 +282,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    pub fn ver_edge_poly(&self, h_coords: BitSeq, i: usize) -> KRPoly<R> {
+    pub fn ver_edge_poly(&self, h_coords: State, i: usize) -> KRPoly<R> {
         use Bit::{Bit0, Bit1};
 
         let sign = self.x_sign(i);
@@ -491,8 +491,8 @@ mod tests {
             let n = l.n_crossings();
             let data = KRCubeData::<R>::new_no_excl(&l);
 
-            let zeros = BitSeq::zeros(n);
-            let ones  = BitSeq::ones(n);
+            let zeros = State::zeros(n);
+            let ones  = State::ones(n);
 
             for i in 0..n {
                 let p = data.x_poly(i);
@@ -589,8 +589,8 @@ mod tests {
         let grad0 = data.root_grad();
         assert_eq!(grad0, isize3(4,-8,-4));
 
-        let h = BitSeq::from([1,0,0]);
-        let v = BitSeq::from([0,1,0]);
+        let h = State::from([1,0,0]);
+        let v = State::from([0,1,0]);
         let grad1 = data.grad_at(h, v);
         assert_eq!(grad1, isize3(4,-6,-2));
     }

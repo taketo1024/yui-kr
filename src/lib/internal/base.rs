@@ -15,7 +15,8 @@ use yui_core::abst::{MathType, Ring, RingOps};
 use yui_core::num::Sign;
 use yui_core::lc::{LcKey, Lc};
 use yui_core::poly::{PolyN, MultiVar, MonoOrd};
-use yui_core::bitseq::{BitSeq, Bit};
+use yui_core::bitseq::Bit;
+use yui_link::State;
 
 pub(crate) type KRMono = MultiVar<'x', usize>;
 pub(crate) type KRPoly<R> = PolyN<'x', R>;
@@ -27,8 +28,8 @@ pub type KRPolyChain<R> = Lc<KRGen, KRPoly<R>>;
 #[display("<{}; {}-{}>", _2, _0, _1)]
 #[debug("{}", self)]
 pub struct KRGen(
-    pub BitSeq, // h-coords
-    pub BitSeq, // v-coords
+    pub State, // h-coords
+    pub State, // v-coords
     pub KRMono
 );
 
@@ -47,8 +48,8 @@ impl PartialOrd for KRGen {
 impl Ord for KRGen {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         // order by priority: v > h > mono
-        BitSeq::cmp(&self.1, &other.1).then_with(||
-            BitSeq::cmp(&self.0, &other.0)
+        State::cmp(&self.1, &other.1).then_with(||
+            State::cmp(&self.0, &other.0)
         ).then_with(||
             KRMono::cmp_grlex(&self.2, &other.2)
         )
@@ -57,7 +58,7 @@ impl Ord for KRGen {
 
 impl LcKey for KRGen {}
 
-pub(crate) fn sign_between(from: BitSeq, to: BitSeq) -> Sign { 
+pub(crate) fn sign_between(from: State, to: State) -> Sign { 
     use Bit::*;
     
     assert_eq!(from.len(), to.len());
@@ -104,7 +105,6 @@ pub(crate) fn extend_ends_bounded(r: RangeInclusive<isize>, d: isize, bound: Ran
 
 #[cfg(test)]
 mod tests {
-    use yui_core::bitseq::BitSeq64;
     use yui_core::num::Ratio;
     use super::*;
 
@@ -115,23 +115,23 @@ mod tests {
         use Sign::*;
         
         let e = sign_between(
-            BitSeq::from([0,0,0]), 
-            BitSeq::from([1,0,0]));
+            State::from([0,0,0]), 
+            State::from([1,0,0]));
         assert_eq!(e, Pos);
 
         let e = sign_between(
-            BitSeq::from([0,0,0]), 
-            BitSeq::from([0,1,0]));
+            State::from([0,0,0]), 
+            State::from([0,1,0]));
         assert_eq!(e, Pos);
 
         let e = sign_between(
-            BitSeq::from([1,0,0]), 
-            BitSeq::from([1,1,0]));
+            State::from([1,0,0]), 
+            State::from([1,1,0]));
         assert_eq!(e, Neg);
 
         let e = sign_between(
-            BitSeq::from([0,1,0]),
-            BitSeq::from([1,1,0]));
+            State::from([0,1,0]),
+            State::from([1,1,0]));
         assert_eq!(e, Pos);
     }
 
@@ -140,7 +140,7 @@ mod tests {
     fn edge_sign_square() {
         let n = 4;
 
-        for u in BitSeq64::generate(n) {
+        for u in State::generate(n) {
             let zeros = (0..n).filter(|&i| u[i].is_zero()).collect_vec();
 
             for [&i, &j] in zeros.iter().array_combinations() {
@@ -158,8 +158,8 @@ mod tests {
 
     #[test]
     fn combine_decombine() {
-        let h = BitSeq::from([1,0,0]);
-        let v = BitSeq::from([0,1,0]);
+        let h = State::from([1,0,0]);
+        let v = State::from([0,1,0]);
         let x = |i, d| KRMono::from((i, d));
 
         // two monomials sharing (h, v), one on a different h.

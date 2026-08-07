@@ -17,7 +17,7 @@ use yui_core::abst::{Ring, RingOps};
 use yui_homology::utils::make_matrix;
 use yui_matrix::sparse::Trans;
 use yui_core::poly::Mono;
-use yui_core::bitseq::BitSeq;
+use yui_link::State;
 
 use super::base::{KRMono, KRPoly, KRGen, KRChain, KRPolyChain, sign_between, combine, decombine};
 use super::data::KRCubeData;
@@ -42,7 +42,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 #[derive(Debug, Clone)]
 pub struct KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    v_coords: BitSeq,
+    v_coords: State,
     edge_polys: HashMap<usize, KRPoly<R>>,
     exc_dirs: HashSet<usize>,
     fst_exc_vars: HashSet<usize>,
@@ -53,7 +53,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> KRHorExcl<R>
 where R: Ring, for<'x> &'x R: RingOps<R> {
-    fn new(v_coords: BitSeq, edge_polys: HashMap<usize, KRPoly<R>>) -> Self { 
+    fn new(v_coords: State, edge_polys: HashMap<usize, KRPoly<R>>) -> Self { 
         let n = v_coords.len();
         Self { 
             v_coords,
@@ -66,7 +66,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         }
     }
 
-    pub fn from(data: &KRCubeData<R>, v_coords: BitSeq, level: usize) -> Self { 
+    pub fn from(data: &KRCubeData<R>, v_coords: State, level: usize) -> Self { 
         assert!(level <= 2);
 
         let n = data.dim();
@@ -89,7 +89,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         res
     }
 
-    pub fn v_coords(&self) -> BitSeq { 
+    pub fn v_coords(&self) -> State { 
         self.v_coords
     }
 
@@ -459,7 +459,6 @@ mod tests {
     use yui_matrix::MatTrait;
     use yui_core::poly::MultiVar;
     use yui_core::num::Ratio;
-    use yui_core::bitseq::{BitSeq, BitSeq64};
 
     use crate::internal::data::KRCubeData;
     use crate::internal::hor_cube::KRHorCube;
@@ -470,7 +469,7 @@ mod tests {
     type P = KRPoly<R>;
 
     fn kr_gen<const N: usize, const M: usize>(h: [usize; N], v: [usize; N], m: [usize; M]) -> KRGen {
-        KRGen(BitSeq::from(h), BitSeq::from(v), MultiVar::from(m))
+        KRGen(State::from(h), State::from(v), MultiVar::from(m))
     }
 
     fn reduce<R>(excl: &KRHorExcl<R>, gens: &Vec<KRGen>) -> Vec<KRGen>
@@ -481,7 +480,7 @@ mod tests {
     #[test]
     fn init() { 
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from([0,0,1]);
+        let v = State::from([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let excl = KRHorExcl::from(&data, v, 0);
@@ -503,7 +502,7 @@ mod tests {
     #[test]
     fn find_excl_var() { 
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from([0,0,1]);
+        let v = State::from([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let excl = KRHorExcl::from(&data, v, 0);
@@ -521,7 +520,7 @@ mod tests {
     #[test]
     fn perform_excl() { 
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from([0,0,1]);
+        let v = State::from([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -554,7 +553,7 @@ mod tests {
     #[test]
     fn perform_excl_2() { 
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from([0,0,1]);
+        let v = State::from([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -586,7 +585,7 @@ mod tests {
     #[test]
     fn perform_excl_3() { 
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from([0,0,1]);
+        let v = State::from([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -624,7 +623,7 @@ mod tests {
     fn should_vanish_before() {
         let l = Link::test_data("3_1").mirror();
         let q = 0;
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let excl = KRHorExcl::from(&data, v, 0);
@@ -640,7 +639,7 @@ mod tests {
     #[test]
     fn should_vanish() {
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -655,7 +654,7 @@ mod tests {
     fn should_reduce_before() {
         let l = Link::test_data("3_1").mirror();
         let q = 0;
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let excl = KRHorExcl::from(&data, v, 0);
@@ -671,7 +670,7 @@ mod tests {
     #[test]
     fn should_reduce() {
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -687,7 +686,7 @@ mod tests {
     #[test]
     fn should_reduce_2() {
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -706,7 +705,7 @@ mod tests {
     fn reduce_gens() {
         let l = Link::test_data("3_1").mirror();
         let q = 0;
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -737,7 +736,7 @@ mod tests {
     fn reduce_gens_2() {
         let l = Link::test_data("3_1").mirror();
         let q = 0;
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -768,7 +767,7 @@ mod tests {
     #[test]
     fn forward() {
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -800,7 +799,7 @@ mod tests {
     #[test]
     fn forward_2() {
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -846,7 +845,7 @@ mod tests {
     #[test]
     fn backward() {
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -887,7 +886,7 @@ mod tests {
     #[test]
     fn backward_2() {
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -913,7 +912,7 @@ mod tests {
     #[test]
     fn backward_3() {
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -945,7 +944,7 @@ mod tests {
     fn trans_before() { 
         let l = Link::test_data("3_1").mirror();
         let q = 0;
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let excl = KRHorExcl::from(&data, v, 0);
@@ -964,7 +963,7 @@ mod tests {
     fn trans() { 
         let l = Link::test_data("3_1").mirror();
         let q = 0;
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -983,7 +982,7 @@ mod tests {
     fn trans_2() { 
         let l = Link::test_data("3_1").mirror();
         let q = 0;
-        let v = BitSeq::from_iter([0,0,1]);
+        let v = State::from_iter([0,0,1]);
 
         let data = KRCubeData::<R>::new_no_excl(&l);
         let mut excl = KRHorExcl::from(&data, v, 0);
@@ -1007,7 +1006,7 @@ mod tests {
         let q = 0;
         let n = l.n_crossings();
 
-        for v in BitSeq64::generate(n) {
+        for v in State::generate(n) {
             let data = KRCubeData::<R>::new_no_excl(&l);
             let excl = KRHorExcl::from(&data, v, 2);
             let cube = KRHorCube::new(Arc::new(data), q, v);

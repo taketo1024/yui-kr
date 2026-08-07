@@ -18,7 +18,7 @@ cfg_if::cfg_if! {
 
 use yui_core::util::sync::SyncCounter;
 use yui_core::abst::{EucRing, EucRingOps};
-use yui_core::bitseq::{BitSeq, BitSeq64};
+use yui_link::State;
 
 use super::base::{KRGen, KRPoly, KRMono, KRChain, KRPolyChain, sign_between, combine, decombine};
 use super::data::KRCubeData;
@@ -43,7 +43,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         let (h_range, v_range) = range;
 
         let total = if log::log_enabled!(log::Level::Info) { 
-            BitSeq64::generate(n).filter(|v|
+            State::generate(n).filter(|v|
                 v_range.contains(&(v.weight() as isize))
             ).count()
         } else { 
@@ -53,7 +53,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
         info!("setup cube.. (total: {total})");
 
-        let vs = BitSeq::generate(n);
+        let vs = State::generate(n);
 
         cfg_if::cfg_if! { 
             if #[cfg(feature = "multithread")] { 
@@ -94,12 +94,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.q
     }
 
-    pub fn vert(&self, v_coords: BitSeq) -> &KRHorHomol<R> {
+    pub fn vert(&self, v_coords: State) -> &KRHorHomol<R> {
         let i = v_coords.as_usize();
         &self.verts[i]
     }
 
-    pub fn edge_poly(&self, h_coords: BitSeq, i: usize) -> KRPoly<R> {
+    pub fn edge_poly(&self, h_coords: State, i: usize) -> KRPoly<R> {
         self.data.ver_edge_poly(h_coords, i)
     }
 
@@ -146,12 +146,12 @@ mod tests {
         let cube = make_cube(&l, 0);
 
         // p: neg, h: 0, v: 0 -> 1
-        let h  = BitSeq::from([0,0,0]);
+        let h  = State::from([0,0,0]);
         let p = cube.edge_poly(h, 0); // 1
         assert_eq!(p, P::one());
 
         // p: neg, h: 1, v: 0 -> 1
-        let h  = BitSeq::from([1,0,0]);
+        let h  = State::from([1,0,0]);
         let p = cube.edge_poly(h, 0); // x_bc
         assert_eq!(p, x(0));
 
@@ -159,12 +159,12 @@ mod tests {
         let cube = make_cube(&l, 0);
 
         // p: pos, h: 0, v: 0 -> 1
-        let h  = BitSeq::from([0,0,0]);
+        let h  = State::from([0,0,0]);
         let p = cube.edge_poly(h, 0); // x_bc
         assert_eq!(p, x(0));
 
         // p: pos, h: 1, v: 0 -> 1
-        let h  = BitSeq::from([1,0,0]);
+        let h  = State::from([1,0,0]);
         let p = cube.edge_poly(h, 0); // x_bc
         assert_eq!(p, P::one());
     }

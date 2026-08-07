@@ -11,7 +11,7 @@ use delegate::delegate;
 use num_traits::Zero;
 use yui_core::abst::{Ring, RingOps};
 use yui_homology::{ChainComplex1, Summand, GrMod1};
-use yui_core::bitseq::BitSeq;
+use yui_link::State;
 
 // use log::info;
 // use yui_homology::DisplaySeq;
@@ -30,12 +30,12 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
 
 impl<R> KRHorComplex<R>
 where R: Ring, for<'x> &'x R: RingOps<R> { 
-    pub fn new(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq) -> Self { 
+    pub fn new(data: Arc<KRCubeData<R>>, q: isize, v_coords: State) -> Self { 
         let n = data.dim() as isize;
         Self::new_restr(data, q, v_coords, 0..=n)
     }
 
-    pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq, h_range: RangeInclusive<isize>) -> Self { 
+    pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, v_coords: State, h_range: RangeInclusive<isize>) -> Self { 
         // info!("C_hor (q: {}, v: {:?})..", q, v_coords);
 
         let excl = data.excl(v_coords);
@@ -78,7 +78,7 @@ where R: Ring, for<'x> &'x R: RingOps<R> {
         self.q
     }
 
-    pub fn v_coords(&self) -> BitSeq {
+    pub fn v_coords(&self) -> State {
         self.excl.v_coords()
     }
 
@@ -116,7 +116,7 @@ mod tests {
 
     type R = Ratio<i64>;
 
-    fn make_cpx(link: &Link, v_coords: BitSeq, q: isize, level: usize, red: bool) -> KRHorComplex<R> {
+    fn make_cpx(link: &Link, v_coords: State, q: isize, level: usize, red: bool) -> KRHorComplex<R> {
         let n = link.n_crossings() as isize;
         let data = Arc::new( KRCubeData::<R>::new_excl(link, level) );
         let excl = data.excl(v_coords);
@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn no_red() { 
         let l = Link::test_data("3_1");
-        let v = BitSeq::from([1,0,0]);
+        let v = State::from([1,0,0]);
         let q = 0;
         
         let c = make_cpx(&l, v, q, 0, false);
@@ -157,7 +157,7 @@ mod tests {
     #[test]
     fn excl_level1() { 
         let l = Link::test_data("3_1");
-        let v = BitSeq::from([1,0,0]);
+        let v = State::from([1,0,0]);
         let q = 0;
         
         let c = make_cpx(&l, v, q, 1, false);
@@ -180,7 +180,7 @@ mod tests {
     #[test]
     fn excl_level2() { 
         let l = Link::test_data("3_1");
-        let v = BitSeq::from([1,0,0]);
+        let v = State::from([1,0,0]);
         let q = 0;
         
         let c = make_cpx(&l, v, q, 2, false);
@@ -203,7 +203,7 @@ mod tests {
     #[test]
     fn excl_level1_red() { 
         let l = Link::test_data("3_1");
-        let v = BitSeq::from([1,0,0]);
+        let v = State::from([1,0,0]);
         let q = 0;
         
         let c = make_cpx(&l, v, q, 1, true);
@@ -226,7 +226,7 @@ mod tests {
     #[test]
     fn excl_level2_red() { 
         let l = Link::test_data("3_1");
-        let v = BitSeq::from([1,0,0]);
+        let v = State::from([1,0,0]);
         let q = 0;
         
         let c = make_cpx(&l, v, q, 2, true);

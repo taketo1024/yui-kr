@@ -15,7 +15,7 @@ use log::info;
 use num_traits::Zero;
 #[cfg(feature = "multithread")]
 use rayon::prelude::{ParallelIterator, IntoParallelIterator, IntoParallelRefIterator};
-use yui_core::bitseq::BitSeq;
+use yui_link::State;
 use yui_core::abst::{EucRing, EucRingOps, Ring, RingOps, AddMon};
 use yui_homology::{isize2, rmod_str, GenericChainComplex, GenericChainComplex2, Grid2, ToTableString};
 use yui_matrix::MatTrait;
@@ -161,7 +161,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 
     #[inline(never)] // for profilability
-    pub fn vectorize_v(&self, i: isize, v: BitSeq, z_v: &KRChain<R>) -> SpVec<R> {
+    pub fn vectorize_v(&self, i: isize, v: State, z_v: &KRChain<R>) -> SpVec<R> {
         let h_v = self.cube.vert(v);
         h_v.vectorize(i, z_v)
     }
@@ -228,7 +228,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
     }
 }
 
-fn decomp<R>(z: &KRChain<R>) -> HashMap<BitSeq, KRChain<R>>
+fn decomp<R>(z: &KRChain<R>) -> HashMap<State, KRChain<R>>
 where R: Ring, for<'x> &'x R: RingOps<R> {
     z.iter().fold(HashMap::new(), |mut res, (v, r)| {
         res.entry(v.1).or_insert(KRChain::zero()).add_pair_ref((v, r.clone()));
@@ -402,9 +402,9 @@ mod tests {
     fn decomp_partitions() {
         use crate::internal::base::{KRGen, KRMono};
 
-        let h = BitSeq::from([1,0,0]);
-        let v0 = BitSeq::from([0,0,0]);
-        let v1 = BitSeq::from([0,1,0]);
+        let h = State::from([1,0,0]);
+        let v0 = State::from([0,0,0]);
+        let v1 = State::from([0,1,0]);
         let x = |i, d| KRMono::from((i, d));
 
         let z = KRChain::<R>::from_iter([

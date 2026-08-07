@@ -16,7 +16,7 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use yui_core::abst::{EucRing, EucRingOps};
 use yui_homology::{GrMod1, Summand};
 use yui_matrix::sparse::SpVec;
-use yui_core::bitseq::BitSeq;
+use yui_link::State;
 
 // use log::info;
 // use yui_homology::DisplaySeq;
@@ -35,12 +35,12 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
 
 impl<R> KRHorHomol<R>
 where R: EucRing, for<'x> &'x R: EucRingOps<R> { 
-    pub fn new(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq) -> Self { 
+    pub fn new(data: Arc<KRCubeData<R>>, q: isize, v_coords: State) -> Self { 
         let n = data.dim() as isize;
         Self::new_restr(data, q, v_coords, 0..=n)
     }
 
-    pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq, h_range: RangeInclusive<isize>) -> Self { 
+    pub fn new_restr(data: Arc<KRCubeData<R>>, q: isize, v_coords: State, h_range: RangeInclusive<isize>) -> Self { 
         let n = data.dim() as isize;
         let h_range_ext = extend_ends_bounded(h_range.clone(), 1, 0..=n);
 
@@ -58,7 +58,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         Self { q, excl, inner }
     }
 
-    pub fn zero(data: Arc<KRCubeData<R>>, q: isize, v_coords: BitSeq) -> Self { 
+    pub fn zero(data: Arc<KRCubeData<R>>, q: isize, v_coords: State) -> Self { 
         let excl = data.excl(v_coords);
         let inner = GrMod1::default();
         Self { q, excl, inner }
@@ -68,7 +68,7 @@ where R: EucRing, for<'x> &'x R: EucRingOps<R> {
         self.q
     }
 
-    pub fn v_coords(&self) -> BitSeq { 
+    pub fn v_coords(&self) -> State { 
         self.excl.v_coords()
     }
 
@@ -140,7 +140,7 @@ mod tests {
 
     type R = Ratio<i64>;
 
-    fn make_hml(l: &Link, q: isize, v: BitSeq) -> KRHorHomol<R> {
+    fn make_hml(l: &Link, q: isize, v: State) -> KRHorHomol<R> {
         let data = KRCubeData::<R>::new(l);
         let rc = Arc::new(data);
         KRHorHomol::new(rc, q, v)
@@ -149,7 +149,7 @@ mod tests {
     #[test]
     fn rank() { 
         let l = Link::test_data("3_1").mirror();
-        let v = BitSeq::from([1,0,0]);
+        let v = State::from([1,0,0]);
         let q = 0;
         let hml = make_hml(&l, q, v);
 
@@ -163,7 +163,7 @@ mod tests {
     #[test]
     fn rank2() { 
         let l = Link::from_pd_code([[1,4,2,5],[5,2,6,3],[3,6,4,1]]); // trefoil
-        let v = BitSeq::from([1,0,0]);
+        let v = State::from([1,0,0]);
         let q = -4;
         let hml = make_hml(&l, q, v);
 
@@ -176,7 +176,7 @@ mod tests {
     #[test]
     fn vectorize() { 
         let l = Link::test_data("3_1");
-        let v = BitSeq::from([1,0,0]);
+        let v = State::from([1,0,0]);
         let q = 1;
         let hml = make_hml(&l, q, v);
 
