@@ -1,6 +1,6 @@
 [package]
 name = "yui-kr"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Taketo Sano <taketo1024@gmail.com>"]
 description = "YUI-KR"
 license = "MIT"
