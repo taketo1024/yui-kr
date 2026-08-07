@@ -54,4 +54,4 @@ yui-homology = { path = "../yui/lib-homology" }
 
 [dev-dependencies]
 yui-link = { path = "../yui/lib-link", features = ["test-utils"] }
-yui-homology = { path = "../yui/lib-homology", features = ["test-utils"] }
+yui-homology = { path = "../yui/lib-homology" }
